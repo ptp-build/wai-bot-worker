@@ -1,0 +1,20 @@
+{
+  "steps": [
+    {
+      "cmd": "moveTo",
+      "x": 23,
+      "y": 12
+    },
+    {
+      "cmd": "click"
+    },
+    {
+      "cmd": "moveTo",
+      "x": 42,
+      "y": 168
+    },
+    {
+      "cmd": "click"
+    }
+  ]
+}

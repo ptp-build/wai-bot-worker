@@ -1,0 +1,15 @@
+{
+  "steps": [
+    {
+      "cmd": "hotkey",
+      "keys": ["command", "space"]
+    },
+    {
+      "cmd": "click"
+    },
+    {
+      "cmd": "typewrite",
+      "text": "Hello, World!"
+    }
+  ]
+}

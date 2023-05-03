@@ -1,5 +1,7 @@
 module.exports = {
-  packagerConfig: {},
+  packagerConfig: {
+    icon: 'src/electron/icons/favicon',
+  },
   rebuildConfig: {},
   makers: [
     {
@@ -19,6 +21,18 @@ module.exports = {
       config: {},
     },
   ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'ptp-build',
+          name: 'wai-bot-worker',
+          draft: true,
+        },
+      },
+    },
+  ],
   plugins: [
     {
       name: '@electron-forge/plugin-webpack',
@@ -28,11 +42,11 @@ module.exports = {
           config: './webpack.renderer.config.js',
           entryPoints: [
             {
-              html: './src/index.html',
-              js: './src/renderer.ts',
+              html: './src/electron/assets/index.html',
+              js: './src/electron/js/renderer.js',
               name: 'main_window',
               preload: {
-                js: './src/preload.ts',
+                js: './src/electron/js/preload.js',
               },
             },
           ],

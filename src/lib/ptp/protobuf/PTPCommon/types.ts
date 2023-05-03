@@ -5,10 +5,12 @@ export enum AUTH_TYPE {
 }
 
 export enum ChatGptStreamStatus {
-  ChatGptStreamStatus_START = 0,
-  ChatGptStreamStatus_GOING = 1,
-  ChatGptStreamStatus_DONE = 2,
-  ChatGptStreamStatus_ERROR = 3,
+  ChatGptStreamStatus_WAITING = 0,
+  ChatGptStreamStatus_START = 1,
+  ChatGptStreamStatus_GOING = 2,
+  ChatGptStreamStatus_DONE = 3,
+  ChatGptStreamStatus_ERROR = 4,
+  ChatGptStreamStatus_STOPPED = 5,
 }
 
 export enum EncryptType {
@@ -23,16 +25,31 @@ export enum ERR {
   ERR_SYSTEM = 1,
   ERR_AUTH_LOGIN = 2,
   ERR_AUTH_NEED = 3,
+  ERR_NOT_FOUND = 4,
+}
+
+export enum MsgAction {
+  MsgAction_WaiChatGptBotWorkerInit = 0,
+  MsgAction_WaiChatGptPromptsInputReady = 1,
+  MsgAction_WaiChatGptOnRecvMsg = 2,
+  MsgAction_WaiChatGptClickLogin = 3,
+  MsgAction_WaiChatGptInputUsername = 4,
+  MsgAction_WaiChatGptInputPassword = 5,
+  MsgAction_WaiChatGptCfChallenge = 6,
+  MsgAction_WaiChatGptUserAskMsg = 6001,
+  MsgAction_WaiChatGptBotAckMsg = 6002,
 }
 
 export enum QrCodeType {
   QrCodeType_MNEMONIC = 1,
+  QrCodeType_SIGN = 2,
 }
 
 export interface ClientInfo_Type {
   deviceModel: string;
   systemVersion: string;
   appVersion: string;
+  isBotWorker?: boolean;
 }
 
 export interface FileInfo_Type {
@@ -45,10 +62,16 @@ export interface FileInfo_Type {
 }
 
 export interface MessageStoreRow_Type {
-  message?: PbMsg_Type;
   messageId: number;
-  time?: number;
   buf?: Buffer;
+}
+
+export interface MsgRow_Type {
+  text: string;
+  msgId: number;
+  chatId: string;
+  senderId: string;
+  msgDate: number;
 }
 
 export interface PbAction_Type {
@@ -82,6 +105,20 @@ export interface PbBotInfo_Type {
   commands?: PbCommands_Type[];
   photo?: PbPhoto_Type;
   aiBot?: PbAiBot_Type;
+}
+
+export interface PbCatBot_Type {
+  cat: string;
+  userId: string;
+  firstName: string;
+  avatarHash?: string;
+  bio?: string;
+  init_system_content?: string;
+  welcome?: string;
+  outputText?: string;
+  template?: string;
+  templateSubmit?: string;
+  time: number;
 }
 
 export interface PbChat_Type {
@@ -203,6 +240,8 @@ export interface PbMsg_Type {
   views?: number;
   repliesThreadInfo?: PbRepliesThreadInfo_Type;
   reactions?: PbReactions_Type;
+  replyToMessageId?: number;
+  replyToUserId?: string;
 }
 
 export interface PbPhoto_Type {
@@ -283,6 +322,7 @@ export interface PbUser_Type {
   isSelf?: boolean;
   avatarHash?: string;
   photos?: PbPhoto_Type[];
+  updatedAt?: number;
 }
 
 export interface PbUsernames_Type {
@@ -295,6 +335,18 @@ export interface PbVoice_Type {
   id: string;
   waveform?: number[];
   duration?: number;
+}
+
+export interface UserAskChatGptMsg_Type {
+  chatGptBotId: string;
+  text: string;
+  chatId: string;
+  msgId: number;
+  msgDate: number;
+  msgAskId: number;
+  msgAskDate: number;
+  senderId: string;
+  streamStatus: ChatGptStreamStatus;
 }
 
 export interface UserMessageStoreData_Type {

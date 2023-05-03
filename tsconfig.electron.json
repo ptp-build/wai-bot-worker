@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "es2021",
+    "allowJs": true,
+    "module": "commonjs",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["node","@cloudflare/workers-types"],
+    "typeRoots": ["node_modules/@types"],
+    "paths": {
+      "*": ["node_modules/*"]
+    }
+  },
+  "include": ["src/electron/*"],
+  "exclude": ["dist", "node_modules","src/worker/share/service"]
+}
