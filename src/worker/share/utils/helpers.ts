@@ -1,7 +1,7 @@
 import PasswordValidator from "password-validator";
 import {sha256} from "ethereum-cryptography/sha256";
 
-const SALT = 'wai ai blockchain auto bot';
+const SALT = 'wai ai blockchain auto services';
 
 export function passwordCheck(password:string){
   const schema = new PasswordValidator();

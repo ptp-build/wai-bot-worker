@@ -9,7 +9,9 @@ import CloudFlareKv from './db/CloudFlareKv';
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
 import { hashSha256 } from './utils/helpers';
 import { randomize } from 'worktop/utils';
-import { EncryptType } from '../../lib/ptp/protobuf/PTPCommon/types';
+import { ClientInfo_Type, EncryptType, QrCodeType } from '../../lib/ptp/protobuf/PTPCommon/types';
+
+const DEFAULT_LANG_MNEMONIC = "chinese_simplified"
 
 const KEYS_PREFIX = 'a-ks';
 const SESSIONS_PREFIX = 'a-ss';
@@ -38,6 +40,7 @@ export default class Account {
   private aad?: Buffer;
   private entropy?: string;
   private session?: string;
+  private clientInfo: ClientInfo_Type | undefined;
   constructor(accountId: number) {
     this.accountId = accountId;
     this.uid = '';
@@ -101,6 +104,18 @@ export default class Account {
     }
   }
 
+  static getSignFromQrcode(sign: string) {
+    sign = sign.replace(`wai://t/${QrCodeType.QrCodeType_SIGN}/`, '').split('/')[1];
+    return Buffer.from(sign, 'hex').toString();
+  }
+
+  static verifySignFromQrcode(sign: string) {
+    return sign.startsWith(`wai://t/${QrCodeType.QrCodeType_SIGN}/`);
+  }
+  setSession(session: string) {
+    this.session = session;
+    return this;
+  }
   getSession() {
     if (this.session) {
       return this.session;
@@ -196,7 +211,7 @@ export default class Account {
   }
 
   genEntropy() {
-    let mnemonic = new Mnemonic();
+    let mnemonic = new Mnemonic(undefined, DEFAULT_LANG_MNEMONIC);
     this.entropy = mnemonic.toEntropy();
   }
 
@@ -303,7 +318,7 @@ export default class Account {
     }
     let entropy = await Account.getKey(this.getAccountId());
     if (!entropy) {
-      let mnemonic = new Mnemonic();
+      let mnemonic = new Mnemonic(undefined, DEFAULT_LANG_MNEMONIC);
       entropy = mnemonic.toEntropy();
       await Account.saveKey(this.getAccountId(), entropy);
     }
@@ -408,5 +423,13 @@ export default class Account {
 
   static randomBuff(len: 16 | 32) {
     return Buffer.from(randomize(len));
+  }
+
+  setClientInfo(clientInfo: ClientInfo_Type | undefined) {
+    this.clientInfo = clientInfo;
+  }
+
+  getClientInfo() {
+    return this.clientInfo;
   }
 }

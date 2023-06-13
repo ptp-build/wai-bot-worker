@@ -1,5 +1,7 @@
 module.exports = {
-  packagerConfig: {},
+  packagerConfig: {
+    icon: 'src/icons/favicon',
+  },
   rebuildConfig: {},
   makers: [
     {
@@ -25,7 +27,7 @@ module.exports = {
       config: {
         repository: {
           owner: 'ptp-build',
-          name: 'wai-chat-bot-electron-chatgpt',
+          name: 'wai-services-worker',
           draft: true,
         },
       },
@@ -40,11 +42,11 @@ module.exports = {
           config: './webpack.renderer.config.js',
           entryPoints: [
             {
-              html: './src/index.html',
-              js: './src/renderer.ts',
+              html: './src/assets/index.html',
+              js: './src/js/renderer.ts',
               name: 'main_window',
               preload: {
-                js: './src/preload.ts',
+                js: './src/js/preload.js',
               },
             },
           ],
