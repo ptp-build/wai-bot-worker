@@ -7,12 +7,12 @@ module.exports = [
   new CopyWebpackPlugin({
     patterns: [
       {
-        from: path.resolve(__dirname, 'src/assets'),
-        to: path.resolve(__dirname, '.webpack/main/assets'),
+        from: path.resolve(__dirname, 'src/electron/assets'),
+        to: path.resolve(__dirname, '.webpack/main/electron/assets'),
       },
       {
-        from: path.resolve(__dirname, 'src/js'),
-        to: path.resolve(__dirname, '.webpack/main/js'),
+        from: path.resolve(__dirname, 'src/electron/js'),
+        to: path.resolve(__dirname, '.webpack/main/electron/js'),
       },
     ],
   }),

@@ -1,7 +1,7 @@
-import { Pdu } from '../lib/ptp/protobuf/BaseMsg';
-import { ClientInfo_Type } from '../lib/ptp/protobuf/PTPCommon/types';
-import { AuthLoginReq } from '../lib/ptp/protobuf/PTPAuth';
-import Account from '../worker/share/Account';
+import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
+import { ClientInfo_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
+import { AuthLoginReq } from '../../lib/ptp/protobuf/PTPAuth';
+import Account from '../../worker/share/Account';
 
 const WebSocket = require('ws');
 

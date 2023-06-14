@@ -25,25 +25,26 @@ let homePageLoaded = false
 const proxyConfig = getProxyConfig(appArgs)
 let mainWindow: BrowserWindow | null;
 let devTools:Devtool;
-let botWsServer:BotWsServer;
-let botWsClient:BotWsClient;
+let botWsServer:BotWsServer | undefined;
+let botWsClient:BotWsClient | undefined;
 let botWsClientAgent:BotWsClientAgent
 
 const loadLocalPage =async (page?:string)=>{
-  await mainWindow.loadFile(path.join(__dirname, 'assets', page || 'index.html'));
+  await mainWindow!.loadFile(path.join(__dirname, 'electron','assets', page || 'index.html'));
 }
 
 const loadUrl = async (url:string)=>{
   try{
-    await mainWindow.loadURL(url)
+    await mainWindow!.loadURL(url)
   }catch (e){
+    //@ts-ignore
     const htmlContent = getErrorHtml(e,useProxy,proxyConfig);
-    await mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURI(htmlContent)}`);
+    await mainWindow!.loadURL(`data:text/html;charset=utf-8,${encodeURI(htmlContent)}`);
   }
 }
 
 export function sendToRenderMsg(action:string,payload?:any){
-  mainWindow.webContents.send("ipcRenderMsg", action,payload);
+  mainWindow!.webContents.send("ipcRenderMsg", action,payload);
 }
 
 
@@ -53,7 +54,7 @@ export function sendToMainMsg(action:string,payload?:any){
 
 export async function runJsCode(code:string){
   console.log("[runJsCode]",code)
-  await mainWindow.webContents.executeJavaScript(code)
+  await mainWindow!.webContents.executeJavaScript(code)
 }
 const isDefaultPartition = partitionName === DefaultPartition
 if(isDefaultPartition){
@@ -92,7 +93,7 @@ const createWindow = (): void => {
   loadLocalPage("index.html");
   const loadHomePage = async ()=>{
     if (useProxy) {
-      const mainWindowSession = mainWindow.webContents.session;
+      const mainWindowSession = mainWindow!.webContents.session;
       await session.defaultSession.setProxy(proxyConfig)
       await mainWindowSession.setProxy(proxyConfig)
       await loadUrl(homeUrl)
@@ -101,9 +102,9 @@ const createWindow = (): void => {
     }
   }
   mainWindow.webContents.on('did-finish-load', async () => {
-    const displaySize = Ui.getDisplaySize(mainWindow)
+    const displaySize = Ui.getDisplaySize(mainWindow!)
     console.log("[displaySize]",displaySize)
-    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    mainWindow!.webContents.on('console-message', (event, level, message, line, sourceId) => {
       if(
         message.includes("font-weight: bold; This renderer process has either ") ||
         message.includes("console.groupEnd") ||
@@ -117,7 +118,7 @@ const createWindow = (): void => {
         console.log('[Console] > ', message);
       }
     });
-    mainWindow.webContents.send('inject-scripts');
+    mainWindow!.webContents.send('inject-scripts');
 
     if(!homePageLoaded){
       homePageLoaded = true
@@ -128,13 +129,13 @@ const createWindow = (): void => {
   devTools.open()
 
   mainWindow.on('resize', () => {
-    const [width, height] = mainWindow.getSize();
-    const [x,y] = mainWindow.getPosition();
+    const [width, height] = mainWindow!.getSize();
+    const [x,y] = mainWindow!.getPosition();
     //console.log(`New window size: {width:${width}, height: ${height}},x:${x},y:${y}`);
   });
 
   mainWindow.on('move', () => {
-    const [x,y] = mainWindow.getPosition();
+    const [x,y] = mainWindow!.getPosition();
     //console.log(`New window position: x:${x},y:${y}`);
   });
 
@@ -174,7 +175,7 @@ app.on('ready', async () => {
       sendToMainMsg
     }).start(appArgs)
   }
-  new ElectronIpcMain(mainWindow).setSendToRenderMsgHandler(sendToRenderMsg).addEvents()
+  new ElectronIpcMain(mainWindow!).setSendToRenderMsgHandler(sendToRenderMsg).addEvents()
 
 });
 app.on('window-all-closed', () => {

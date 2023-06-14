@@ -1,9 +1,8 @@
-import { ChatGptStreamStatus } from '../../lib/ptp/protobuf/PTPCommon/types';
-import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
-import { SendBotMsgReq } from '../../lib/ptp/protobuf/PTPMsg';
+import { ChatGptStreamStatus } from '../../../lib/ptp/protobuf/PTPCommon/types';
+import { Pdu } from '../../../lib/ptp/protobuf/BaseMsg';
+import { SendBotMsgReq } from '../../../lib/ptp/protobuf/PTPMsg';
 import BotWebSocket from '../BotWebSocket';
-import WaiBridge from '../../worker/msg/WaiBridge';
-
+import WaiBridge from '../../../worker/msg/WaiBridge';
 
 let msgList: number[] = [];
 let msgObjects: Record<number, ChatGptWaiChatBot> = {};

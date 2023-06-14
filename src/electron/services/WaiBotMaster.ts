@@ -1,7 +1,7 @@
-import Account from '../worker/share/Account';
-import LocalStorage from '../worker/share/db/LocalStorage';
-import { getAppVersion } from '../worker/msg/WaiBridge';
-import MsgDispatcher from '../worker/share/service/MsgDispatcher';
+import Account from '../../worker/share/Account';
+import LocalStorage from '../../worker/share/db/LocalStorage';
+import { getAppVersion } from '../../worker/msg/WaiBridge';
+import MsgDispatcher from '../../worker/share/service/MsgDispatcher';
 
 import WaiBotRpa from './WaiBotRpa';
 import BotWebSocket, { BotWebSocketNotifyAction, BotWebSocketState } from './BotWebSocket';

@@ -1,5 +1,3 @@
-import { app as application } from 'electron';
-
 const minimist = require('minimist');
 require('dotenv').config();
 export const DefaultPartition = "default";
@@ -36,10 +34,6 @@ const AppArgvKeys = [
   "accountSign","accountId","msgServer",
   "botWsServerPort","startBotWsClient","startBotWsServer","isBotWsClientMaster"
 ]
-export interface EnvType{
-  appPath:string,
-  electronPath:string,
-}
 export const isProd = !getFromProcessEnv("WEBPACK_SERVE")
 
 export function getAppPlatform(){
@@ -86,13 +80,6 @@ export function getProxyConfig(args:AppArgvType){
   return res;
 }
 
-export function getEnv():EnvType {
-  const electronPath = process.argv[0]
-  const appPath = application.getAppPath()
-  return {
-    electronPath,appPath
-  }
-}
 export function parseAppArgs():AppArgvType{
   const argv = minimist(process.argv.slice(2));
 

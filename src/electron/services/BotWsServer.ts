@@ -2,8 +2,8 @@ import WebSocket from 'ws';
 import * as net from 'net';
 import { exec } from 'child_process';
 import { EventEmitter } from 'events';
-import { Pdu } from '../lib/ptp/protobuf/BaseMsg';
-import { currentTs1000 } from '../worker/share/utils/utils';
+import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
+import { currentTs1000 } from '../../worker/share/utils/utils';
 import { AppArgvType } from '../utils/args';
 
 export class BotWsServer {

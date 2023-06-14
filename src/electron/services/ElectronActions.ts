@@ -1,4 +1,4 @@
-import { getEnv, parseAppArgs } from '../utils/args';
+import { getElectronEnv, parseAppArgs } from '../utils/args';
 import ElectronIpcMain from './ElectronIpcMain';
 import { runCommand } from '../utils/evalSystemCmd';
 
@@ -18,7 +18,7 @@ export default class ElectronActions{
 
   async getAppInfo(){
     const appArgs = parseAppArgs()
-    const env = getEnv()
+    const env = getElectronEnv()
     const appArgs_str = "```json\n" + JSON.stringify(appArgs, null, 2) + "```"
     const env_str = "```json\n" + JSON.stringify(env, null, 2) + "```"
     const text = `appArgs\n${appArgs_str}\nenv\n${env_str}`
@@ -30,7 +30,7 @@ export default class ElectronActions{
     const buf = Buffer.from(bufStr,"hex").toString()
     const eventData = JSON.parse(buf)
     const {accountId,accountSign} = eventData
-    const {electronPath,appPath} = getEnv()
+    const {electronPath,appPath} = getElectronEnv()
     const {botWsServerPort} = parseAppArgs()
     const args = [
       appPath,

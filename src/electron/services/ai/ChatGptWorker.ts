@@ -1,5 +1,5 @@
-import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
-import { SendBotMsgReq } from '../../lib/ptp/protobuf/PTPMsg';
+import { Pdu } from '../../../lib/ptp/protobuf/BaseMsg';
+import { SendBotMsgReq } from '../../../lib/ptp/protobuf/PTPMsg';
 
 export class ChatGptWorker {
   private msgId?: number;

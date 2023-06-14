@@ -42,11 +42,11 @@ module.exports = {
           config: './webpack.renderer.config.js',
           entryPoints: [
             {
-              html: './src/assets/index.html',
-              js: './src/js/renderer.ts',
+              html: './src/electron/assets/index.html',
+              js: './src/electron/js/renderer.ts',
               name: 'main_window',
               preload: {
-                js: './src/js/preload.js',
+                js: './src/electron/js/preload.js',
               },
             },
           ],

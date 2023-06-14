@@ -13,7 +13,7 @@ export class TcpServer extends Server {
     this.server = net.createServer();
   }
 
-  async start(): Promise<void> {
+  start(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.server.on('error', reject);
       //@ts-ignore

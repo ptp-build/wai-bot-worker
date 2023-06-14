@@ -1,6 +1,6 @@
 import { encodeToBase64 } from '../utils/utils';
 import PyAutoGuiRpa from './PyAutoGuiRpa';
-import { runJsCode } from '../electron';
+import { runJsCode } from '../index';
 
 export default class WaiBotRpa{
   async askMsg(text:string){
