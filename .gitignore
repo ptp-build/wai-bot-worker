@@ -90,7 +90,7 @@ out/
 dist/
 .idea/
 pnpm-lock.yaml
-src/electron/assets/wai/desktop
+#src/electron/assets/wai/desktop
 wrangler-local-state/
 wrangler.toml
 wrangler.prod.toml
