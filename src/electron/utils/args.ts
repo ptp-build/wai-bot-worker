@@ -18,22 +18,64 @@ export interface AppArgvType{
   proxyPassword?:string,
   accountSign?:string,
   accountId?:number,
-  botWsServerPort:number
-  startBotWsServer?:boolean
-  startBotWsClient?:boolean
+
   isBotWsClientMaster?:boolean
   msgServer?:string
+  startWsServer?:boolean
+  startWsClient?:boolean
+  isWsClientMaster?:boolean
+  waiServerHttpPort:number
+  waiServerWsPort:number
+  waiServerTcpPort:number
+  chatGptSendPromptSleep?:number
+  //
+  useCloudFlareWorker:boolean
+  OPENAI_API_KEY: string
+  KV_NAMESPACE_BINDING_KEY?: string
+  R2_STORAGE_BINDING_KEY?: string
+  SERVER_USER_ID_START: string
+  Access_Control_Allow_Origin: string
+  DTALK_ACCESS_TOKEN_PAY: string
+  WECHAT_APPID: string
+  WECHAT_APPSECRET: string
+  WECHAT_NOTIFY_USER: string
+  WECHAT_NOTIFY_TEMPLATE_ID: string
+  TG_BOT_CHAT_ID_PAY: string
+  TG_BOT_TOKEN_PAY: string
+  DATABASE_HOST?:string
+  DATABASE_USERNAME?:string
+  DATABASE_PASSWORD?:string
+  SUPABASE_URL?:string
+  SUPABASE_KEY?:string
+  DATABASE_URL?:string
+  chatGptBotWorkers?:string
+
+  chatGptUsername?:string
+  chatGptPassword?:string
+  appSubWidth:number
+  appSubHeight:number
+  windowGap:number
 }
 
 const AppArgvKeys = [
+  "chatGptUsername",
+  "chatGptPassword",
+  "appSubWidth","appSubHeight","windowGap",
   "electronPath",
   "homeUrl",
   "openDevTool",
+  "chatGptSendPromptSleep",
   "appWidth","appHeight","appPosX","appPosY","partitionName",
   "useProxy","proxyType","proxy","proxyPort","proxyUsername","proxyPassword",
   "accountSign","accountId","msgServer",
-  "botWsServerPort","startBotWsClient","startBotWsServer","isBotWsClientMaster"
+  "waiServerHttpPort","waiServerWsPort","waiServerTcpPort",
+  "startWsClient","startWsServer","isWsClientMaster",
+  "startWsServer",
+  "useCloudFlareWorker",
+  "chatGptBotWorkers",
+  "Access_Control_Allow_Origin","OPENAI_API_KEY","SERVER_USER_ID_START","TG_BOT_CHAT_ID_PAY","TG_BOT_TOKEN_PAY","WECHAT_APPID","WECHAT_APPSECRET","WECHAT_NOTIFY_TEMPLATE_ID","WECHAT_NOTIFY_USER","DTALK_ACCESS_TOKEN_PAY"
 ]
+
 export const isProd = !getFromProcessEnv("WEBPACK_SERVE")
 
 export function getAppPlatform(){
@@ -79,7 +121,6 @@ export function getProxyConfig(args:AppArgvType){
   }
   return res;
 }
-
 export function parseAppArgs():AppArgvType{
   const argv = minimist(process.argv.slice(2));
 
@@ -90,19 +131,19 @@ export function parseAppArgs():AppArgvType{
     value = (value === undefined ) ? valFromEnv : value
     switch (key){
       case "homeUrl":
-        value = getDefaultValue(value,"https://wai.chat")
+        value = getDefaultValue(value,"wai/desktop/index.html")
         break
-      case "botWsServerPort":
-        value = getDefaultValue(value,1221,'int')
+      case "waiServerHttpPort":
+        value = getDefaultValue(value,5080,'int')
+        break
+      case "waiServerWsPort":
+        value = getDefaultValue(value,5081,'int')
+        break
+      case "waiServerTcpPort":
+        value = getDefaultValue(value,5082,'int')
         break
       case "accountId":
         value = getDefaultValue(value,undefined,'int')
-        break
-      case "appPosX":
-        value = getDefaultValue(value,0,'int')
-        break
-      case "appPosY":
-        value = getDefaultValue(value,0,'int')
         break
       case "appWidth":
         value = getDefaultValue(value,1280,'int')
@@ -110,6 +151,21 @@ export function parseAppArgs():AppArgvType{
       case "appHeight":
         value = getDefaultValue(value,800,'int')
         break
+      case "appSubWidth":
+        value = getDefaultValue(value,300,'int')
+        break
+      case "appSubHeight":
+        value = getDefaultValue(value,600,'int')
+        break
+      case "windowGap":
+        value = getDefaultValue(value,10,'int')
+        break
+      case "appPosX":
+      case "appPosY":
+      case "chatGptSendPromptSleep":
+        value = getDefaultValue(value,0,'int')
+        break
+
       case "partitionName":
         if(value === undefined ){
           value = DefaultPartition
@@ -118,15 +174,16 @@ export function parseAppArgs():AppArgvType{
           value = "persist:" + value
         }
         break
-      case "startBotWsServer":
+      case "startWsServer":
         value = getDefaultValue(value,true,'boolean')
         break
-      case "isBotWsClientMaster":
+      case "isWsClientMaster":
         value = getDefaultValue(value,false,'boolean')
         break
-      case "startBotWsClient":
+      case "useCloudFlareWorker":
       case "openDevTool":
       case "useProxy":
+      case "startWsClient":
         value = getDefaultValue(value,false,'boolean')
         break
     }
@@ -135,6 +192,5 @@ export function parseAppArgs():AppArgvType{
       ...{[key]:value}
     }
   })
-  console.log("[AppArgs]",JSON.stringify(argvObj))
   return argvObj as AppArgvType
 }

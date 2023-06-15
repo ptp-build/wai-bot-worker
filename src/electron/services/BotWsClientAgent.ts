@@ -4,7 +4,7 @@ const WebSocket = require('ws');
 export class BotWsClientAgent{
   private ws?:WebSocket;
   private accountId?:number;
-  private msgHandler: { sendToRenderMsg: (action: string, payload?: any) => void; sendToMainMsg: (action: string, payload?: any) => void };
+  private msgHandler?: { sendToRenderMsg: (action: string, payload?: any) => void; sendToMainMsg: (action: string, payload?: any) => void };
   setMsgHandler(msgHandler:{
     sendToRenderMsg:(action:string,payload?:any)=>void,
     sendToMainMsg:(action:string,payload?:any)=>void
@@ -12,17 +12,19 @@ export class BotWsClientAgent{
     this.msgHandler = msgHandler
     return this
   }
-  start({botWsServerPort,accountId}:AppArgvType){
+  start({waiServerWsPort,accountId}:AppArgvType){
     this.accountId = accountId
-    this.ws = new WebSocket(`ws://localhost:${botWsServerPort}`);
-    this.ws.onopen = this.onConnected.bind(this);
-    this.ws.onmessage = this.onData.bind(this);
-    this.ws.onclose = this.onClose.bind(this);
+    const url = `ws://localhost:${waiServerWsPort}`
+    console.log("[BotWsClientAgent connecting]",url)
+    this.ws = new WebSocket(url);
+    this.ws!.onopen = this.onConnected.bind(this);
+    this.ws!.onmessage = this.onData.bind(this);
+    this.ws!.onclose = this.onClose.bind(this);
     return this
   }
   onConnected(){
     console.log("[BotWsClientAgent onConnected]")
-    this.ws.send(JSON.stringify({
+    this.ws!.send(JSON.stringify({
       action:"login",
       payload:{
         accountId:this.accountId!
@@ -50,7 +52,7 @@ export class BotWsClientAgent{
     console.log("[BotWsClientAgent close]")
     if(this.ws){
       this.ws.close();
-      this.ws = null
+      this.ws = undefined
     }
   }
 }

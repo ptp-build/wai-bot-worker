@@ -3,7 +3,7 @@ import { AppArgvType } from '../utils/args';
 
 export default class Devtool{
   private mainWindow: BrowserWindow;
-  private devToolsWindow: BrowserWindow;
+  private devToolsWindow?: BrowserWindow;
   private appArgv: AppArgvType;
 
   constructor(mainWindow:BrowserWindow,appArgv:AppArgvType) {
@@ -19,7 +19,7 @@ export default class Devtool{
     let {mainWindow,devToolsWindow} = this
     // 打开 DevTools
     mainWindow.webContents.once('did-frame-finish-load', () => {
-      mainWindow.webContents.setDevToolsWebContents(devToolsWindow.webContents);
+      mainWindow.webContents.setDevToolsWebContents(devToolsWindow!.webContents);
       let mode = undefined
       if(mode){
         mainWindow.webContents.openDevTools({ mode:"detach" });
@@ -43,7 +43,7 @@ export default class Devtool{
     mainWindow.webContents.on('devtools-closed', () => {
       if (devToolsWindow) {
         devToolsWindow.destroy();
-        devToolsWindow = null;
+        devToolsWindow = undefined;
       }
     });
   }
@@ -58,7 +58,7 @@ export default class Devtool{
     if (devToolsWindow) {
       devToolsWindow.close();
       devToolsWindow.destroy();
-      this.devToolsWindow = null;
+      this.devToolsWindow = undefined;
     }
   }
 }

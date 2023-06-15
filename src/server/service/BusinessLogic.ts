@@ -11,13 +11,10 @@ export class BusinessLogic {
     this.client = client;
   }
 
-  processMessage(message: Buffer): void {
+  async processMessage(msg: Buffer) {
     if (!this.client) {
       throw new Error('no client ');
     }
 
-    console.log('Processing message:', Buffer.from(message));
-    // const responseMessage = 'Response message';
-    this.client.send(message);
   }
 }

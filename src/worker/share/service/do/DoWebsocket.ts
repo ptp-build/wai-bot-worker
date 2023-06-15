@@ -1,11 +1,14 @@
 import {ENV} from "../../../env";
 import {JSON_HEADERS} from "../../../setting";
+import MsgConnectionManager from '../../../../server/service/MsgConnectionManager';
 
 export class DoWebsocket{
-    constructor() {
-    }
     getHandler(){
-        return ENV.DO_WEBSOCKET!.get(ENV.DO_WEBSOCKET!.idFromName('/ws'))
+        if(ENV.useCloudFlareWorker){
+            return ENV.DO_WEBSOCKET!.get(ENV.DO_WEBSOCKET!.idFromName('/ws'))
+        }else {
+            return MsgConnectionManager.getInstance()
+        }
     }
     buildRequest(method:string,path:string,body?:Record<string, any>){
         method = method.toUpperCase()
@@ -28,9 +31,9 @@ export class DoWebsocket{
         return handler.fetch(request)
     }
 
-    async sendChatGptMsg(pduBuf:Buffer,chatId:string){
+    async sendChatGptMsg(pduBuf:Buffer,chatId:string,msgConnId:string){
         const request =  this.buildRequest("POST","sendChatGptMsg",{
-            pduBuf:pduBuf.toString("hex"),chatId
+            pduBuf:pduBuf.toString("hex"),chatId,msgConnId
         });
         const handler = this.getHandler();
         return handler.fetch(request)
@@ -46,6 +49,7 @@ export class DoWebsocket{
         const handler = this.getHandler();
         console.log("getAccounts")
         const res = await handler.fetch(this.buildRequest("GET","__accounts"))
+        // @ts-ignore
         return await res.json();
     }
 }

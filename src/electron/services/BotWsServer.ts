@@ -7,11 +7,11 @@ import { currentTs1000 } from '../../worker/share/utils/utils';
 import { AppArgvType } from '../utils/args';
 
 export class BotWsServer {
-  private port: number;
+  private port?: number;
   private socketServer?: WebSocket.Server;
-  private ws: WebSocket.WebSocket;
-  private appArgs: AppArgvType;
-  private msgHandler: { sendToRenderMsg: (action: string, payload?: any) => void; sendToMainMsg: (action: string, payload?: any) => void };
+  private ws?: WebSocket.WebSocket;
+  private appArgs?: AppArgvType;
+  private msgHandler?: { sendToRenderMsg: (action: string, payload?: any) => void; sendToMainMsg: (action: string, payload?: any) => void };
   setMsgHandler(msgHandler:{
                   sendToRenderMsg:(action:string,payload?:any)=>void,
                   sendToMainMsg:(action:string,payload?:any)=>void
@@ -26,23 +26,23 @@ export class BotWsServer {
   }
   async start(appArgs: AppArgvType) {
     this.appArgs = appArgs
-    if(!appArgs.startBotWsServer){
+    if(!appArgs.startWsServer){
       return
     }
-    const port = appArgs.botWsServerPort!;
+    const port = appArgs.waiServerWsPort!;
 
     // 检查端口是否被占用
-    const isPortUsed = await this.isPortInUse(this.port);
+    const isPortUsed = await this.isPortInUse(this.port!);
 
     if (isPortUsed) {
       console.log(`[BotWsServer] Port ${this.port} is in use. Killing the process...`);
-      await this.killProcessUsingPort(this.port);
+      await this.killProcessUsingPort(this.port!);
     }
     const socketServer = (this.socketServer = new WebSocket.Server({ port }));
     socketServer.on('connection', ws => {
       this.ws = ws;
       console.log("[BotWsServer Client] connected ")
-      this.msgHandler.sendToMainMsg('clientConnected');
+      this.msgHandler!.sendToMainMsg('clientConnected');
       ws.on('message', async (msg: string) => {
         const {action,payload} =JSON.parse(msg)
         console.log("[BotWsServer message]",action,payload)
@@ -72,10 +72,10 @@ export class BotWsServer {
     if (this.socketServer) {
       if (this.ws) {
         this.ws.close();
-        this.ws = null;
+        this.ws = undefined;
       }
       this.socketServer.close();
-      this.socketServer = null;
+      this.socketServer = undefined;
     }
   }
   private isPortInUse(port: number): Promise<boolean> {

@@ -1,7 +1,6 @@
 import Account from '../../worker/share/Account';
 import LocalStorage from '../../worker/share/db/LocalStorage';
-import { getAppVersion } from '../../worker/msg/WaiBridge';
-import MsgDispatcher from '../../worker/share/service/MsgDispatcher';
+// import { getAppVersion } from '../../worker/msg/WaiBridge';
 
 import WaiBotRpa from './WaiBotRpa';
 import BotWebSocket, { BotWebSocketNotifyAction, BotWebSocketState } from './BotWebSocket';
@@ -37,12 +36,12 @@ export default class WaiBotMaster{
     loading = true;
     try {
       Account.setClientKv(new LocalStorage());
-      const accountId = Account.getCurrentAccountId();
+      const accountId = Account.getCurrentAccountId()!;
       console.log('[Account init]', accountId, loading);
-      const appVersion = getAppVersion();
+      // const appVersion = getAppVersion();
 
       Account.getCurrentAccount()?.setSession(Account.getSignFromQrcode(sign)).setClientInfo({
-        appVersion,
+        appVersion:"",
         deviceModel: '',
         systemVersion: '',
       });
@@ -70,7 +69,7 @@ export default class WaiBotMaster{
                 if (payload.getCommandId() === 5001) {
                   return;
                 }
-                await new MsgDispatcher(accountId).handleSendBotMsgReq(payload);
+                // await new MsgDispatcher(accountId).handleSendBotMsgReq(payload);
                 break;
             }
           }

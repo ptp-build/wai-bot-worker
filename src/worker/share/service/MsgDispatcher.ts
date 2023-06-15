@@ -1,18 +1,22 @@
-import {ActionCommands, getActionCommandsName} from '../../../lib/ptp/protobuf/ActionCommands';
-import {Pdu} from '../../../lib/ptp/protobuf/BaseMsg';
-import {AuthSessionType, getSessionInfoFromSign, User} from './User';
-import {AuthLoginReq, AuthLoginRes} from '../../../lib/ptp/protobuf/PTPAuth';
-import {SendBotMsgReq, SendBotMsgRes, SendMsgRes, SendTextMsgReq,} from '../../../lib/ptp/protobuf/PTPMsg';
-import {ERR, UserStoreData_Type} from '../../../lib/ptp/protobuf/PTPCommon/types';
-import {PbMsg, PbUser, UserStoreData} from '../../../lib/ptp/protobuf/PTPCommon';
-import {SyncReq, SyncRes, TopCatsRes} from '../../../lib/ptp/protobuf/PTPSync';
-import {kv, storage} from '../../env';
-import {currentTs} from '../utils/utils';
+import { ActionCommands } from '../../../lib/ptp/protobuf/ActionCommands';
+import { Pdu } from '../../../lib/ptp/protobuf/BaseMsg';
+import { AuthSessionType, getSessionInfoFromSign, User } from './User';
+import { AuthLoginReq, AuthLoginRes } from '../../../lib/ptp/protobuf/PTPAuth';
+import { MsgReq, SendBotMsgReq, SendBotMsgRes, SendMsgRes, SendTextMsgReq } from '../../../lib/ptp/protobuf/PTPMsg';
+import { ChatGptStreamStatus, ERR, MsgAction, UserStoreData_Type } from '../../../lib/ptp/protobuf/PTPCommon/types';
+import { PbMsg, PbUser, UserStoreData } from '../../../lib/ptp/protobuf/PTPCommon';
+import { SyncReq, SyncRes, TopCatsRes } from '../../../lib/ptp/protobuf/PTPSync';
+import { ENV, kv, storage } from '../../env';
+import { currentTs } from '../utils/utils';
 import UserSetting from './UserSetting';
-import {TelegramBot} from './third_party/Telegram';
-import {MsgBot} from "./msg/MsgBot";
-import {ChatGptWorker} from "./ai/ChatGptWorker";
-import {DoWebsocket} from "./do/DoWebsocket";
+import { TelegramBot } from './third_party/Telegram';
+import { MsgBot } from './msg/MsgBot';
+import { ChatGptWorker } from './ai/ChatGptWorker';
+import { DoWebsocket } from './do/DoWebsocket';
+import MsgConnectionManager from '../../../server/service/MsgConnectionManager';
+import MsgConnChatGptBotWorkerManager, {
+  MsgConnChatGptBotWorkerStatus,
+} from '../../../server/service/MsgConnChatGptBotWorkerManager';
 
 let dispatchers: Record<string, MsgDispatcher> = {};
 
@@ -69,6 +73,17 @@ export default class MsgDispatcher {
       );
     }
   }
+
+  async handleMsgReq(pdu: Pdu) {
+    let {action,payload} = MsgReq.parseMsg(pdu)
+    switch (action){
+      case MsgAction.MsgAction_WaiChatGptPromptsInputReady:
+        if(ENV.chatGptBotWorkers!.indexOf(this.address!) > -1){
+          MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.accountId,MsgConnChatGptBotWorkerStatus.READY)
+        }
+        break
+    }
+  }
   async handleSendTextMsgReq(pdu: Pdu) {
     let req = SendTextMsgReq.parseMsg(pdu);
     const { authUserId } = this;
@@ -99,6 +114,7 @@ export default class MsgDispatcher {
             text:text!,
             chatId,
           })
+          // @ts-ignore
           if (resDo.status === 404) {
             new TelegramBot(tgToken).replyUrlButton(text!,`${user.firstName}`,url,tgChatId).catch(console.error);
           }
@@ -129,28 +145,60 @@ export default class MsgDispatcher {
   }
   async handleSendBotMsgReq(pdu: Pdu) {
     let { text, chatId,streamStatus, msgDate,msgAskId,msgAskDate, toUid,msgId, chatGpt } = SendBotMsgReq.parseMsg(pdu);
-    console.log('handleSendBotMsgReq', { text, chatId, msgId, chatGpt,senderId:this.authUserId,toUid });
+    // console.log('handleSendBotMsgReq', { text, chatId, msgId, chatGpt,senderId:this.authUserId,toUid });
     if (chatGpt) {
+      const manager = MsgConnChatGptBotWorkerManager.getInstance();
+      const msgConnId = manager.getRandomReadyWorker()
+      let reply = "..."
+      if(msgConnId){
+        manager.setStatus(msgConnId,MsgConnChatGptBotWorkerStatus.BUSY)
+        await new ChatGptWorker().process(pdu,this.authUserId!,msgConnId);
+      }else{
+        reply = "Work is busy! pls Retry later"
+      }
+
       this.sendPdu(new SendBotMsgRes({
-        reply: "...",
+        reply,
         chatId,
         msgId,
         msgDate,
       }).pack(),pdu.getSeqNum())
-      await new ChatGptWorker().process(pdu,this.authUserId!);
     }
     if(toUid){
-      await new DoWebsocket().sendBotMsgRes(
-          Buffer.from(
-            new SendBotMsgRes({
-              reply: text,
-              chatId,
-              msgId,
-              msgDate,
-              streamStatus
-            }).pack().getPbData()),
-          toUid
-      )
+      kv.put(`${toUid}_${chatId}_${msgId}_${text!.split("_")[0]}`,text).catch(console.error)
+      console.log("[toUser]",text)
+      this.sendPdu(new SendBotMsgRes({
+        reply:"",
+        chatId,
+        msgId,
+        msgDate,
+      }).pack(),pdu.getSeqNum())
+      await MsgConnectionManager.getInstance().sendBotMsgRes(toUid,
+            Buffer.from(
+              new SendBotMsgRes({
+                reply: text,
+                chatId,
+                msgId,
+                msgDate,
+                streamStatus
+              }).pack().getPbData()),
+        )
+      if(streamStatus === ChatGptStreamStatus.ChatGptStreamStatus_DONE){
+        MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.accountId,MsgConnChatGptBotWorkerStatus.READY)
+      }
+      //
+      //
+      // await new DoWebsocket().sendBotMsgRes(
+      //     Buffer.from(
+      //       new SendBotMsgRes({
+      //         reply: text,
+      //         chatId,
+      //         msgId,
+      //         msgDate,
+      //         streamStatus
+      //       }).pack().getPbData()),
+      //     toUid
+      // )
     }
   }
 
@@ -191,12 +239,12 @@ export default class MsgDispatcher {
   static async handleUpdateCmdReq(pdu: Pdu, ws?: WebSocket) {}
   static async handleWsMsg(accountId: string, pdu:Pdu) {
     const dispatcher = MsgDispatcher.getInstance(accountId);
-    console.log(
-      '[onMessage]',
-      getActionCommandsName(pdu.getCommandId()),
-      pdu.getSeqNum()
-      // pdu.getPbData().slice(0, 16)
-    );
+    // console.log(
+    //   '[onMessage]',
+    //   getActionCommandsName(pdu.getCommandId()),
+    //   pdu.getSeqNum()
+    //   // pdu.getPbData().slice(0, 16)
+    // );
     switch (pdu.getCommandId()) {
       case ActionCommands.CID_SyncReq:
         await dispatcher.handleSyncReq(pdu);
@@ -209,6 +257,9 @@ export default class MsgDispatcher {
         break;
       case ActionCommands.CID_SendTextMsgReq:
         await dispatcher.handleSendTextMsgReq(pdu);
+        break
+      case ActionCommands.CID_MsgReq:
+        await dispatcher.handleMsgReq(pdu);
         break;
     }
   }
@@ -226,7 +277,7 @@ export default class MsgDispatcher {
     this.address = address;
   }
   sendPdu(pdu: Pdu, seqNum: number = 0) {
-    console.log('sendPdu', getActionCommandsName(pdu.getCommandId()));
+    // console.log('sendPdu', getActionCommandsName(pdu.getCommandId()));
     pdu.updateSeqNo(seqNum);
     this.ws.send(pdu.getPbData());
   }

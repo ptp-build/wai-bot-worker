@@ -1,14 +1,10 @@
-let i = 0;
-export default class CloudFlareKv {
+import BaseKv from './BaseKv';
+
+export default class CloudFlareKv extends BaseKv{
   private db: any;
   static cache: Record<string, any> = {};
   init(db: any) {
     this.db = db;
-  }
-  async put(key: string, value: any) {
-    console.debug('[kv put]', i++, key);
-    CloudFlareKv.cache[key] = value;
-    return this.db.put(key, value);
   }
 
   async get(key: string, force?: boolean) {
@@ -16,32 +12,35 @@ export default class CloudFlareKv {
     if (!force && CloudFlareKv.cache[key] !== undefined) {
       return CloudFlareKv.cache[key];
     } else {
-      console.debug('[kv get]', i++, key);
-      CloudFlareKv.cache[key] = await this.db.get(key);
-      return CloudFlareKv.cache[key];
+      console.debug('[kv get]', key);
+      try {
+        CloudFlareKv.cache[key] = await this.db.get(key);
+        return CloudFlareKv.cache[key];
+      }catch (e){
+        return null
+      }
+    }
+  }
+
+  async put(key: string, value: any) {
+    console.debug('[kv put]',key);
+    CloudFlareKv.cache[key] = value;
+    try {
+      this.db.put(key, value);
+      return true
+    }catch (e){
+      return false
     }
   }
 
   async delete(key: string) {
-    console.debug('[kv delete]', i++, key);
-    delete CloudFlareKv.cache[key];
-    return this.db.delete(key);
-  }
-
-  async list(options: { prefix?: string }) {
-    const rows = [];
-    let cur = null;
-    do {
-      // @ts-ignore
-      const { keys, cursor } = await this.db.list({
-        prefix: options.prefix,
-        cursor: cur,
-      });
-      console.debug('[kv list]', i++);
-      rows.push(...keys);
-      cur = cursor;
-    } while (cur);
-
-    return rows;
+    console.debug('[kv delete]',key);
+    try {
+      this.db.delete(key);
+      delete CloudFlareKv.cache[key];
+      return true
+    }catch (e){
+      return false
+    }
   }
 }

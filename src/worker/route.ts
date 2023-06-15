@@ -43,8 +43,8 @@ export class WaiRouter {
     router.all('*', () => new Response('Not Found.', { status: 404 }));
     return this;
   }
-  setEnv(env: Environment) {
-    initEnv(env);
+  setEnv(env: Environment,isCloudFlare:boolean = true) {
+    initEnv(env,isCloudFlare);
     return this;
   }
 

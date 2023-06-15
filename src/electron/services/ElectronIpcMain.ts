@@ -4,6 +4,7 @@ import ElectronActions from './ElectronActions';
 import Ui from '../ui/Ui';
 import PyAutoGuiRpa from './PyAutoGuiRpa';
 import { ChatGptWaiChatBot } from './ai/ChatGptWaiChatBot';
+import { sleep } from '../../worker/share/utils/utils';
 
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
 
@@ -12,39 +13,64 @@ export default class ElectronIpcMain{
   constructor(mainWindow:BrowserWindow) {
     this.mainWindow = mainWindow
   }
-  private sendToRenderMsg: (action: string, payload?: any) => void;
+  private sendToRenderMsg?: (action: string, payload?: any) => void;
   setSendToRenderMsgHandler(sendToRenderMsg:(action:string,payload?:any)=>void){
     this.sendToRenderMsg = sendToRenderMsg
     return this
   }
 
-  getAdvanceInlineButtons(paload:any){
-    const inlineButtons = [
-      [
-        {
-          type:"callback",
-          text:"createChatGptBotWorker",
-          data:"local/createChatGptBotWorker"
-        }
-      ],
-      [
-        {
-          type:"callback",
-          text:"Debug",
-          data:"ipcMain/debug"
-        }
-      ]
-    ];
-    this.sendToRenderMsg(IpcMainCallbackButtonAction,{
+  getAdvanceInlineButtons(data:string,paload:any){
+    const chatId = data.split("/")[data.split("/").length - 1]
+    let inlineButtons;
+    if(chatId === "1000"){
+      inlineButtons = [
+        [
+          {
+            type:"callback",
+            text:"创建 ChatGpt Bot Worker",
+            data:"local/createChatGptBotWorker"
+          }
+        ],
+        [
+          {
+            type:"callback",
+            text:"获取App信息",
+            data:"ipcMain/appInfo"
+          }
+        ]
+      ];
+    }else{
+      inlineButtons = [
+        [
+          {
+            type:"callback",
+            text:"打开窗口",
+            data:"local/createChatGptBotWorker"
+          }
+        ],
+        [
+          {
+            type:"callback",
+            text:"获取App信息",
+            data:"ipcMain/appInfo"
+          }
+        ]
+      ];
+    }
+
+    this.sendToRenderMsg!(IpcMainCallbackButtonAction,{
       ...paload,
-      text:"Test",
+      text:"本地机器人",
       inlineButtons
     })
   }
   sendAction(payload:any){
-    this.sendToRenderMsg(IpcMainCallbackButtonAction, payload)
+    this.sendToRenderMsg!(IpcMainCallbackButtonAction, payload)
   }
   async debug(payload:any) {
+    await new ElectronActions(payload.__id,this).getAppInfo()
+  }
+  async appInfo(payload:any) {
     await new ElectronActions(payload.__id,this).getAppInfo()
   }
   async handlePosition(eventData:any){
@@ -58,7 +84,7 @@ export default class ElectronIpcMain{
   }
   async ipcMainCallbackButton({data,...payload}:{__id:number,data:string,eventData?:any}){
     if(data.includes("getButtons")){
-      return this.getAdvanceInlineButtons(payload);
+      return this.getAdvanceInlineButtons(data,payload);
     }
     if(data.startsWith("ipcMain/createChatGptBotWorker/")){
       return await new ElectronActions(payload.__id,this).createChatGptBotWorker(data)
@@ -67,32 +93,38 @@ export default class ElectronIpcMain{
       case "ipcMain/getSize":
         await this.handlePosition(payload.eventData!)
         break
-      case "ipcMain/debug":
-        await this.debug(payload)
+      case "ipcMain/appInfo":
+        await this.appInfo(payload)
         break
     }
   }
   addEvents(){
     console.log("[ElectronIpcMain addEvents!!!]")
     ipcMain.on('ipcMainMsg', async (event, action,payload) => {
-      console.log('[ipcMainMsg]',action)
+      //console.log('[ipcMainMsg]',action)
       switch (action) {
         case "ipcMainCallbackButton":
           this.ipcMainCallbackButton(payload||{}).catch(console.error)
           break
-        case 'ping':
-          this.sendToRenderMsg("dong")
-          break
-        case "promptsInputReady":
-          await new WaiBotRpa().inputPrompt("promptsInputReady")
-          break
-        case 'WaiChatGptBotWorkerInit':
+        case 'MsgAction_WaiChatGptBotWorkerInit':
           break;
-        case 'onRecvChatGptMsg':
+        case 'MsgAction_WaiChatGptInputUsername':
+          ChatGptWaiChatBot.inputUsername(payload);
+          break;
+        case 'MsgAction_WaiChatGptClickLogin':
+          ChatGptWaiChatBot.clickLogin(payload);
+          break;
+        case 'MsgAction_WaiChatGptInputPassword':
+          ChatGptWaiChatBot.inputPassword(payload);
+          break;
+        case "MsgAction_WaiChatGptPromptsInputReady":
+          console.log("[promptsInputReady]!!")
+          await sleep(2000)
+          await new WaiBotRpa().askMsg("ping ,you reply:pong!!!!")
+          break
+        case 'MsgAction_WaiChatGptOnRecvMsg':
           const { text, index, state } = payload;
-          if(ChatGptWaiChatBot.getCurrentObj()){
-            ChatGptWaiChatBot.getCurrentObj().handleWebChatGptMsg({ text, index, state });
-          }
+          ChatGptWaiChatBot.handleWebChatGptMsg({ text, index, state });
           break
       }
     });

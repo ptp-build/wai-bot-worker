@@ -1,7 +1,11 @@
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
-import { ClientInfo_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
+import { ClientInfo_Type, MsgAction } from '../../lib/ptp/protobuf/PTPCommon/types';
 import { AuthLoginReq } from '../../lib/ptp/protobuf/PTPAuth';
 import Account from '../../worker/share/Account';
+import MessageSendHandler from './MessageSendHandler';
+import { getActionCommandsName } from '../../lib/ptp/protobuf/ActionCommands';
+import { MsgReq } from '../../lib/ptp/protobuf/PTPMsg';
+import { MsgReq_Type } from '../../lib/ptp/protobuf/PTPMsg/types';
 
 const WebSocket = require('ws');
 
@@ -31,8 +35,7 @@ let seq_num = 10;
 let clients: Record<string, BotWebSocket> = {};
 
 let currentMsgConn: BotWebSocket | null = null;
-let msgList: Buffer[] = [];
-let sending = false;
+
 export default class BotWebSocket {
   private autoConnect: boolean;
   public client: WebSocket | any | undefined;
@@ -239,15 +242,14 @@ export default class BotWebSocket {
   }
 
   static getInstance(msgConnId: number): BotWebSocket {
-    if (!clients[msgConnId]) {
-      clients[msgConnId] = new BotWebSocket(msgConnId);
+    if (!currentMsgConn) {
+      currentMsgConn = new BotWebSocket(msgConnId);
     }
-    return clients[msgConnId];
+    return currentMsgConn;
   }
 
   static getCurrentInstance(): BotWebSocket {
-    const accountId = Account.getCurrentAccountId();
-    return BotWebSocket.getInstance(accountId);
+    return currentMsgConn!;
   }
 
   waitForMsgCallback(seq_num: number, timeout: number = 5000, startTime: number = 0) {
@@ -272,33 +274,35 @@ export default class BotWebSocket {
   }
 
   send(data: Buffer | Uint8Array) {
-    this.__send(data);
-    // msgList.push(Buffer.from(data));
-    // if (sending) {
-    //   return;
-    // }
-    // sending = true;
-    // while (true) {
-    //   if (msgList.length > 0) {
-    //     const data: Buffer = msgList.shift()!;
-    //     this.__send(data);
-    //   } else {
-    //     sending = false;
-    //     break;
-    //   }
-    // }
-  }
-
-  __send(data: Buffer | Uint8Array) {
     this.client.send(data);
   }
 
-  sendPduWithCallback(pdu: Pdu, timeout: number = 10000) {
+  sendWithQueue(pdu:Pdu) {
     seq_num += 1;
     if (seq_num > 100000) {
       seq_num = 10;
     }
     pdu.updateSeqNo(seq_num);
+    MessageSendHandler.handleSendMsg(pdu,async (pdu)=>{
+      try {
+        await this.sendPduWithCallback(pdu,5000,true)
+        return true
+      }catch (e){
+        console.log("[MessageSendHandler.handleSendMsg error]",e)
+        return false
+      }
+    }).catch(console.error)
+  }
+
+  sendPduWithCallback(pdu: Pdu, timeout: number = 5000,noSeqNum = false) {
+    if(!noSeqNum){
+      seq_num += 1;
+      if (seq_num > 100000) {
+        seq_num = 10;
+      }
+      pdu.updateSeqNo(seq_num);
+    }
+    // console.log("[SendPdu] sno:",seq_num,"cmd",getActionCommandsName(pdu.getCommandId()))
     return new Promise<Pdu>((resolve, reject) => {
       if (this.isConnect()) {
         this.__sending_msg_map[pdu.getSeqNum()] = true;
@@ -323,5 +327,17 @@ export default class BotWebSocket {
     this.client.close();
     this.setAutoConnect(false);
     await this.waitForMsgServerState(BotWebSocketState.closed);
+  }
+
+  static async msgReq(msg:MsgReq_Type,sync:boolean = false){
+    if(sync){
+      return BotWebSocket.getCurrentInstance().sendWithQueue(
+        new MsgReq(msg).pack()
+      )
+    }else{
+      return BotWebSocket.getCurrentInstance().sendPduWithCallback(
+        new MsgReq(msg).pack()
+      )
+    }
   }
 }

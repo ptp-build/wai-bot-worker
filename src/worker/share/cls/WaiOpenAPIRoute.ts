@@ -45,7 +45,7 @@ export default class WaiOpenAPIRoute extends BaseOpenAPIRoute {
       if (!authUserId) {
         authUserId = await genUserId();
         await new UserBalance(authUserId).firstLogin();
-        await account.saveUidFromCacheByAddress(authUserId, authUserId);
+        await account.saveUidFromCacheByAddress(address, authUserId);
       }
       this.authSession = {
         address,
@@ -53,7 +53,7 @@ export default class WaiOpenAPIRoute extends BaseOpenAPIRoute {
         ts,
         clientId,
       };
-      console.log('[checkTokenIsInvalid]', JSON.stringify(this.authSession));
+      // console.log('[checkTokenIsInvalid]', JSON.stringify(this.authSession));
     }
     return false;
   }

@@ -1,14 +1,21 @@
-import { ChatGptStreamStatus } from '../../../lib/ptp/protobuf/PTPCommon/types';
+import { ChatGptStreamStatus, MsgAction } from '../../../lib/ptp/protobuf/PTPCommon/types';
 import { Pdu } from '../../../lib/ptp/protobuf/BaseMsg';
 import { SendBotMsgReq } from '../../../lib/ptp/protobuf/PTPMsg';
 import BotWebSocket from '../BotWebSocket';
-import WaiBridge from '../../../worker/msg/WaiBridge';
+import WaiBotRpa from '../WaiBotRpa';
+import { parseAppArgs } from '../../utils/args';
+import PyAutoGuiRpa from '../PyAutoGuiRpa';
+import { runJsCode } from '../../index';
 
 let msgList: number[] = [];
+let accountIds: number[] = [];
 let msgObjects: Record<number, ChatGptWaiChatBot> = {};
-let loading = false;
 
+let tempTexts = "";
+let sendIndex = 0;
+let tempLastText = "";
 let currentMsgId: number = 0;
+let currentObj:ChatGptWaiChatBot | null = null
 
 export class ChatGptWaiChatBot {
   private status: ChatGptStreamStatus;
@@ -42,27 +49,15 @@ export class ChatGptWaiChatBot {
     this.msgAskDate = msgAskDate!;
     this.senderId = senderId!;
   }
+  static getAccountIds(){
+    return accountIds
+  }
+  static setAccountIds(accountIds_:number[]){
+    accountIds = accountIds_
+  }
   async process() {
-    let { msgId } = this;
-    if (!msgList.includes(msgId)) {
-      msgList.push(msgId);
-    }
-    msgObjects[msgId] = this;
-    if (loading) {
-      return;
-    }
-    loading = true;
-    while (true) {
-      if (msgList.length > 0) {
-        const msgId: number = msgList.shift()!;
-        console.log('process', msgId, msgObjects[msgId], msgList);
-        await msgObjects[msgId].askChatGpt();
-      } else {
-        delete msgObjects[msgId];
-        loading = false;
-        break;
-      }
-    }
+    currentObj = this
+    await this.askChatGpt();
   }
 
   async askChatGpt() {
@@ -71,37 +66,34 @@ export class ChatGptWaiChatBot {
       currentMsgId = msgId;
       console.log(
         'askChatGpt',
-        msgId,
-        ChatGptWaiChatBot.getCurrentMsgId(),
-        ChatGptWaiChatBot.getCurrentObj()
+        text,
+        msgId
       );
-      WaiBridge.postEvent('WRITE_INPUT', { text: text });
-      await this.waitForStatus(ChatGptStreamStatus.ChatGptStreamStatus_DONE);
-      console.log('finish');
+      await new WaiBotRpa().askMsg(text)
+      // WaiBridge.postEvent('WRITE_INPUT', { text: text });
+      // await this.waitForStatus(ChatGptStreamStatus.ChatGptStreamStatus_DONE);
     } catch (e) {
-      this.reply(ChatGptStreamStatus.ChatGptStreamStatus_ERROR, '请求超时');
+      ChatGptWaiChatBot.reply(ChatGptStreamStatus.ChatGptStreamStatus_ERROR, 'ERROR askMsg');
       console.error(e);
-    } finally {
-      currentMsgId = 0;
-      loading = false;
     }
   }
   static getCurrentMsgId() {
     return currentMsgId;
   }
   static getCurrentObj() {
-    return msgObjects[currentMsgId] || null;
+    return currentObj
   }
   setState(status: ChatGptStreamStatus) {
     this.status = status;
   }
 
-  reply(status: ChatGptStreamStatus, text?: string) {
-    this.setState(status);
-    console.log('[ChatGptWaiChatBot reply]', status, text);
-    let { chatId, msgId, msgDate, msgAskId, msgAskDate, senderId } = this;
-
-    BotWebSocket.getCurrentInstance().send(
+  static reply(status: ChatGptStreamStatus, text?: string) {
+    const obj = ChatGptWaiChatBot.getCurrentObj()
+    if(!obj) return
+    obj.setState(status);
+    // console.log('[ChatGptWaiChatBot reply]', status, text);
+    let { chatId, msgId, msgDate, msgAskId, msgAskDate, senderId } = obj;
+    BotWebSocket.getCurrentInstance().sendWithQueue(
       new SendBotMsgReq({
         senderId: chatId,
         toUid: senderId,
@@ -114,8 +106,7 @@ export class ChatGptWaiChatBot {
         streamStatus: status,
       })
         .pack()
-        .getPbData()
-    );
+    )
   }
   getState() {
     return this.status;
@@ -164,72 +155,148 @@ export class ChatGptWaiChatBot {
 
   onStart() {
     // console.log('[onStart]');
-    this.reply(ChatGptStreamStatus.ChatGptStreamStatus_START, '...');
-  }
-
-  onData(v: string) {
-    // console.log('[onData]', v);
-    this.replyTextTmp += v;
-    if (this.replyTextTmp.startsWith('data:')) {
-      let lines = this.replyTextTmp
-        .substring(5)
-        .split('data:')
-        .filter(row => row !== '')
-        .map(row => row.trim());
-
-      if (lines && lines.length > 0) {
-        this.part = '';
-        lines.forEach((line, i) => {
-          if (line.indexOf('{') === 0 && line.substring(line.length - 1) === '}') {
-            try {
-              const part = JSON.parse(line).message.content.parts[0];
-              if (!this.cacheReplyText[part]) {
-                console.log('part', part);
-                this.part = part;
-                this.cacheReplyText[part] = true;
-                // const msgText = part.replace(this.lastText, '');
-                // this.index++;
-                // this.reply(
-                //   ChatGptStreamStatus.ChatGptStreamStatus_GOING,
-                //   this.index + '_' + msgText
-                // );
-                this.lastText = part;
-              }
-            } catch (e) {}
-          } else {
-            if (line === '[DONE]') {
-              const msgLine = lines[i - 1];
-              const msg = JSON.parse(msgLine.trim());
-              const msgText = msg.message.content.parts[0];
-              // console.log('[DONE]', msgText);
-              this.reply(ChatGptStreamStatus.ChatGptStreamStatus_DONE, msgText);
-              return;
-            }
-          }
-        });
-        if (this.part) {
-          this.index++;
-          this.reply(ChatGptStreamStatus.ChatGptStreamStatus_GOING, this.index + '_' + this.part);
-        }
-      }
-    }
+    ChatGptWaiChatBot.reply(ChatGptStreamStatus.ChatGptStreamStatus_START, '...');
   }
 
   onError(err: string) {
-    this.reply(ChatGptStreamStatus.ChatGptStreamStatus_ERROR, err);
+    ChatGptWaiChatBot.reply(ChatGptStreamStatus.ChatGptStreamStatus_ERROR, err);
   }
-  handleWebChatGptMsg({ text, index, state }: { text: string; index: number; state: string }) {
-    console.log({ text, index, state });
+
+  static clickLogin(payload:{x:number,y:number}){
+    console.log("[clickLogin]",payload)
+    const {appPosY,appPosX} = parseAppArgs()
+
+    PyAutoGuiRpa.runPyCode([
+      {
+        cmd:"click",
+        x:payload.x + 10 + appPosX,
+        y:payload.y + 10 + 53 + appPosY
+      },
+    ])
+  }
+  static async inputUsername(payload:{x:number,y:number}){
+    console.log("[inputUsername]",payload)
+    const {appPosY,appPosX} = parseAppArgs()
+    console.debug(parseAppArgs().chatGptUsername)
+    if(!parseAppArgs().chatGptUsername) return
+    runJsCode(`$("#username").val("${parseAppArgs().chatGptUsername}")`)
+    await PyAutoGuiRpa.runPyCode([
+      {
+        cmd:"sleep",
+        sec:0.5
+      },
+      {
+        cmd:"click",
+        x:payload.x + 10 + appPosX,
+        y:payload.y + 10 + 53 + appPosY
+      },
+      {
+        cmd:"press",
+        key:"tab"
+      },
+      {
+        cmd:"press",
+        key:"enter"
+      },
+    ])
+  }
+  static async inputPassword(payload:{x:number,y:number}){
+    console.log("[inputPassword]",payload)
+    console.debug(parseAppArgs().chatGptPassword)
+    if(!parseAppArgs().chatGptPassword) return
+    const {appPosY,appPosX} = parseAppArgs()
+    runJsCode(`$("#password").val("${parseAppArgs().chatGptPassword}")`)
+    await PyAutoGuiRpa.runPyCode([
+      {
+        cmd:"sleep",
+        sec:0.5
+      },
+      {
+        cmd:"click",
+        x:payload.x + 10 + appPosX,
+        y:payload.y + 10 + 53 + appPosY
+      },
+      {
+        cmd:"press",
+        key:"tab"
+      },
+      {
+        cmd:"press",
+        key:"tab"
+      },
+      {
+        cmd:"press",
+        key:"tab"
+      },
+      {
+        cmd:"press",
+        key:"enter"
+      },
+    ])
+  }
+  static promptsInputReady(){
+    BotWebSocket.msgReq({
+      action:MsgAction.MsgAction_WaiChatGptPromptsInputReady
+    }).catch(console.error)
+  }
+  static handleWebChatGptMsg({ text, index, state }: { text: string; index: number; state: string }) {
     switch (state) {
       case 'ERROR':
-        this.reply(ChatGptStreamStatus.ChatGptStreamStatus_ERROR, text);
-        break;
+        tempTexts = ""
+        tempLastText = ""
+        sendIndex = 0
+        console.log({ text, index, state });
+        ChatGptWaiChatBot.reply(ChatGptStreamStatus.ChatGptStreamStatus_ERROR, text);
+        return;
       case 'START':
-        this.reply(ChatGptStreamStatus.ChatGptStreamStatus_START, '...');
-        break;
-      case 'IN_PROCESS':
-        this.onData(text);
-        break;
+        tempTexts = ""
+        tempLastText = ""
+        sendIndex = 0
+        console.log({ text, index, state });
+        ChatGptWaiChatBot.reply(ChatGptStreamStatus.ChatGptStreamStatus_START, '...');
+        return;
+    }
+    ChatGptWaiChatBot.onData(text,index)
+  }
+
+  static onData(chunk: string,index:number) {
+    // console.log(index)
+    // putFileContent(`/tmp/test/${index}`,chunk)
+    tempTexts += chunk;
+    const dataText = "\n\n"+tempTexts.trim()
+    const rows = dataText.split("\n\ndata: {\"message\": {\"id\":")
+    let lastLine = rows[rows.length - 1]
+    let isDone = false
+    if(lastLine.endsWith("\n\ndata: [DONE]")){
+      lastLine = lastLine.substring(0,lastLine.length - "\n\ndata: [DONE]".length )
+      isDone = true
+    }else{
+      if(!lastLine.endsWith('"error": null}')){
+        lastLine = rows[rows.length - 2]
+      }
+    }
+    lastLine = "{\"message\": {\"id\":" + lastLine
+    try{
+      const res = JSON.parse(lastLine)
+      const text1 = res.message.content.parts[0];
+      const text = text1.replace(tempLastText,"")
+      tempLastText = text1
+
+      sendIndex += 1
+      if(isDone){
+        if(tempLastText && tempLastText.toLowerCase().includes("pong")){
+          ChatGptWaiChatBot.promptsInputReady();
+        }
+        console.log("[onData] #" + sendIndex,"DONE",tempLastText)
+        ChatGptWaiChatBot.reply(ChatGptStreamStatus.ChatGptStreamStatus_DONE, sendIndex+"_"+tempLastText);
+        sendIndex = 0
+      }else{
+        console.log("[onData] #" + sendIndex,"GOING",text)
+        ChatGptWaiChatBot.reply(ChatGptStreamStatus.ChatGptStreamStatus_GOING, sendIndex+"_"+text);
+      }
+    }catch (e){
+      // putFileContent(`/tmp/test/${index}`,chunk).then(console.log).catch(console.error)
+      // console.log("[onData] #" + index,"EROR")
     }
   }
 }

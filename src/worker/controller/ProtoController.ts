@@ -257,7 +257,7 @@ export default class ProtoController extends WaiOpenAPIRoute {
   }
 
   async handleUploadUserReq(authUserId: number, pdu: Pdu) {
-    const { userBuf } = UploadUserReq.parseMsg(pdu);
+    let { userBuf } = UploadUserReq.parseMsg(pdu);
     const buf = Buffer.from(userBuf);
     const user = PbUser.parseMsg(new Pdu(buf));
     if (!user.updatedAt) {

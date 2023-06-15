@@ -12,7 +12,7 @@ export const initMobileFetch = () => {
         typeof url !== 'string' ||
         url?.indexOf('backend-api/conversation') > 0
       ) {
-        ChatGptWaiChatBot.getCurrentObj().onRequestRemote(options);
+        ChatGptWaiChatBot.getCurrentObj()!.onRequestRemote(options);
       }
       // @ts-ignore
       const response = await originalFetch.apply(this, args);
@@ -29,7 +29,7 @@ export const initMobileFetch = () => {
                 // 在这里处理数据
                 const decoder = new TextDecoder();
                 const v = decoder.decode(chunk);
-                ChatGptWaiChatBot.getCurrentObj()?.onData(v);
+                // ChatGptWaiChatBot.getCurrentObj()?.onData(v);
               },
             });
 

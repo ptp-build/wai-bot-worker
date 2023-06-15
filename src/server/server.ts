@@ -12,22 +12,17 @@ import { DTalkBotSendMessageAction } from '../worker/controller/DTalkController'
 import { RandomAction } from '../worker/controller/ApiController';
 import { MasterAccountsAction } from '../worker/controller/MasterController';
 import ProtoController from '../worker/controller/ProtoController';
+import { Environment } from '../worker/env';
+import { isProd, parseAppArgs } from '../electron/utils/args';
 const minimist = require('minimist');
 
 const iRouter = new WaiRouter({
   title: 'Worker Wai Chat',
   version: '1.0.1',
 }).setRoute((router: any) => {
-  router.post('/api/chatgpt/v1/chat/completions', ChatGptAction);
-  router.post('/api/chatgpt/usage', ChatGptBillingUsageAction);
-
-  router.post('/api/cron', CronAction);
-  router.post('/api/queue', QueueAction);
-
   router.post('/api/telegram/bot/sendMessage', TelegramBotSendMessageAction);
   router.post('/api/wechat/bot/sendMessage', WechatBotSendMessageAction);
   router.post('/api/dtalk/bot/sendMessage', DTalkBotSendMessageAction);
-  router.get('/api/utils/random', RandomAction);
 
   router.get('/api/master/accounts', MasterAccountsAction);
   router.post('/api/proto', ProtoController);
@@ -35,19 +30,30 @@ const iRouter = new WaiRouter({
 
 
 export async function startServers(tcpPort: number, wsPort: number,httpPort:number): Promise<void> {
-  const argv = minimist(process.argv.slice(2));
+  const avgs = parseAppArgs()
+  const {
+    chatGptBotWorkers,useCloudFlareWorker,Access_Control_Allow_Origin,
+    OPENAI_API_KEY,SERVER_USER_ID_START,TG_BOT_CHAT_ID_PAY,TG_BOT_TOKEN_PAY,
+    WECHAT_APPID,WECHAT_APPSECRET,WECHAT_NOTIFY_TEMPLATE_ID,WECHAT_NOTIFY_USER,DTALK_ACCESS_TOKEN_PAY} = avgs
+  const env:Environment = {
+    IS_PROD: isProd,
+    chatGptBotWorkers,
+    useCloudFlareWorker,
+    Access_Control_Allow_Origin, OPENAI_API_KEY,SERVER_USER_ID_START,TG_BOT_CHAT_ID_PAY,TG_BOT_TOKEN_PAY,WECHAT_APPID,WECHAT_APPSECRET,WECHAT_NOTIFY_TEMPLATE_ID,WECHAT_NOTIFY_USER,DTALK_ACCESS_TOKEN_PAY
+  }
 
-  console.log(process.env)
-  const tcpServer = new TcpServer(tcpPort);
-  await tcpServer.start();
-  console.log(`TCP server started on port ${tcpPort}`);
+  iRouter.setEnv(env,useCloudFlareWorker);
+  const httpServer = new HttpServer(httpPort,iRouter);
+  await httpServer.start();
+  console.log(`HttpServer server started: http://localhost:${httpPort}`);
 
   const wsServer = new WsServer(wsPort);
   wsServer.start();
-  console.log(`WebSocket server started on port ${wsPort}`);
+  console.log(`WebSocket server started: ws://localhost:${wsPort}`);
 
-  const httpServer = new HttpServer(httpPort,iRouter);
-  await httpServer.start();
-  console.log(`HttpServer server started http://localhost:${httpPort}`);
+  const tcpServer = new TcpServer(tcpPort);
+  await tcpServer.start();
+  console.log(`TCP server started on port: localhost:${tcpPort}`);
+
 }
 

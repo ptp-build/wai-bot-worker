@@ -1,12 +1,13 @@
 import { AppArgvType } from '../utils/args';
 import BotWebSocket, { BotWebSocketNotifyAction, BotWebSocketState } from './BotWebSocket';
+import BotWebSocketMsgDispatcher from './BotWebSocketMsgDispatcher';
 
 
 export class BotWsClient {
-  private appArgs: AppArgvType;
-  private botWs:BotWebSocket;
+  private appArgs?: AppArgvType;
+  private botWs?:BotWebSocket;
 
-  private msgHandler: { sendToRenderMsg: (action: string, payload?: any) => void; sendToMainMsg: (action: string, payload?: any) => void };
+  private msgHandler?: { sendToRenderMsg: (action: string, payload?: any) => void; sendToMainMsg: (action: string, payload?: any) => void };
   setMsgHandler(msgHandler:{
     sendToRenderMsg:(action:string,payload?:any)=>void,
     sendToMainMsg:(action:string,payload?:any)=>void
@@ -17,17 +18,14 @@ export class BotWsClient {
 
   async start(appArgs:AppArgvType) {
     this.appArgs = appArgs;
-    const {botWsServerPort,msgServer,accountId,accountSign,startBotWsClient} = this.appArgs
-    if(!startBotWsClient){
+    const {msgServer,accountId,accountSign} = this.appArgs
+    if(!accountId || !accountSign || !msgServer){
+      console.error("[BotWsClient start], error check the args!!!",JSON.stringify({msgServer,accountId,accountSign}))
       return
     }
-    if(!botWsServerPort || !accountId || !accountSign || !msgServer){
-      console.error("[BotWsClient start], error check the args!!!",JSON.stringify({botWsServerPort,msgServer,accountId,accountSign}))
-      return
-    }
-    this.msgHandler.sendToRenderMsg("onStartBotWsClient",{accountId,botWsServerPort})
+    this.msgHandler!.sendToRenderMsg("onStartBotWsClient",{accountId})
 
-    const botWs = BotWebSocket.getInstance(accountId);
+    const botWs = BotWebSocket.getInstance(Number(accountId));
     botWs.session = accountSign!
     botWs.setWsUrl(msgServer);
     botWs.clientInfo = { appVersion: 'Desktop', deviceModel: '', systemVersion: '' };
@@ -48,11 +46,10 @@ export class BotWsClient {
                 }
                 break;
               case BotWebSocketNotifyAction.onData:
-                console.log('[BotWsClient] onData');
                 if (payload.getCommandId() === 5001) {
                   return;
                 }
-                // await new MsgDispatcher(msgConnId).handleSendBotMsgReq(payload);
+                await new BotWebSocketMsgDispatcher(accountId).handleWsMsg(accountId,payload);
                 break;
             }
 
@@ -77,8 +74,8 @@ export class BotWsClient {
   }
   close() {
     console.log("[BotWsClient close]",this.botWs)
-    const {startBotWsClient} = this.appArgs
-    if(startBotWsClient && this.botWs){
+    const {startWsClient} = this.appArgs!
+    if(startWsClient && this.botWs){
       this.botWs.close().catch(console.error)
     }
   }

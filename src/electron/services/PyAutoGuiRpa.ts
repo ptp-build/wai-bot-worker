@@ -46,23 +46,23 @@ export default class PyAutoGuiRpa{
       switch (step.cmd){
         case "click":
         case "moveTo":
-          codes.push(`${cmd}.(${step.x},${step.y})`)
+          codes.push(`pyautogui.${cmd}(${step.x},${step.y})`)
           break
         case "typewrite":
-          codes.push(`${cmd}.("${step.text}")`)
+          codes.push(`pyautogui.${cmd}("${step.text}")`)
           break
         case "hotkey":
-          codes.push(`${cmd}.("${step.keys.join('","')}")`)
+          codes.push(`pyautogui.${cmd}("${step.keys.join('","')}")`)
           break
         case "press":
-          codes.push(`${cmd}.("step.key")`)
+          codes.push(`pyautogui.${cmd}("${step.key}")`)
           break
         case "sleep":
-          codes.push(`${cmd}.(${step.sec})`)
+          codes.push(`pyautogui.${cmd}(${step.sec})`)
           break
       }
     }
-    const pyCode = importCode + codes.join("\n")
+    const pyCode = importCode +"\n"+ codes.join("\n")
     await runPyCode(`${pyCode}`);
   }
   async getPositionByPyAutoGui() {

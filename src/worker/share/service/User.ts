@@ -7,7 +7,7 @@ import {currentTs1000} from "../utils/utils";
 export async function genUserId() {
   let value = await kv.get('USER_INCR', true);
   if (!value) {
-    value = parseInt(ENV.SERVER_USER_ID_START);
+    value = parseInt(ENV.SERVER_USER_ID_START || "20000");
   } else {
     value = parseInt(value) + 1;
   }

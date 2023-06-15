@@ -10,6 +10,7 @@ import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
 import { hashSha256 } from './utils/helpers';
 import { randomize } from 'worktop/utils';
 import { ClientInfo_Type, EncryptType, QrCodeType } from '../../lib/ptp/protobuf/PTPCommon/types';
+import BaseKv from './db/BaseKv';
 
 const DEFAULT_LANG_MNEMONIC = "chinese_simplified"
 
@@ -28,7 +29,7 @@ export type IMsgConn = {
 let currentAccountId: number;
 let accountIds: number[] = [];
 let accounts: Record<number, Account> = {};
-let serverKvStore: CloudFlareKv | undefined = undefined;
+let serverKvStore: BaseKv | undefined = undefined;
 let clientKvStore: LocalStorage | undefined = undefined;
 
 export default class Account {
@@ -51,7 +52,7 @@ export default class Account {
   static getClientKv() {
     return clientKvStore!;
   }
-  static setServerKv(kv: CloudFlareKv) {
+  static setServerKv(kv: BaseKv) {
     serverKvStore = kv;
   }
 

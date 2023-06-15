@@ -96,7 +96,7 @@ export default class ChatMsg {
   }
 
   static sendPdu(pdu: Pdu, ws?: WebSocket, seqNum?: number) {
-    console.log('sendPdu', getActionCommandsName(pdu.getCommandId()));
+    // console.log('sendPdu', getActionCommandsName(pdu.getCommandId()));
     if (ws) {
       pdu.updateSeqNo(seqNum || 0);
       ws.send(pdu.getPbData());

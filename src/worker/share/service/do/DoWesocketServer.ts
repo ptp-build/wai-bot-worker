@@ -9,7 +9,7 @@ import {SendBotMsgReq, SendMsgRes} from '../../../../lib/ptp/protobuf/PTPMsg';
 import {currentTs} from '../../utils/utils';
 import {JSON_HEADERS} from "../../../setting";
 
-interface AccountUser {
+export interface AccountUser {
   websocket: WebSocket;
   authSession?: AuthSessionType;
   id: string;
@@ -31,6 +31,7 @@ export class WebSocketDurableObject {
     // We will put the WebSocket objects for each client into `websockets`
     this.accounts = new Map();
     this.pings = new Map();
+    //@ts-ignore
     this.storage = state.storage;
     this.dolocation = '';
 
@@ -39,7 +40,7 @@ export class WebSocketDurableObject {
   }
   async handleApi(request:Request){
     const uri = new URL(request.url)
-    let requestBody;
+    let requestBody:any;
     let hasSent = false;
 
     if (uri.pathname.startsWith('/api/do/ws/sendBotMsgRes')) {
@@ -47,7 +48,7 @@ export class WebSocketDurableObject {
       let {pduBuf, toUid} = requestBody
       pduBuf = Buffer.from(pduBuf,'hex')
       this.accounts!.forEach((account, key) => {
-        const {authUserId,chatId} = account.authSession
+        const {authUserId,chatId} = account.authSession!
         console.log("=====>>>>> sendBotMsgRes 1",{authUserId,toUid},account)
         if (authUserId === toUid && !chatId) {
           try {
@@ -84,7 +85,7 @@ export class WebSocketDurableObject {
       return new Response(null, { status: hasSent ? 200 : 404 });
     }
     if (uri.pathname.startsWith('/api/do/ws/__accounts')) {
-      const accounts = []
+      const accounts:any[] = []
       this.accounts.forEach((account, key) => {
         accounts.push(account)
       });
@@ -121,6 +122,7 @@ export class WebSocketDurableObject {
     if(uri.pathname.startsWith("/api")){
       return this.handleApi(request);
     }
+    //@ts-ignore
     const requestMetadata = request.cf;
     let pair = new WebSocketPair();
     //@ts-ignore
@@ -129,13 +131,14 @@ export class WebSocketDurableObject {
     // We're going to take pair[1] as our end, and return pair[0] to the client.
     //@ts-ignore
     await this.handleWebSocketSession(server, requestMetadata);
-    // Now we return the other end of the pair to the client.
+    //@ts-ignore
     return new Response(null, { status: 101, webSocket: client });
   }
 
   async handleWebSocketSession(webSocket: WebSocket, metadata: IncomingRequestCfProperties) {
     // Accept our end of the WebSocket. This tells the runtime that we'll be terminating the
     // WebSocket in JavaScript, not sending it elsewhere.
+    //@ts-ignore
     webSocket.accept();
 
     // Create our session and add it to the accounts map.
@@ -160,10 +163,12 @@ export class WebSocketDurableObject {
             const res = await dispatcher.handleAuthLoginReq(pdu);
             console.log('CID_AuthLoginReq', res,this.accounts);
             if (res) {
-              this.accounts.set(accountId, {
+              const accountUser = {
                 ...this.accounts.get(accountId),
                 authSession: res,
-              });
+              }
+              //@ts-ignore
+              this.accounts.set(accountId, accountUser);
             }
             return;
         }
@@ -204,6 +209,7 @@ export class WebSocketDurableObject {
   scheduleNextAlarm(storage: DurableObjectStorage) {
     try {
       const alarmTime = Date.now() + healthCheckInterval;
+      //@ts-ignore
       storage.setAlarm(alarmTime);
     } catch {
       console.log('Durable Objects Alarms not supported in Miniflare (--local mode) yet.');

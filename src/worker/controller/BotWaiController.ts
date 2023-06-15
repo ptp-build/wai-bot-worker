@@ -73,7 +73,7 @@ export class BotWaiAction extends WaiOpenAPIRoute {
     if (res) {
       return res;
     }
-    const { authUserId } = this.getAuthSession();
+    const { authUserId } = this.getAuthSession()!;
     const userStoreDataStr = await kv.get(`W_U_S_D_${authUserId}`);
     let userStoreDataRes: UserStoreData_Type;
     if (userStoreDataStr) {

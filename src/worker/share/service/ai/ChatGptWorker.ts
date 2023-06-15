@@ -7,7 +7,7 @@ export class ChatGptWorker{
     private msgId?: number;
     private chatId?: string;
     constructor() {}
-    async process(pdu:Pdu,authUserId:string){
+    async process(pdu:Pdu,authUserId:string,msgConnId:string){
         let { chatId, msgId,chatGpt,...other } = SendBotMsgReq.parseMsg(pdu);
         this.chatId = chatId
         this.msgId = msgId;
@@ -44,7 +44,7 @@ export class ChatGptWorker{
             senderId:authUserId
         }).pack()
         if(!customApiKey){
-            await new DoWebsocket().sendChatGptMsg(Buffer.from(pdu1.getPbData()),chatId!)
+            await new DoWebsocket().sendChatGptMsg(Buffer.from(pdu1.getPbData()),chatId!,msgConnId)
         }
     }
 }

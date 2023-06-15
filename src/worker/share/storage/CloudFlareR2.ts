@@ -1,10 +1,14 @@
-export default class CloudFlareR2 {
-	private STORAGE: any;
+import BaseStorage from './BaseStorage';
 
+export default class CloudFlareR2 extends BaseStorage{
+	private STORAGE?: any;
+	private getStorage(){
+		return this.STORAGE!
+	}
 	init(STORAGE: any) {
 		this.STORAGE = STORAGE;
 	}
-
+	//
 	async put(path: string, data: any) {
 		console.debug("[storage put]",path)
 		return await this.invoke({ action: 'PUT', path, data });
@@ -21,30 +25,31 @@ export default class CloudFlareR2 {
 	}
 
 	async invoke({
-		path,
-		data,
-		action,
-	}: {
+								 path,
+								 data,
+								 action,
+							 }: {
 		path: string;
 		data?: any;
 		action: 'PUT' | 'GET' | 'DELETE';
 	}) {
 		switch (action) {
 			case 'PUT':
-				await this.STORAGE.put(path, data);
+				await this.getStorage().put(path, data);
 				return;
 			case 'GET':
-				const object = await this.STORAGE.get(path);
+				const object = await this.getStorage().get(path);
 				if (!object) {
 					return null;
 				}
 				const body = await object.arrayBuffer();
 				return Buffer.from(body);
 			case 'DELETE':
-				await this.STORAGE.delete(path);
+				await this.getStorage().delete(path);
 				return;
 			default:
 				break;
 		}
+		return null
 	}
 }
