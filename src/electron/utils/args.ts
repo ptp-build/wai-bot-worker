@@ -146,10 +146,10 @@ export function parseAppArgs():AppArgvType{
         value = getDefaultValue(value,undefined,'int')
         break
       case "appWidth":
-        value = getDefaultValue(value,1280,'int')
+        value = getDefaultValue(value,1024,'int')
         break
       case "appHeight":
-        value = getDefaultValue(value,800,'int')
+        value = getDefaultValue(value,600,'int')
         break
       case "appSubWidth":
         value = getDefaultValue(value,300,'int')
@@ -161,11 +161,12 @@ export function parseAppArgs():AppArgvType{
         value = getDefaultValue(value,10,'int')
         break
       case "appPosX":
+        value = getDefaultValue(value,320,'int')
+        break
       case "appPosY":
       case "chatGptSendPromptSleep":
         value = getDefaultValue(value,0,'int')
         break
-
       case "partitionName":
         if(value === undefined ){
           value = DefaultPartition
