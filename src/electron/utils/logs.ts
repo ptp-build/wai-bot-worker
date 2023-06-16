@@ -1,5 +1,6 @@
 import * as electronLog from 'electron-log';
 import * as path from 'path';
+import { getElectronEnv } from './electronEnv';
 
 export type LogLevelType = 'info' | 'error' | 'warn' | 'debug';
 
@@ -50,7 +51,7 @@ function logWithFileAndLine(name:string,minLevel: LogLevelType, level: LogLevelT
   }
 }
 
-export function setUpLogs(isProd: boolean,name:string, minLevel: LogLevelType,fileName:string = 'app.log') {
+export function setUpLogs(name:string, minLevel: LogLevelType,dir?:string,fileName:string = 'app.log') {
   electronLog.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] {text}';
   electronLog.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] {text}';
 
@@ -58,10 +59,7 @@ export function setUpLogs(isProd: boolean,name:string, minLevel: LogLevelType,fi
   console.error = logWithFileAndLine.bind(null,name, minLevel, 'error');
   console.warn = logWithFileAndLine.bind(null, name,minLevel, 'warn');
   console.debug = logWithFileAndLine.bind(null,name, minLevel, 'debug');
-
-  if (!isProd) {
-    electronLog.transports.file.resolvePath = () => {
-      return path.join(__dirname, fileName);
-    };
-  }
+  electronLog.transports.file.resolvePath = () => {
+    return path.join(dir || __dirname, fileName);
+  };
 }

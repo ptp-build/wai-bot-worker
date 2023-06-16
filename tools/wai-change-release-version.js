@@ -61,6 +61,7 @@ const handleGitCommands = async version => {
 (async () => {
   if (version) {
     try {
+      await replaceApi(packageJsonPath, version);
       await replaceFileVersion(packageJsonPath, version);
 
       setTimeout(async () => {

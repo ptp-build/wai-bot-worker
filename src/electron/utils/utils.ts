@@ -19,12 +19,18 @@ export const getErrorHtml = (
 <head>
   <meta charset='UTF-8'>
   <title>Error</title>
+  <script>
+  function reload(){
+    window.invoke_api("Load_url",{url:"${url}"})
+  }
+</script>
 </head>
 <body>
 <div id="message" style='width: 100%;height:100vh;display: flex; flex-direction:column;align-items: center;justify-content: center'>
-  <h2>${code}</h2>
+  <h2 style='word-break:break-word'>${code}</h2>
   ${proxy}
   <div style='margin-top: 16px'>${message}</div>
+  <button style='margin-top: 32px' onclick='reload()'>Retry</button>
 </div>
 </body>
 </html>

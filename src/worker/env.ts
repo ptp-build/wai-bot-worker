@@ -35,6 +35,8 @@ export type Environment = {
   DATABASE_URL?:string;
   useCloudFlareWorker?:boolean;
   chatGptBotWorkers?:string;
+  localFileKvDir?:string;
+  fileStorageDir?:string;
 };
 
 export let CTX: ExecutionContext;
@@ -58,6 +60,8 @@ export const ENV: Environment = {
   TG_BOT_CHAT_ID_PAY:'',
   useCloudFlareWorker: true,
   chatGptBotWorkers:"",
+  localFileKvDir:"/tmp/kv",
+  fileStorageDir:"/tmp/storage"
 };
 
 export let kv: BaseKv;
@@ -75,11 +79,9 @@ export function initEnv(env: Environment,isCloudFlare:boolean = true) {
     storage.init(env[ENV.R2_STORAGE_BINDING_KEY]);
   }else{
     kv = new LocalFileKv();
-    //@ts-ignore
-    kv.init("/tmp/kv");
+    kv.init(ENV.localFileKvDir);
     storage = new FileStorage();
-    //@ts-ignore
-    storage.init("/tmp/storage/");
+    storage.init(ENV.fileStorageDir);
   }
 }
 

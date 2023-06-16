@@ -109,7 +109,7 @@ export function getFromProcessEnv(key:string){
 export function getProxyConfig(args:AppArgvType){
   let {proxy,proxyType,proxyIp,proxyPort,proxyUsername,proxyPassword} = args
   proxyType = proxyType || "http";
-  let proxyRules = proxy || `${proxyType}://${proxyIp}:${proxyPort}`;
+  let proxyRules = (proxy) || `${proxyType}://${proxyIp}:${proxyPort}`;
   const res = {
     proxyRules,
     proxyUsername,

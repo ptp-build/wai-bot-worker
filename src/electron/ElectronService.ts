@@ -10,10 +10,10 @@ export default class ElectronService{
   constructor(appArgs:AppArgvType) {
     this.appArgs = appArgs
   }
-  async start(){
+  async start(userDataPath:string){
     const {appArgs} = this
     if(appArgs.startWsServer){
-      await startServers(appArgs.waiServerTcpPort, appArgs.waiServerWsPort,appArgs.waiServerHttpPort);
+      await startServers(appArgs.waiServerTcpPort, appArgs.waiServerWsPort,appArgs.waiServerHttpPort,userDataPath);
     }
     if(appArgs.startWsClient){
       botWsClient = await new BotWsClient().setMsgHandler({

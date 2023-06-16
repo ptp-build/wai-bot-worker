@@ -1,6 +1,6 @@
 import { app, BrowserWindow, session,dialog } from 'electron';
 import * as path from 'path';
-import { DefaultPartition, getProxyConfig, isProd, parseAppArgs } from './utils/args';
+import { DefaultPartition, getProxyConfig, parseAppArgs } from './utils/args';
 import { getErrorHtml } from './utils/utils';
 import ElectronIpcMain from './services/ElectronIpcMain';
 import Devtool from './ui/Devtool';
@@ -8,6 +8,8 @@ import Ui from './ui/Ui';
 import ElectronService from './ElectronService';
 import { ignoreConsoleMessage, setUpLogs } from './utils/logs';
 import { isPortInUse } from './utils/server';
+
+const userDataPath = app.getPath('userData');
 
 const appArgs = parseAppArgs();
 let {
@@ -23,19 +25,22 @@ let {
 } = appArgs;
 
 const logLevel = "debug"
-setUpLogs(isProd,String(!startWsServer ? accountId : "default"),logLevel)
 console.debug("[AppArgs]",appArgs)
+console.log("[userDataPath]",userDataPath)
+
+setUpLogs(String(!startWsServer ? accountId : "default"),logLevel,userDataPath)
+
 let homePageLoaded = false
 const proxyConfig = getProxyConfig(appArgs)
 let mainWindow: BrowserWindow | null;
 let devTools:Devtool;
 let electronServer:ElectronService
 
-const loadLocalPage =async (page?:string)=>{
+export const loadLocalPage =async (page?:string)=>{
   await mainWindow!.loadFile(path.join(__dirname, 'electron','assets', page || 'index.html'));
 }
 
-const loadUrl = async (url:string)=>{
+export const loadUrl = async (url:string)=>{
   try{
     if(url.startsWith("http")){
       await mainWindow!.loadURL(url)
@@ -145,7 +150,7 @@ app.on('ready', async () => {
   }
   createWindow();
   new ElectronIpcMain(mainWindow!).setSendToRenderMsgHandler(sendToRenderMsg).addEvents()
-  electronServer = await new ElectronService(appArgs).start()
+  electronServer = await new ElectronService(appArgs).start(userDataPath)
 });
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

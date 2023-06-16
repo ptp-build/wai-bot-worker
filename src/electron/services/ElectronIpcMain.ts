@@ -5,8 +5,9 @@ import Ui from '../ui/Ui';
 import PyAutoGuiRpa from './PyAutoGuiRpa';
 import { ChatGptWaiChatBot } from './ai/ChatGptWaiChatBot';
 import { sleep } from '../../worker/share/utils/utils';
+import { loadUrl } from '../index';
 
-const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
+const IpcMainCallbackButtonAction = "IpcMainCallbackButton";
 
 export default class ElectronIpcMain{
   private mainWindow: BrowserWindow;
@@ -82,7 +83,7 @@ export default class ElectronIpcMain{
       pyAutoGuiPosition
     })
   }
-  async ipcMainCallbackButton({data,...payload}:{__id:number,data:string,eventData?:any}){
+  async IpcMainCallbackButton({data,...payload}:{__id:number,data:string,eventData?:any}){
     if(data.includes("getButtons")){
       return this.getAdvanceInlineButtons(data,payload);
     }
@@ -103,8 +104,11 @@ export default class ElectronIpcMain{
     ipcMain.on('ipcMainMsg', async (event, action,payload) => {
       //console.log('[ipcMainMsg]',action)
       switch (action) {
-        case "ipcMainCallbackButton":
-          this.ipcMainCallbackButton(payload||{}).catch(console.error)
+        case "Load_url":
+          loadUrl(payload.url)
+          break;
+        case "IpcMainCallbackButton":
+          this.IpcMainCallbackButton(payload||{}).catch(console.error)
           break
         case 'MsgAction_WaiChatGptBotWorkerInit':
           break;

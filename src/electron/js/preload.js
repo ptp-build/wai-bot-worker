@@ -145,7 +145,7 @@ class WaiChatGptBotWorker{;
   }
   process(action,payload){
     switch(action){
-      case "ipcMainCallbackButton":
+      case "IpcMainCallbackButton":
         const  {__id} = payload
         delete payload.__id
         this.__rev_msg_map[__id] = payload
@@ -195,10 +195,10 @@ class WaiChatGptBotWorker{;
   async handleCallbackButton(data){
     console.log("handleCallbackButton",data)
     if(data.indexOf("ipcMain") > -1){
-      return await this.callIpcMain("ipcMainCallbackButton",data)
+      return await this.callIpcMain("IpcMainCallbackButton",data)
     }
     if(data.indexOf("getButtons") > -1){
-      return await this.callIpcMain("ipcMainCallbackButton",data)
+      return await this.callIpcMain("IpcMainCallbackButton",data)
     }
     // switch(data){
     //   case "ipcRender/test":
@@ -242,13 +242,19 @@ window.addEventListener('DOMContentLoaded', () => {
 
 new ElectronIpcRender().addEvents()
 
+
 document.addEventListener('click', (event) => {
-  if(localStorage.getItem("getSize")){
-    const {clientX,clientY,pageX,pageY,screenX,screenY} = event
-    const {innerWidth,innerHeight} = window;
-    ipcRenderer.send('ipcMainMsg',"ipcMainCallbackButton",{
-      data:"ipcMain/getSize",
-      eventData:{innerWidth,innerHeight,clientX,clientY,pageX,pageY,screenX,screenY}
-    })
+  try {
+
+    if(localStorage && localStorage.getItem("getSize")){
+      const {clientX,clientY,pageX,pageY,screenX,screenY} = event
+      const {innerWidth,innerHeight} = window;
+      ipcRenderer.send('ipcMainMsg',"IpcMainCallbackButton",{
+        data:"ipcMain/getSize",
+        eventData:{innerWidth,innerHeight,clientX,clientY,pageX,pageY,screenX,screenY}
+      })
+    }
+  }catch (e){
+
   }
 })

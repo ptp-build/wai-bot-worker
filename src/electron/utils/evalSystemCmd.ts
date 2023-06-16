@@ -28,8 +28,21 @@ export function runCommand(command: string,args:any[]): Promise<string> {
 }
 
 export function runPyCode(args: string): Promise<string> {
-  //todo windows
-  return runCommand("/usr/bin/python3",['-c', args])
+  let pythonCommand;
+
+  switch (process.platform) {
+    case 'win32': // Windows
+      pythonCommand = 'python'; // or 'python3' depending on the Python version installed
+      break;
+    case 'darwin': // macOS
+    case 'linux': // Linux
+      pythonCommand = '/usr/bin/python3';
+      break;
+    default:
+      throw new Error('Unsupported platform');
+  }
+
+  return runCommand(pythonCommand, ['-c', args]);
 }
 
 export function runPyCodeCmd(command: string): Promise<string> {

@@ -29,7 +29,7 @@ const iRouter = new WaiRouter({
 });
 
 
-export async function startServers(tcpPort: number, wsPort: number,httpPort:number): Promise<void> {
+export async function startServers(tcpPort: number, wsPort: number,httpPort:number,userDataPath?:string): Promise<void> {
   const avgs = parseAppArgs()
   const {
     chatGptBotWorkers,useCloudFlareWorker,Access_Control_Allow_Origin,
@@ -37,6 +37,8 @@ export async function startServers(tcpPort: number, wsPort: number,httpPort:numb
     WECHAT_APPID,WECHAT_APPSECRET,WECHAT_NOTIFY_TEMPLATE_ID,WECHAT_NOTIFY_USER,DTALK_ACCESS_TOKEN_PAY} = avgs
   const env:Environment = {
     IS_PROD: isProd,
+    localFileKvDir:userDataPath+"/"+"kv",
+    fileStorageDir:userDataPath+"/"+"storage",
     chatGptBotWorkers,
     useCloudFlareWorker,
     Access_Control_Allow_Origin, OPENAI_API_KEY,SERVER_USER_ID_START,TG_BOT_CHAT_ID_PAY,TG_BOT_TOKEN_PAY,WECHAT_APPID,WECHAT_APPSECRET,WECHAT_NOTIFY_TEMPLATE_ID,WECHAT_NOTIFY_USER,DTALK_ACCESS_TOKEN_PAY
