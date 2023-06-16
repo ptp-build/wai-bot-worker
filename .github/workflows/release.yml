@@ -34,6 +34,7 @@ jobs:
           draft: false
           prerelease: false
   publish_on_mac:
+    needs: build
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -48,6 +49,7 @@ jobs:
         run: npm run publish
 
   publish_on_win:
+    needs: build
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
