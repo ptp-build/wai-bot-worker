@@ -12,8 +12,8 @@ export class SupabaseDb {
         const { data, error } = await this.getConnection().from("countries").select(columns);
         if (error) throw error;
         return {
-            rows:data,
-            size:data.length,
+            rows:data|| [],
+            size:data ? data.length : 0,
             time:currentTs1000() - startTime
         }
     }

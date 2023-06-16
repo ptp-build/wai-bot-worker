@@ -78,9 +78,9 @@ export default class MsgDispatcher {
     let {action,payload} = MsgReq.parseMsg(pdu)
     switch (action){
       case MsgAction.MsgAction_WaiChatGptPromptsInputReady:
-        if(ENV.chatGptBotWorkers!.indexOf(this.address!) > -1){
-          MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.accountId,MsgConnChatGptBotWorkerStatus.READY)
-        }
+        // if(ENV.chatGptBotWorkers!.indexOf(this.address!) > -1){
+        // }
+        MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.accountId,MsgConnChatGptBotWorkerStatus.READY)
         break
     }
   }
