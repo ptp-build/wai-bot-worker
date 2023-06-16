@@ -1,9 +1,9 @@
-import Account from '../../worker/share/Account';
-import LocalStorage from '../../worker/share/db/LocalStorage';
-// import { getAppVersion } from '../../worker/msg/WaiBridge';
+
 
 import WaiBotRpa from './WaiBotRpa';
 import BotWebSocket, { BotWebSocketNotifyAction, BotWebSocketState } from './BotWebSocket';
+import Account from '../../worker/services/Account';
+import LocalStorage from '../../worker/services/db/LocalStorage';
 
 let loading = false
 
@@ -69,7 +69,7 @@ export default class WaiBotMaster{
                 if (payload.getCommandId() === 5001) {
                   return;
                 }
-                // await new MsgDispatcher(accountId).handleSendBotMsgReq(payload);
+                // await new BotWsClientMsgProcessor(accountId).handleSendBotMsgReq(payload);
                 break;
             }
           }

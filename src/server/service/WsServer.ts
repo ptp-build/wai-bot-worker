@@ -9,7 +9,6 @@ import BusinessLogicProcessor from '../../worker/services/BusinessLogicProcessor
 
 export class WsServer extends BaseServer {
   private wsServer: WebSocket.Server;
-  private connections: Map<string, WsConnection> = new Map();
 
   constructor(port: number) {
     super(port);
@@ -21,7 +20,6 @@ export class WsServer extends BaseServer {
       const connId = uuidv4();
       //@ts-ignore
       const connection = new WsConnection(connId,ws)
-      this.connections.set(connId, connection);
       MsgConnectionManager.getInstance().addMsgConn(connId,{
         id: connId,
         city: "",
@@ -51,7 +49,6 @@ export class WsServer extends BaseServer {
       });
 
       ws.on('close', () => {
-        this.connections.delete(connId);
         MsgConnectionManager.getInstance().removeMsgConn(connId)
       });
     });

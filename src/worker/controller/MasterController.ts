@@ -1,5 +1,5 @@
-import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
-import { DoWebsocketApi } from '../share/service/do/DoWebsocketApi';
+import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
+import { DoWebsocketApi } from '../services/do/DoWebsocketApi';
 
 
 export class MasterAccountsAction extends WaiOpenAPIRoute {

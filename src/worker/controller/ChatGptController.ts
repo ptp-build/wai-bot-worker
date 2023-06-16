@@ -1,7 +1,7 @@
 import { Bool, Int, Query, Str } from '@cloudflare/itty-router-openapi';
-import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
 import {requestOpenAiStream, requestOpenAi, requestUsage} from '../share/functions/openai';
 import { ENV } from '../env';
+import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
 
 const Message = {
   role: new Str({

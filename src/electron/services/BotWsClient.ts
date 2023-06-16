@@ -1,6 +1,6 @@
 import { AppArgvType } from '../utils/args';
 import BotWebSocket, { BotWebSocketNotifyAction, BotWebSocketState } from './BotWebSocket';
-import BotWebSocketMsgDispatcher from './BotWebSocketMsgDispatcher';
+import BotWsClientMsgProcessor from './BotWsClientMsgProcessor';
 
 
 export class BotWsClient {
@@ -49,7 +49,7 @@ export class BotWsClient {
                 if (payload.getCommandId() === 5001) {
                   return;
                 }
-                await new BotWebSocketMsgDispatcher(accountId).handleWsMsg(accountId,payload);
+                await BotWsClientMsgProcessor.getInstance(accountId).handleWsMsg(payload);
                 break;
             }
 

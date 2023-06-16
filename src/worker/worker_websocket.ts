@@ -1,7 +1,7 @@
 import { Environment } from './env';
 import { WaiRouter } from './route';
-import WaiOpenAPIRoute from './share/cls/WaiOpenAPIRoute';
-export { WebSocketDurableObject } from './share/service/do/DoWesocketServer';
+import WaiOpenAPIRoute from './services/WaiOpenAPIRoute';
+export { WebSocketDurableObject } from './services/do/DoWesocketServer';
 
 const iRouter = new WaiRouter({
   title: 'Worker Wai Chat Websocket',

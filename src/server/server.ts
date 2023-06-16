@@ -1,21 +1,17 @@
-import { TCP_SERVER_PORT, WS_SERVER_PORT,HTTP_SERVER_PORT } from './config';
 import { TcpServer } from './service/TcpServer';
 import { WsServer } from './service/WsServer';
 import { HttpServer } from './service/HttpServer';
 import { WaiRouter } from '../worker/route';
-import { ChatGptAction, ChatGptBillingUsageAction } from '../worker/controller/ChatGptController';
-import { CronAction } from '../worker/controller/CronController';
-import { QueueAction } from '../worker/controller/QueueController';
 import { TelegramBotSendMessageAction } from '../worker/controller/TelegramController';
 import { WechatBotSendMessageAction } from '../worker/controller/WechatController';
 import { DTalkBotSendMessageAction } from '../worker/controller/DTalkController';
-import { RandomAction } from '../worker/controller/ApiController';
 import { MasterAccountsAction } from '../worker/controller/MasterController';
 import ProtoController from '../worker/controller/ProtoController';
-import { ENV, Environment, kv, setKvAndStorage, storage } from '../worker/env';
+import { Environment, kv, setKvAndStorage, storage } from '../worker/env';
 import { isProd, parseAppArgs } from '../electron/utils/args';
-import LocalFileKv from '../worker/share/db/LocalFileKv';
-import FileStorage from '../worker/share/storage/FileStorage';
+import LocalFileKv from '../worker/services/db/LocalFileKv';
+import FileStorage from '../worker/services/storage/FileStorage';
+
 const minimist = require('minimist');
 
 const iRouter = new WaiRouter({

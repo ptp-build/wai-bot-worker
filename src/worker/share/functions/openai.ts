@@ -1,7 +1,4 @@
 import { createParser } from 'eventsource-parser';
-import UserBalance from "../service/UserBalance";
-import {User} from "../service/User";
-import {MsgBot} from "../service/msg/MsgBot";
 
 const OPENAI_URL = 'api.openai.com';
 const DEFAULT_PROTOCOL = 'https';

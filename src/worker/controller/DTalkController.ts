@@ -1,6 +1,6 @@
-import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
+import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
 import {Str} from '@cloudflare/itty-router-openapi';
-import {DTalk} from "../share/service/third_party/DTalk";
+import { DTalk } from '../services/third_party/DTalk';
 
 const BotSendMessageBody = {
   text: new Str({

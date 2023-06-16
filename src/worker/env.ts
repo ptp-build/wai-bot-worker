@@ -1,7 +1,8 @@
-import CloudFlareKv from './share/db/CloudFlareKv';
-import CloudFlareR2 from './share/storage/CloudFlareR2';
-import BaseKv from './share/db/BaseKv';
-import BaseStorage from './share/storage/BaseStorage';
+import CloudFlareKv from './services/db/CloudFlareKv';
+import CloudFlareR2 from './services/storage/CloudFlareR2';
+import BaseKv from './services/db/BaseKv';
+import BaseStorage from './services/storage/BaseStorage';
+
 export interface ExecutionContext {
   waitUntil(promise: Promise<any>): void;
   passThroughOnException(): void;

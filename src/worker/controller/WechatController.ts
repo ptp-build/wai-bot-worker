@@ -1,6 +1,6 @@
-import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
 import {Str} from '@cloudflare/itty-router-openapi';
-import {WechatMessage} from '../share/service/third_party/WechatMessage';
+import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
+import { WechatMessage } from '../services/third_party/WechatMessage';
 
 const BotSendMessageBody = {
   token: new Str({

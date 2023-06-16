@@ -1,9 +1,7 @@
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
-import { ClientInfo_Type, MsgAction } from '../../lib/ptp/protobuf/PTPCommon/types';
+import { ClientInfo_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
 import { AuthLoginReq } from '../../lib/ptp/protobuf/PTPAuth';
-import Account from '../../worker/share/Account';
 import MessageSendHandler from './MessageSendHandler';
-import { getActionCommandsName } from '../../lib/ptp/protobuf/ActionCommands';
 import { MsgReq } from '../../lib/ptp/protobuf/PTPMsg';
 import { MsgReq_Type } from '../../lib/ptp/protobuf/PTPMsg/types';
 

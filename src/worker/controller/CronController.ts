@@ -1,5 +1,5 @@
-import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
 import {Str} from '@cloudflare/itty-router-openapi';
+import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
 
 const CronBody = {
   text: new Str({

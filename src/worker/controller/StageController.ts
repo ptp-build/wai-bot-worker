@@ -1,7 +1,7 @@
-import BaseOpenAPIRoute from "../share/cls/BaseOpenAPIRoute";
-import {MySqlPlanetScale} from "../share/db/MySqlPlanetScale";
-import {SupabaseDb} from "../share/db/SupabaseDb";
-import {PgSqlNeon} from "../share/db/PgSqlNeon";
+import BaseOpenAPIRoute from '../services/BaseOpenAPIRoute';
+import { SupabaseDb } from '../services/db/SupabaseDb';
+import { MySqlPlanetScale } from '../services/db/MySqlPlanetScale';
+import { PgSqlNeon } from '../services/db/PgSqlNeon';
 
 export class StageSupabaseDbAction extends BaseOpenAPIRoute {
 	static schema = {

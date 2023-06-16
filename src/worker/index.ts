@@ -4,14 +4,14 @@ import {ChatGptAction, ChatGptBillingUsageAction,} from './controller/ChatGptCon
 import ProtoController from './controller/ProtoController';
 import {TelegramBotSendMessageAction} from './controller/TelegramController';
 import {WechatBotSendMessageAction} from './controller/WechatController';
-import CloudFlareQueue from "./share/service/CloudFlareQueue";
 import {QueueAction} from "./controller/QueueController";
 import {CronAction} from "./controller/CronController";
 import {DTalkBotSendMessageAction} from "./controller/DTalkController";
 import {RandomAction} from "./controller/ApiController";
 import {MasterAccountsAction} from "./controller/MasterController";
+import CloudFlareQueue from './services/CloudFlareQueue';
 
-export { WebSocketDurableObject } from './share/service/do/DoWesocketServer';
+export { WebSocketDurableObject } from './services/do/DoWesocketServer';
 
 export interface Message<Body = any> {
   readonly id: string;

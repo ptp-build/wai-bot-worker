@@ -2,20 +2,21 @@ import MsgConnectionManager from './MsgConnectionManager';
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
 import { ActionCommands } from '../../lib/ptp/protobuf/ActionCommands';
 import { SyncReq, SyncRes, TopCatsRes } from '../../lib/ptp/protobuf/PTPSync';
-import { AuthSessionType, getSessionInfoFromSign, User } from '../share/service/User';
 import { AuthLoginReq, AuthLoginRes } from '../../lib/ptp/protobuf/PTPAuth';
 import { ChatGptStreamStatus, ERR, MsgAction, UserStoreData_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
 import { kv, storage } from '../env';
 import { PbMsg, PbUser, UserStoreData } from '../../lib/ptp/protobuf/PTPCommon';
 import { MsgReq, SendBotMsgReq, SendBotMsgRes, SendMsgRes, SendTextMsgReq } from '../../lib/ptp/protobuf/PTPMsg';
 import MsgConnChatGptBotWorkerManager, { MsgConnChatGptBotWorkerStatus } from './MsgConnChatGptBotWorkerManager';
-import { DoWebsocketApi } from '../share/service/do/DoWebsocketApi';
-import UserSetting from '../share/service/UserSetting';
-import { TelegramBot } from '../share/service/third_party/Telegram';
-import { MsgBot } from '../share/service/msg/MsgBot';
+
 import { currentTs } from '../share/utils/utils';
 import MsgConnectionApiHandler from './MsgConnectionApiHandler';
-import { ChatGptWorker } from '../share/service/ai/ChatGptWorker';
+import { ChatGptRequestHelper } from '../helper/ChatGptRequestHelper';
+import { DoWebsocketApi } from './do/DoWebsocketApi';
+import { AuthSessionType, getSessionInfoFromSign, User } from './user/User';
+import UserSetting from './user/UserSetting';
+import { TelegramBot } from './third_party/Telegram';
+import { MsgBot } from './msg/MsgBot';
 
 let businessLogicProcessors = new Map<string, BusinessLogicProcessor>();
 
@@ -172,7 +173,7 @@ export default class BusinessLogicProcessor {
       let reply = "..."
       if(msgConnId){
         manager.setStatus(msgConnId,MsgConnChatGptBotWorkerStatus.BUSY)
-        await new ChatGptWorker().process(pdu,authUserId,msgConnId);
+        await new ChatGptRequestHelper().process(pdu,authUserId,msgConnId);
       }else{
         reply = "Work is busy! pls Retry later"
       }

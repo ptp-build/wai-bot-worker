@@ -2,7 +2,7 @@ import {WaiRouter} from './route';
 import {CronAction} from "./controller/CronController";
 import { Environment, ExecutionContext } from './env';
 
-export { WebSocketDurableObject } from './share/service/do/DoWesocketServer';
+export { WebSocketDurableObject } from './services/do/DoWesocketServer';
 
 
 const iRouter = new WaiRouter({

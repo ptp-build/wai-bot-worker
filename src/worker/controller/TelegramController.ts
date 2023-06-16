@@ -1,6 +1,6 @@
-import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
 import {Str} from '@cloudflare/itty-router-openapi';
-import {sendTextMessageToTelegram, TelegramBot,} from '../share/service/third_party/Telegram';
+import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
+import { sendTextMessageToTelegram, TelegramBot } from '../services/third_party/Telegram';
 
 const BotSendMessageBody = {
   token: new Str({

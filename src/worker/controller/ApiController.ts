@@ -1,7 +1,7 @@
 import {randomize} from 'worktop/utils';
 import {Int, Query} from '@cloudflare/itty-router-openapi';
 import {ENV} from "../env";
-import BaseOpenAPIRoute from "../share/cls/BaseOpenAPIRoute";
+import BaseOpenAPIRoute from '../services/BaseOpenAPIRoute';
 
 export class RandomAction extends BaseOpenAPIRoute {
 	static schema = {

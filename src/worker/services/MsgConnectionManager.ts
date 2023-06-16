@@ -1,6 +1,6 @@
 import MsgConnChatGptBotWorkerManager from './MsgConnChatGptBotWorkerManager';
-import { AuthSessionType } from '../share/service/User';
 import { BaseConnection } from '../../server/service/BaseConnection';
+import { AuthSessionType } from './user/User';
 
 let currentInstance:MsgConnectionManager;
 

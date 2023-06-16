@@ -1,6 +1,5 @@
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
 import { ActionCommands, getActionCommandsName } from '../../lib/ptp/protobuf/ActionCommands';
-import { Download, Upload } from '../share/service/File';
 import {
   CallbackButtonReq,
   CallbackButtonRes,
@@ -15,7 +14,6 @@ import {
 } from '../../lib/ptp/protobuf/PTPMsg';
 import { ERR, UserMessageStoreData_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
 import { ENV, kv, storage } from '../env';
-import { AuthSessionType, User } from '../share/service/User';
 import {
   CreateUserReq,
   CreateUserRes,
@@ -34,14 +32,16 @@ import {
   UploadUserReq,
   UploadUserRes,
 } from '../../lib/ptp/protobuf/PTPUser';
-import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
 import { PbMsg, PbUser, UserMessageStoreData } from '../../lib/ptp/protobuf/PTPCommon';
 import { OtherNotify } from '../../lib/ptp/protobuf/PTPOther';
 import { currentTs, currentTs1000 } from '../share/utils/utils';
-import CallbackButtonHandler from '../share/service/CallbackButtonHandler';
-import UserSetting from '../share/service/UserSetting';
-import { MsgBot } from '../share/service/msg/MsgBot';
-import { MsgBotPublic } from '../share/service/msg/MsgBotPublic';
+import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
+import { AuthSessionType, User } from '../services/user/User';
+import { Download, Upload } from '../services/im/File';
+import { MsgBot } from '../services/msg/MsgBot';
+import CallbackButtonHandler from '../services/msg/CallbackButtonHandler';
+import UserSetting from '../services/user/UserSetting';
+import { MsgBotPublic } from '../services/msg/MsgBotPublic';
 
 export default class ProtoController extends WaiOpenAPIRoute {
   private authSession: AuthSessionType | undefined;

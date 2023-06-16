@@ -1,9 +1,9 @@
 import {Environment, initEnv} from './env';
 import {WaiRouter} from './route';
-import CloudFlareQueue from "./share/service/CloudFlareQueue";
 import {QueueAction} from "./controller/QueueController";
+import CloudFlareQueue from './services/CloudFlareQueue';
 
-export { WebSocketDurableObject } from './share/service/do/DoWesocketServer';
+export { WebSocketDurableObject } from './services/do/DoWesocketServer';
 
 export interface Message<Body = any> {
   readonly id: string;
