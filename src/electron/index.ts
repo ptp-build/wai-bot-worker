@@ -134,22 +134,22 @@ const createWindow = (): void => {
 };
 
 app.on('ready', async () => {
-  if(appArgs.startWsServer && await isPortInUse(appArgs.waiServerWsPort)){
-    const options = {
-      type: 'error',
-      buttons: ['Ok'],
-      defaultId: 0,
-      title: 'Error',
-      message: 'The server is already running on this port.',
-      detail: 'Please stop the existing server before trying again.',
-    };
-
-    dialog.showMessageBox(options).then(() => {
-      app.quit();
-    });
-
-    return
-  }
+  // if(appArgs.startWsServer && await isPortInUse(appArgs.waiServerWsPort)){
+  //   const options = {
+  //     type: 'error',
+  //     buttons: ['Ok'],
+  //     defaultId: 0,
+  //     title: 'Error',
+  //     message: 'The server is already running on this port.',
+  //     detail: 'Please stop the existing server before trying again.',
+  //   };
+  //
+  //   dialog.showMessageBox(options).then(() => {
+  //     app.quit();
+  //   });
+  //
+  //   return
+  // }
   createWindow();
   new ElectronIpcMain(mainWindow!).setSendToRenderMsgHandler(sendToRenderMsg).addEvents()
   electronServer = await new ElectronService(appArgs).start(userDataPath)

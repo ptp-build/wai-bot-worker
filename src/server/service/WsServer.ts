@@ -23,7 +23,7 @@ export class WsServer extends Server {
       const client = new WsClient(connId, ws);
       this.clients.set(connId, client);
       const dispatcher = MsgDispatcher.getInstance(connId);
-      dispatcher.setWs(ws);
+
       MsgConnectionManager.getInstance().addMsgConn(connId,{
         id: connId,
         city: "",
