@@ -3,7 +3,7 @@ const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 /**
 
-export VERSION=0.0.0
+export VERSION=1.0.1
 node tools/wai-change-release-version.js
 
  */
@@ -61,7 +61,6 @@ const handleGitCommands = async version => {
 (async () => {
   if (version) {
     try {
-      await replaceApi(packageJsonPath, version);
       await replaceFileVersion(packageJsonPath, version);
 
       setTimeout(async () => {
