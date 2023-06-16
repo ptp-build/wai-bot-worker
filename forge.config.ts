@@ -27,7 +27,7 @@ module.exports = {
       config: {
         repository: {
           owner: 'ptp-build',
-          name: 'wai-services-worker',
+          name: 'wai-bot-worker',
           draft: true,
         },
       },
