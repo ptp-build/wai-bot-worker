@@ -8,12 +8,12 @@ export interface AppArgvType{
   appPosX:number,
   appPosY:number,
   homeUrl:string,
+  openDevTool?:boolean,
   useProxy?:boolean,
   proxyType?:string,
   proxyIp?:string,
   proxyPort?:string,
   proxy?:string,
-  openDevTool?:boolean,
   proxyUsername?:string,
   proxyPassword?:string,
   accountSign?:string,
@@ -61,12 +61,11 @@ const AppArgvKeys = [
   "chatGptUsername",
   "chatGptPassword",
   "appSubWidth","appSubHeight","windowGap",
-  "electronPath",
   "homeUrl",
   "openDevTool",
   "chatGptSendPromptSleep",
   "appWidth","appHeight","appPosX","appPosY","partitionName",
-  "useProxy","proxyType","proxy","proxyPort","proxyUsername","proxyPassword",
+  "useProxy","proxy","proxyType","proxyIp","proxyPort","proxyUsername","proxyPassword",
   "accountSign","accountId","msgServer",
   "waiServerHttpPort","waiServerWsPort","waiServerTcpPort",
   "startWsClient","startWsServer","isWsClientMaster",
@@ -181,7 +180,7 @@ export function parseAppArgs():AppArgvType{
         }
         break
       case "startWsServer":
-        value = getDefaultValue(value,true,'boolean')
+        value = getDefaultValue(value,false,'boolean')
         break
       case "isWsClientMaster":
         value = getDefaultValue(value,false,'boolean')

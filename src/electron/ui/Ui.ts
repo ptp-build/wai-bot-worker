@@ -1,4 +1,4 @@
-import { BrowserWindow, screen } from 'electron';
+import { BrowserWindow, screen,dialog } from 'electron';
 let displayWidth = 0
 let displayHeight = 0
 type Position = {
@@ -55,5 +55,17 @@ export default class Ui{
     return {
       displayWidth,displayHeight
     }
+  }
+  static showDialog(cb:()=>void){
+      const options = {
+        type: 'error',
+        buttons: ['Ok'],
+        defaultId: 0,
+        title: 'Error',
+        message: 'The server is already running on this port.',
+        detail: 'Please stop the existing server before trying again.',
+      };
+
+      dialog.showMessageBox(options).then(cb);
   }
 }

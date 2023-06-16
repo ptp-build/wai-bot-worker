@@ -23,42 +23,32 @@ export default class ElectronIpcMain{
   getAdvanceInlineButtons(data:string,paload:any){
     const chatId = data.split("/")[data.split("/").length - 1]
     let inlineButtons;
-    if(chatId === "1000"){
-      inlineButtons = [
-        [
-          {
-            type:"callback",
-            text:"创建 ChatGpt Bot Worker",
-            data:"local/createChatGptBotWorker"
-          }
-        ],
-        [
-          {
-            type:"callback",
-            text:"获取App信息",
-            data:"ipcMain/appInfo"
-          }
-        ]
-      ];
-    }else{
-      inlineButtons = [
-        [
-          {
-            type:"callback",
-            text:"打开窗口",
-            data:"local/createChatGptBotWorker"
-          }
-        ],
-        [
-          {
-            type:"callback",
-            text:"获取App信息",
-            data:"ipcMain/appInfo"
-          }
-        ]
-      ];
-    }
-
+    inlineButtons = [
+      [
+        {
+          type:"callback",
+          text:chatId === "1000" ? "创建 ChatGpt Bot Worker" : "打开窗口",
+          data:"local/createChatGptBotWorker"
+        },
+        {
+          type:"callback",
+          text:"ChatGpt用户名密码",
+          data:"local/setUpChatGptAuthUser"
+        },
+        {
+          type:"callback",
+          text:"设置代理",
+          data:"local/setUpProxy"
+        }
+      ],
+      [
+        {
+          type:"callback",
+          text:"获取App信息",
+          data:"ipcMain/appInfo"
+        },
+      ]
+    ];
     this.sendToRenderMsg!(IpcMainCallbackButtonAction,{
       ...paload,
       text:"本地机器人",
@@ -108,9 +98,12 @@ export default class ElectronIpcMain{
           loadUrl(payload.url)
           break;
         case "IpcMainCallbackButton":
-          this.IpcMainCallbackButton(payload||{}).catch(console.error)
+          this.IpcMainCallbackButton(payload||{}).catch((e)=>{
+            console.error("[IpcMainCallbackButton error]",e)
+          })
           break
         case 'MsgAction_WaiChatGptBotWorkerInit':
+          ChatGptWaiChatBot.promptsInputReady();
           break;
         case 'MsgAction_WaiChatGptInputUsername':
           ChatGptWaiChatBot.inputUsername(payload);

@@ -20,8 +20,6 @@ export function runCommand(command: string,args:any[]): Promise<string> {
       console.warn("[runCommand close]",code,Buffer.from(output).toString().trim())
       if (code !== 0) {
         reject(`Python process exited with code ${code}`);
-      } else {
-        resolve(Buffer.from(output).toString().trim());
       }
     });
   });

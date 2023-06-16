@@ -1,13 +1,12 @@
-import { app, BrowserWindow, session,dialog } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import * as path from 'path';
-import { DefaultPartition, getProxyConfig, parseAppArgs } from './utils/args';
+import { DefaultPartition, getProxyConfig, isProd, parseAppArgs } from './utils/args';
 import { getErrorHtml } from './utils/utils';
 import ElectronIpcMain from './services/ElectronIpcMain';
 import Devtool from './ui/Devtool';
 import Ui from './ui/Ui';
 import ElectronService from './ElectronService';
 import { ignoreConsoleMessage, setUpLogs } from './utils/logs';
-import { isPortInUse } from './utils/server';
 
 const userDataPath = app.getPath('userData');
 
@@ -24,7 +23,7 @@ let {
   startWsServer
 } = appArgs;
 
-const logLevel = "debug"
+const logLevel = isProd ? "debug" : "debug"
 console.debug("[AppArgs]",appArgs)
 console.log("[userDataPath]",userDataPath)
 
@@ -134,22 +133,6 @@ const createWindow = (): void => {
 };
 
 app.on('ready', async () => {
-  // if(appArgs.startWsServer && await isPortInUse(appArgs.waiServerWsPort)){
-  //   const options = {
-  //     type: 'error',
-  //     buttons: ['Ok'],
-  //     defaultId: 0,
-  //     title: 'Error',
-  //     message: 'The server is already running on this port.',
-  //     detail: 'Please stop the existing server before trying again.',
-  //   };
-  //
-  //   dialog.showMessageBox(options).then(() => {
-  //     app.quit();
-  //   });
-  //
-  //   return
-  // }
   createWindow();
   new ElectronIpcMain(mainWindow!).setSendToRenderMsgHandler(sendToRenderMsg).addEvents()
   electronServer = await new ElectronService(appArgs).start(userDataPath)

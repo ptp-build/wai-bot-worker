@@ -33,7 +33,7 @@ export default class ElectronActions{
     const bufStr = data.split("/")[2]
     const buf = Buffer.from(bufStr,"hex").toString()
     const eventData = JSON.parse(buf)
-    let {accountId,accountSign,accountNum} = eventData
+    let {accountId,accountSign,accountNum,proxy,chatGptAuthUser} = eventData
     accountId = Number(accountId)
     accountNum = accountNum || 0
     const {electronPath,appPath} = getElectronEnv()
@@ -56,10 +56,50 @@ export default class ElectronActions{
       appPosY = eventData.appPosY
     }
 
+    let chatGptUsername = "",chatGptPassword = ""
+    if(chatGptAuthUser && chatGptAuthUser.includes(":")){
+      chatGptUsername = chatGptAuthUser.split(":")[0]
+      chatGptPassword = chatGptAuthUser.split(":")[1]
+    }
+
+    let proxyType = "",proxyIp = "",proxyPort="",proxyUsername = "",proxyPassword="";
+    let useProxy = !!proxy
+    if(useProxy){
+      if(proxy.split("://").length > 1){
+        proxyType = proxy.split("://")[0]
+        const proxyOther = proxy.split("://")[1]
+        if(proxyOther.split("@").length > 1){
+          proxyIp = proxyOther.split("@")[0].split(":")[0]
+          proxyPort = proxyOther.split("@")[0].split(":")[1]
+          proxyUsername = proxyOther.split("@")[1].split(":")[0]
+          proxyPassword = proxyOther.split("@")[1].split(":")[1]
+        }
+      }
+    }
+    if(proxyIp && proxyPort && proxyUsername && proxyPassword && proxyType){
+      useProxy = true
+    }
+
     const args = [
       appPath,
       "--homeUrl",
       "https://chat.openai.com",
+      "--chatGptUsername",
+      chatGptUsername,
+      "--chatGptPassword",
+      chatGptPassword,
+      "--useProxy",
+      useProxy,
+      "--proxyType",
+      proxyType,
+      "--proxyIp",
+      proxyIp,
+      "--proxyPort",
+      proxyPort,
+      "--proxyUsername",
+      proxyUsername,
+      "--proxyPassword",
+      proxyPassword,
       "--openDevTool",
       "false",
       "--appPosX",
@@ -86,9 +126,14 @@ export default class ElectronActions{
     this.sendAction("创建成功",{
       type:"chatGpt",
       botId:eventData.botId,
+      proxy,chatGptAuthUser,
       accountId,accountSign,appWidth,appHeight,appPosX,appPosY
     });
-    const res = await runCommand(electronPath,args)
-    console.log("openChatGptBotWorkerApp",res)
+    try {
+      const res = await runCommand(electronPath,args)
+    }catch (e){
+      console.warn("[createChatGptBotWorker][runCommand error]")
+    }
+
   }
 }
