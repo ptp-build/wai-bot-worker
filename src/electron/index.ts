@@ -80,6 +80,8 @@ const createWindow = (): void => {
     x: appPosX,
     y: appPosY,
     title: '-',
+    resizable: partitionName === DefaultPartition,
+    movable: partitionName === DefaultPartition,
     webPreferences: {
       preload: path.join(__dirname, 'electron','js', 'preload.js'),
       nodeIntegration: false,

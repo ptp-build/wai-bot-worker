@@ -52,28 +52,27 @@ get_cur_dir() {
 
 get_cur_dir
 
-SRC_PNG=${CUR_DIR}/logo.png
-
-magick $SRC_PNG -resize 512x512 favicon.ico
-
-sips -z 256 256   $SRC_PNG --out favicon.256x256.png
-sips -z 512 512   $SRC_PNG --out favicon.512x512.png
-sips -z 256 256   $SRC_PNG --out favicon.png
-
+SRC_PNG=${CUR_DIR}/favicon.512x512.png
 
 cd ${CUR_DIR}
-iconutil -c icns ${CUR_DIR}/icon.iconset
 
-sips -z 16 16     $SRC_PNG --out icon.iconset/icon_16x16.png
-sips -z 32 32     $SRC_PNG --out icon.iconset/icon_16x16@2x.png
-sips -z 32 32     $SRC_PNG --out icon.iconset/icon_32x32.png
-sips -z 64 64     $SRC_PNG --out icon.iconset/icon_32x32@2x.png
-sips -z 128 128   $SRC_PNG --out icon.iconset/icon_128x128.png
-sips -z 256 256   $SRC_PNG --out icon.iconset/icon_128x128@2x.png
-sips -z 256 256   $SRC_PNG --out icon.iconset/icon_256x256.png
-sips -z 512 512   $SRC_PNG --out icon.iconset/icon_256x256@2x.png
-sips -z 512 512   $SRC_PNG --out icon.iconset/icon_512x512.png
+magick $SRC_PNG -resize 256x256 favicon.ico
+sips -z 256 256   $SRC_PNG --out favicon.256x256.png
+sips -z 256 256   $SRC_PNG --out favicon.png
 
-iconutil -c icns ${CUR_DIR}/icon.iconset
+mkdir -p favicon.iconset
 
-#rm -rf ${CUR_DIR}/favicon.iconset
+sips -z 16 16     $SRC_PNG --out favicon.iconset/icon_16x16.png
+sips -z 32 32     $SRC_PNG --out favicon.iconset/icon_16x16@2x.png
+sips -z 32 32     $SRC_PNG --out favicon.iconset/icon_32x32.png
+sips -z 64 64     $SRC_PNG --out favicon.iconset/icon_32x32@2x.png
+sips -z 128 128   $SRC_PNG --out favicon.iconset/icon_128x128.png
+sips -z 256 256   $SRC_PNG --out favicon.iconset/icon_128x128@2x.png
+sips -z 256 256   $SRC_PNG --out favicon.iconset/icon_256x256.png
+sips -z 512 512   $SRC_PNG --out favicon.iconset/icon_256x256@2x.png
+sips -z 512 512   $SRC_PNG --out favicon.iconset/icon_512x512.png
+
+
+iconutil -c icns favicon.iconset
+rm -rf favicon.iconset
+
