@@ -134,8 +134,8 @@ export function parseAppArgs():AppArgvType{
         // value = getDefaultValue(value,"ws://localhost:5081")
         break
       case "homeUrl":
-        value = getDefaultValue(value,"https://wai.chat")
-        // value = getDefaultValue(value,"wai/desktop/index.html")
+        // value = getDefaultValue(value,"https://wai.chat")
+        value = getDefaultValue(value,"wai/desktop/index.html")
         break
       case "waiServerHttpPort":
         value = getDefaultValue(value,5080,'int')
