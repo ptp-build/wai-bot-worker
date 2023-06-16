@@ -1,8 +1,8 @@
 {
   "name": "wai-bot-worker",
   "productName": "Wai Bot Worker",
-  "version": "1.2.7",
-  "description": "a project for wai bot worker",
+  "version": "1.2.8",
+  "description": "Wai Bot Worker",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
