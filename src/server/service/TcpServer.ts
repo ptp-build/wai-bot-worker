@@ -1,12 +1,11 @@
 import * as net from 'net';
 import { v4 as uuidv4 } from 'uuid';
-import { TcpClient } from './Client';
-import { BusinessLogic } from './BusinessLogic';
-import { Server } from './Server';
+import { BaseServer } from './BaseServer';
+import { TcpConnection } from './BaseConnection';
 
-export class TcpServer extends Server {
+export class TcpServer extends BaseServer {
   private server: net.Server;
-  private clients: Map<string, TcpClient> = new Map();
+  private connections: Map<string, TcpConnection> = new Map();
 
   constructor(port: number) {
     super(port);
@@ -20,16 +19,13 @@ export class TcpServer extends Server {
       this.server.listen(this.port, resolve);
       this.server.on('connection', socket => {
         const id = uuidv4();
-        const client = new TcpClient(id, socket);
-        this.clients.set(id, client);
+        const connection = new TcpConnection(id, socket);
+        this.connections.set(id, connection);
         console.log(`[TcpServer] on connection: `, id);
-        const businessLogic = new BusinessLogic();
-        businessLogic.setClient(client);
-
         socket.on('data', data => {
-          businessLogic.processMessage(data);
+
           socket.end(() => {
-            this.clients.delete(id);
+            this.connections.delete(id);
           });
         });
       });

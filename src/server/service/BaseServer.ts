@@ -1,4 +1,4 @@
-export abstract class Server {
+export abstract class BaseServer {
   constructor(protected port: number) {}
 
   abstract start(): void;

@@ -1,5 +1,5 @@
 import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
-import {DoWebsocket} from "../share/service/do/DoWebsocket";
+import { DoWebsocketApi } from '../share/service/do/DoWebsocketApi';
 
 
 export class MasterAccountsAction extends WaiOpenAPIRoute {
@@ -16,7 +16,7 @@ export class MasterAccountsAction extends WaiOpenAPIRoute {
   };
   async handle(request: Request, data: Record<string, any>) {
     return {
-      accounts:await new DoWebsocket().getAccounts()
+      accounts:await new DoWebsocketApi().getAccounts()
     }
   }
 }

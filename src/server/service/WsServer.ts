@@ -1,15 +1,15 @@
 import * as WebSocket from 'ws';
 import { v4 as uuidv4 } from 'uuid';
-import { WsClient } from './Client';
-import { Server } from './Server';
-import MsgDispatcher from '../../worker/share/service/MsgDispatcher';
+import { BaseServer } from './BaseServer';
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
 import { ActionCommands } from '../../lib/ptp/protobuf/ActionCommands';
-import MsgConnectionManager from './MsgConnectionManager';
+import MsgConnectionManager from '../../worker/services/MsgConnectionManager';
+import { WsConnection } from './BaseConnection';
+import BusinessLogicProcessor from '../../worker/services/BusinessLogicProcessor';
 
-export class WsServer extends Server {
+export class WsServer extends BaseServer {
   private wsServer: WebSocket.Server;
-  private clients: Map<string, WsClient> = new Map();
+  private connections: Map<string, WsConnection> = new Map();
 
   constructor(port: number) {
     super(port);
@@ -19,41 +19,39 @@ export class WsServer extends Server {
   start(): void {
     this.wsServer.on('connection', ws => {
       const connId = uuidv4();
-      // @ts-ignore
-      const client = new WsClient(connId, ws);
-      this.clients.set(connId, client);
-      const dispatcher = MsgDispatcher.getInstance(connId);
-
+      //@ts-ignore
+      const connection = new WsConnection(connId,ws)
+      this.connections.set(connId, connection);
       MsgConnectionManager.getInstance().addMsgConn(connId,{
         id: connId,
         city: "",
         country: "",
-        //@ts-ignore
-        websocket: ws,
+        connection,
       })
-      console.log(`[WsServer] on connection: `, connId,this.clients);
+      console.log(`[WsServer] on connection: `, connId);
       ws.on('message', async (msg: Buffer) => {
+        const processor = BusinessLogicProcessor.getInstance(connId);
         try {
           const pdu = new Pdu(Buffer.from(msg));
-          const dispatcher = MsgDispatcher.getInstance(connId);
+
           switch (pdu.getCommandId()) {
             case ActionCommands.CID_AuthLoginReq:
-              const res = await dispatcher.handleAuthLoginReq(pdu);
+              const res = await processor.handleAuthLoginReq(pdu);
               if (res) {
                 MsgConnectionManager.getInstance().updateMsgConn(connId,{
-                  authSession: res,
+                  session: res,
                 })
               }
               return;
           }
-          await MsgDispatcher.handleWsMsg(connId, pdu);
+          await processor.handleWsMsg(pdu);
         } catch (err) {
           console.error(err);
         }
       });
 
       ws.on('close', () => {
-        this.clients.delete(connId);
+        this.connections.delete(connId);
         MsgConnectionManager.getInstance().removeMsgConn(connId)
       });
     });

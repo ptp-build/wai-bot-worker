@@ -1,10 +1,19 @@
-import { AccountUser } from '../../worker/share/service/do/DoWesocketServer';
 import MsgConnChatGptBotWorkerManager from './MsgConnChatGptBotWorkerManager';
+import { AuthSessionType } from '../share/service/User';
+import { BaseConnection } from '../../server/service/BaseConnection';
 
 let currentInstance:MsgConnectionManager;
 
+export interface AccountUser {
+  connection:BaseConnection,
+  session?: AuthSessionType;
+  id: string;
+  city: string | undefined | any;
+  country: string | any;
+}
+
 export default class MsgConnectionManager {
-  private accounts: Map<string, AccountUser>;
+  private accountUsers: Map<string, AccountUser>;
   private addressAccountMap: Map<string, string[]>;
   static getInstance(){
     if(!currentInstance){
@@ -13,24 +22,24 @@ export default class MsgConnectionManager {
     return currentInstance
   }
   constructor() {
-    this.accounts = new Map();
+    this.accountUsers = new Map();
     this.addressAccountMap = new Map();
   }
   addUserAccountMap(id:string,account:AccountUser){
-    if(account.authSession?.authUserId){
-      const {address} = account.authSession
-      let accounts:string[] = []
+    if(account.session?.authUserId){
+      const {address} = account.session
+      let accountUsers:string[] = []
       if(this.addressAccountMap.has(address)){
-        accounts = this.addressAccountMap.get(address)!
+        accountUsers = this.addressAccountMap.get(address)!
       }
-      if(!accounts.includes(id)){
-        accounts.push(id)
+      if(!accountUsers.includes(id)){
+        accountUsers.push(id)
       }
-      this.addressAccountMap.set(address,accounts)
+      this.addressAccountMap.set(address,accountUsers)
     }
   }
   addMsgConn(id:string,account:AccountUser){
-    this.accounts.set(id,account)
+    this.accountUsers.set(id,account)
     this.addUserAccountMap(id,account)
   }
   updateMsgConn(id:string,account:Partial<AccountUser>){
@@ -39,28 +48,28 @@ export default class MsgConnectionManager {
     this.addUserAccountMap(id,this.getMsgConn(id)!)
   }
   getMsgConn(id:string,){
-    return this.accounts.get(id)
+    return this.accountUsers.get(id)
   }
   getMsgConnMap(){
-    return this.accounts
+    return this.accountUsers
   }
 
   getAddressAccountMap(){
     return this.addressAccountMap
   }
   removeMsgConn(id:string,){
-    const account=this.accounts.get(id)
+    const account=this.accountUsers.get(id)
     if(account){
       if(undefined !== MsgConnChatGptBotWorkerManager.getInstance().getStatus(id)){
         MsgConnChatGptBotWorkerManager.getInstance().remove(id)
       }
-      this.accounts.delete(id)
-      if(account.authSession){
-        const {address} = account.authSession
+      this.accountUsers.delete(id)
+      if(account.session){
+        const {address} = account.session
         if(this.addressAccountMap.has(address)){
-          const accounts = this.addressAccountMap.get(address)!
-          if(accounts.includes(address)){
-            this.addressAccountMap.set(address,accounts.filter(id1=>id!== id1))
+          const accountUsers = this.addressAccountMap.get(address)!
+          if(accountUsers.includes(address)){
+            this.addressAccountMap.set(address,accountUsers.filter(id1=>id!== id1))
           }
         }
       }
@@ -69,7 +78,7 @@ export default class MsgConnectionManager {
   broadcast(message:Buffer){
     MsgConnectionManager.getInstance().getMsgConnMap().forEach((msgConn, _) => {
       try {
-        msgConn.websocket.send(message);
+        msgConn.connection.send(message);
       } catch (err) {
         console.error("[broadcast] error",err)
       }
@@ -78,16 +87,16 @@ export default class MsgConnectionManager {
   broadcastAlarm(message:Buffer){
     MsgConnectionManager.getInstance().getMsgConnMap().forEach((msgConn, connId) => {
       try {
-        msgConn.websocket.send(message);
+        msgConn.connection.send(message);
       } catch (err) {
-        msgConn.websocket.close()
+        msgConn.connection.close()
       }
     });
   }
   sendBuffer(msgConnId:string,message:Buffer){
     const msgConn = MsgConnectionManager.getInstance().getMsgConn(msgConnId)
-    if(msgConn && msgConn.websocket){
-      msgConn.websocket.send(message)
+    if(msgConn && msgConn.connection){
+      msgConn.connection.send(message)
     }
   }
 }

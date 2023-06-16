@@ -1,61 +1,60 @@
-import { ActionCommands } from '../../../lib/ptp/protobuf/ActionCommands';
-import { Pdu } from '../../../lib/ptp/protobuf/BaseMsg';
-import { AuthSessionType, getSessionInfoFromSign, User } from './User';
-import { AuthLoginReq, AuthLoginRes } from '../../../lib/ptp/protobuf/PTPAuth';
-import { MsgReq, SendBotMsgReq, SendBotMsgRes, SendMsgRes, SendTextMsgReq } from '../../../lib/ptp/protobuf/PTPMsg';
-import { ChatGptStreamStatus, ERR, MsgAction, UserStoreData_Type } from '../../../lib/ptp/protobuf/PTPCommon/types';
-import { PbMsg, PbUser, UserStoreData } from '../../../lib/ptp/protobuf/PTPCommon';
-import { SyncReq, SyncRes, TopCatsRes } from '../../../lib/ptp/protobuf/PTPSync';
-import { kv, storage } from '../../env';
-import { currentTs } from '../utils/utils';
-import UserSetting from './UserSetting';
-import { TelegramBot } from './third_party/Telegram';
-import { MsgBot } from './msg/MsgBot';
-import { ChatGptWorker } from './ai/ChatGptWorker';
-import { DoWebsocket } from './do/DoWebsocket';
-import MsgConnectionManager from '../../../server/service/MsgConnectionManager';
-import MsgConnChatGptBotWorkerManager, {
-  MsgConnChatGptBotWorkerStatus,
-} from '../../../server/service/MsgConnChatGptBotWorkerManager';
-import MsgConnectionApiHandler from '../../../server/service/MsgConnectionApiHandler';
+import MsgConnectionManager from './MsgConnectionManager';
+import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
+import { ActionCommands } from '../../lib/ptp/protobuf/ActionCommands';
+import { SyncReq, SyncRes, TopCatsRes } from '../../lib/ptp/protobuf/PTPSync';
+import { AuthSessionType, getSessionInfoFromSign, User } from '../share/service/User';
+import { AuthLoginReq, AuthLoginRes } from '../../lib/ptp/protobuf/PTPAuth';
+import { ChatGptStreamStatus, ERR, MsgAction, UserStoreData_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
+import { kv, storage } from '../env';
+import { PbMsg, PbUser, UserStoreData } from '../../lib/ptp/protobuf/PTPCommon';
+import { MsgReq, SendBotMsgReq, SendBotMsgRes, SendMsgRes, SendTextMsgReq } from '../../lib/ptp/protobuf/PTPMsg';
+import MsgConnChatGptBotWorkerManager, { MsgConnChatGptBotWorkerStatus } from './MsgConnChatGptBotWorkerManager';
+import { DoWebsocketApi } from '../share/service/do/DoWebsocketApi';
+import UserSetting from '../share/service/UserSetting';
+import { TelegramBot } from '../share/service/third_party/Telegram';
+import { MsgBot } from '../share/service/msg/MsgBot';
+import { currentTs } from '../share/utils/utils';
+import MsgConnectionApiHandler from './MsgConnectionApiHandler';
+import { ChatGptWorker } from '../share/service/ai/ChatGptWorker';
 
-let dispatchers: Record<string, MsgDispatcher> = {};
+let businessLogicProcessors = new Map<string, BusinessLogicProcessor>();
 
-export default class MsgDispatcher {
-  private accountId: string;
+export default class BusinessLogicProcessor {
+  private connId: string;
   private msgConnManager: MsgConnectionManager;
-  constructor(accountId: string) {
-    this.accountId = accountId;
+  constructor(connId: string) {
+    this.connId = connId;
     this.msgConnManager = MsgConnectionManager.getInstance()
   }
-
-  static getInstance(accountId: string) {
-    if (!dispatchers[accountId]) {
-      dispatchers[accountId] = new MsgDispatcher(accountId);
+  getAuthSession() {
+    return this.msgConnManager.getMsgConn(this.connId)?.session
+  }
+  static getInstance(connId: string) {
+    if(!businessLogicProcessors.has(connId)){
+      businessLogicProcessors.set(connId,new BusinessLogicProcessor(connId))
     }
-    return dispatchers[accountId];
+    return businessLogicProcessors.get(connId)!;
   }
   sendPdu(pdu: Pdu, seqNum: number = 0) {
     pdu.updateSeqNo(seqNum);
-    MsgConnectionManager.getInstance().sendBuffer(this.accountId,Buffer.from(pdu.getPbData()));
+    this.msgConnManager.sendBuffer(this.connId,Buffer.from(pdu.getPbData()));
   }
-  static async handleWsMsg(accountId: string, pdu:Pdu) {
-    const dispatcher = MsgDispatcher.getInstance(accountId);
+  async handleWsMsg(pdu:Pdu) {
     switch (pdu.getCommandId()) {
       case ActionCommands.CID_SyncReq:
-        await dispatcher.handleSyncReq(pdu);
+        await this.handleSyncReq(pdu);
         break;
       case ActionCommands.CID_TopCatsReq:
-        await dispatcher.handleTopCatsReq(pdu);
+        await this.handleTopCatsReq(pdu);
         break;
       case ActionCommands.CID_SendBotMsgReq:
-        await dispatcher.handleSendBotMsgReq(pdu);
+        await this.handleSendBotMsgReq(pdu);
         break;
       case ActionCommands.CID_SendTextMsgReq:
-        await dispatcher.handleSendTextMsgReq(pdu);
+        await this.handleSendTextMsgReq(pdu);
         break
       case ActionCommands.CID_MsgReq:
-        await dispatcher.handleMsgReq(pdu);
+        await this.handleMsgReq(pdu);
         break;
     }
   }
@@ -63,8 +62,6 @@ export default class MsgDispatcher {
   async handleAuthLoginReq(pdu: Pdu): Promise<AuthSessionType | undefined> {
     const { sign, clientInfo } = AuthLoginReq.parseMsg(pdu);
     const res = await getSessionInfoFromSign(sign);
-    console.log('[clientInfo]', JSON.stringify(clientInfo));
-    console.log('[authSession]', JSON.stringify(res));
     if (res) {
       this.sendPdu(
         new AuthLoginRes({
@@ -75,9 +72,6 @@ export default class MsgDispatcher {
     }
 
     return res;
-  }
-  getAuthSession() {
-    return this.msgConnManager.getMsgConn(this.accountId)?.authSession
   }
   async handleSyncReq(pdu: Pdu) {
     let { userStoreData } = SyncReq.parseMsg(pdu);
@@ -105,7 +99,7 @@ export default class MsgDispatcher {
     let {action,payload} = MsgReq.parseMsg(pdu)
     switch (action){
       case MsgAction.MsgAction_WaiChatGptPromptsInputReady:
-        MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.accountId,MsgConnChatGptBotWorkerStatus.READY)
+        MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.connId,MsgConnChatGptBotWorkerStatus.READY)
         break
     }
   }
@@ -133,7 +127,7 @@ export default class MsgDispatcher {
         if (tg && tg.split('@').length === 2) {
           const [tgToken, tgChatId] = tg.split('@');
           let url = 'https://wai.chat/#' + chatId;
-          const resDo = await new DoWebsocket().sendMsg({
+          const resDo = await new DoWebsocketApi().sendMsg({
             toUserId: chatOwnerUserId,
             fromUserId: authUserId!,
             text:text!,
@@ -146,7 +140,7 @@ export default class MsgDispatcher {
         }
       } else {
         if(replyToUserId){
-          await new DoWebsocket().sendMsg({
+          await new DoWebsocketApi().sendMsg({
             toUserId: replyToUserId,
             fromUserId: chatId,
             text:text!,
@@ -182,7 +176,6 @@ export default class MsgDispatcher {
       }else{
         reply = "Work is busy! pls Retry later"
       }
-
       this.sendPdu(new SendBotMsgRes({
         reply,
         chatId,
@@ -211,45 +204,16 @@ export default class MsgDispatcher {
           }).pack().getPbData()),
       )
       if(streamStatus === ChatGptStreamStatus.ChatGptStreamStatus_DONE){
-        MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.accountId,MsgConnChatGptBotWorkerStatus.READY)
+        MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.connId,MsgConnChatGptBotWorkerStatus.READY)
       }
     }
   }
 
   async handleTopCatsReq(pdu: Pdu) {
-    // const { time } = TopCatsReq.parseMsg(pdu);
-    // const str = await kv.get('topCats-cn.json');
-    //
-    // let topCats;
-    // if (str) {
-    //   topCats = JSON.parse(str);
-    // } else {
-    //   return;
-    // }
-    // let payload: any = {};
-    // console.log('handleTopCatsReq', time, topCats.time, time < topCats.time);
-    // if (time < topCats.time) {
-    //   payload = {
-    //     topSearchPlaceHolder: '编程 写作 旅游...',
-    //     cats: topCats.cats,
-    //   };
-    // }
-    // const bots: any[] = [];
-    // topCats.bots.forEach(bot => {
-    //   if (bot.time > time) {
-    //     bots.push(bot);
-    //   }
-    // });
-    // if (bots.length > 0) {
-    //   payload.bots = bots;
-    // }
     this.sendPdu(
       new TopCatsRes({
-        // payload: JSON.stringify(payload),
       }).pack(),
       pdu.getSeqNum()
     );
   }
-  static async handleUpdateCmdReq(pdu: Pdu, ws?: WebSocket) {}
-
 }

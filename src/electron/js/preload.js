@@ -49,15 +49,16 @@ if (window.location.href.indexOf('chat.openai.com') > -1) {
       const response = await originalFetch.apply(this, args);
       if (options && options.signal && url.indexOf('backend-api/conversation') > 0) {
         if (response.ok) {
+          const id = +(new Date())
           if (response.body && options) {
-            invoke_api("MsgAction_WaiChatGptOnRecvMsg",{state:"START",index,text:""})
+            invoke_api("MsgAction_WaiChatGptOnRecvMsg",{id,state:"START",index,text:""})
             const transformStream = new TransformStream({
               transform(chunk, controller) {
                 controller.enqueue(chunk);
                 index += 1
                 const decoder = new TextDecoder();
                 const text = decoder.decode(chunk);
-                invoke_api("MsgAction_WaiChatGptOnRecvMsg",{state:"IN_PROCESS",index,text})
+                invoke_api("MsgAction_WaiChatGptOnRecvMsg",{id,state:"IN_PROCESS",index,text})
               },
             });
             response.body.pipeThrough(transformStream);
@@ -68,11 +69,11 @@ if (window.location.href.indexOf('chat.openai.com') > -1) {
             });
           } else {
             const error = 'ERR_CODE: ' + response.status;
-            invoke_api("MsgAction_WaiChatGptOnRecvMsg",{state:"ERROR",index,text:error})
+            invoke_api("MsgAction_WaiChatGptOnRecvMsg",{id,state:"ERROR",index,text:error})
           }
         } else {
           const error = await response.clone().text();
-          invoke_api("MsgAction_WaiChatGptOnRecvMsg",{state:"ERROR",index,text:error})
+          invoke_api("MsgAction_WaiChatGptOnRecvMsg",{id,state:"ERROR",index,text:error})
         }
       }
       return response;

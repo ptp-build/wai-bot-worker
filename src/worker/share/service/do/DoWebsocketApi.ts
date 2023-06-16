@@ -1,9 +1,7 @@
 import {ENV} from "../../../env";
 import {JSON_HEADERS} from "../../../setting";
-import MsgConnectionManager from '../../../../server/service/MsgConnectionManager';
-import MsgConnectionApiHandler from '../../../../server/service/MsgConnectionApiHandler';
-
-export class DoWebsocket{
+import MsgConnectionApiHandler from '../../../services/MsgConnectionApiHandler';
+export class DoWebsocketApi{
     getHandler(){
         if(ENV.useCloudFlareWorker){
             return ENV.DO_WEBSOCKET!.get(ENV.DO_WEBSOCKET!.idFromName('/ws'))

@@ -6,6 +6,7 @@ import WaiBotRpa from '../WaiBotRpa';
 import { parseAppArgs } from '../../utils/args';
 import PyAutoGuiRpa from '../PyAutoGuiRpa';
 import { runJsCode } from '../../index';
+import ChatGptHelper from '../../../worker/helper/ChatGptHelper';
 
 let msgList: number[] = [];
 let accountIds: number[] = [];
@@ -239,7 +240,7 @@ export class ChatGptWaiChatBot {
       action:MsgAction.MsgAction_WaiChatGptPromptsInputReady
     }).catch(console.error)
   }
-  static handleWebChatGptMsg({ text, index, state }: { text: string; index: number; state: string }) {
+  static handleWebChatGptMsg({ id,text, index, state }: { id:number,text: string; index: number; state: string }) {
     switch (state) {
       case 'ERROR':
         tempTexts = ""
@@ -256,7 +257,14 @@ export class ChatGptWaiChatBot {
         ChatGptWaiChatBot.reply(ChatGptStreamStatus.ChatGptStreamStatus_START, '...');
         return;
     }
-    ChatGptWaiChatBot.onData(text,index)
+    const res = ChatGptHelper.getInstance(id).parseOnData(text,index)
+    if(res.state !== 'ERROR'){
+      ChatGptWaiChatBot.reply(
+        res.state === "DONE" ?
+          ChatGptStreamStatus.ChatGptStreamStatus_DONE:
+          ChatGptStreamStatus.ChatGptStreamStatus_GOING
+        , res.text);
+    }
   }
 
   static onData(chunk: string,index:number) {

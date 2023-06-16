@@ -1,20 +1,20 @@
 import { WaiRouter } from '../../worker/route';
 import * as http from 'http';
 import { getCorsHeader, getCorsOptionsHeader } from '../../worker/share/utils/utils';
-import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
-import { UploadUserReq } from '../../lib/ptp/protobuf/PTPUser';
-import { PbUser } from '../../lib/ptp/protobuf/PTPCommon';
+import { BaseServer } from './BaseServer';
 
-export class HttpServer {
+export class HttpServer extends BaseServer{
   private server?: http.Server;
-  private port: number;
-  private router: WaiRouter;
+  private router?: WaiRouter;
 
-  constructor(port: number, router: WaiRouter) {
-    this.port = port;
-    this.router = router;
+  constructor(port: number) {
+    super(port);
   }
 
+  setRoute( router: WaiRouter) {
+    this.router = router;
+    return this
+  }
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.server = http.createServer(async (req, res) => {
@@ -34,7 +34,7 @@ export class HttpServer {
 
               //@ts-ignore
               const request = new Request(reqUrl, { method, body, headers: req.headers });
-              const response = await this.router.handleRequest(request);
+              const response = await this.router!.handleRequest(request);
               const headers = Object.fromEntries(response.headers)
               res.writeHead(200, {
                 ...headers,
@@ -60,7 +60,7 @@ export class HttpServer {
         } else if (method === 'GET') {
           //@ts-ignore
           const request = new Request(reqUrl, { method, headers: req.headers });
-          const response = await this.router.handleRequest(request);
+          const response = await this.router!.handleRequest(request);
           res.writeHead(response.status, {
             ...Object.fromEntries(response.headers),
             "Connection":"close"

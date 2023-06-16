@@ -1,8 +1,8 @@
 import WaiOpenAPIRoute from '../share/cls/WaiOpenAPIRoute';
 import {Str} from '@cloudflare/itty-router-openapi';
 import {ENV} from "../env";
-import {DoWebsocket} from "../share/service/do/DoWebsocket";
 import BaseOpenAPIRoute from "../share/cls/BaseOpenAPIRoute";
+import { DoWebsocketApi } from '../share/service/do/DoWebsocketApi';
 
 const QueueBody = {
   text: new Str({
@@ -33,7 +33,7 @@ export class QueueAction extends BaseOpenAPIRoute {
     });
 
     return WaiOpenAPIRoute.responseJson({
-      accounts:new DoWebsocket().getAccounts()
+      accounts:new DoWebsocketApi().getAccounts()
     });
   }
 }

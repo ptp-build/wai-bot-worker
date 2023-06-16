@@ -120,8 +120,8 @@ export default class ElectronIpcMain{
           await new WaiBotRpa().askMsg("ping ,you reply:pong!!!!")
           break
         case 'MsgAction_WaiChatGptOnRecvMsg':
-          const { text, index, state } = payload;
-          ChatGptWaiChatBot.handleWebChatGptMsg({ text, index, state });
+          const { text, index, state,id } = payload;
+          ChatGptWaiChatBot.handleWebChatGptMsg({ id,text, index, state });
           break
       }
     });

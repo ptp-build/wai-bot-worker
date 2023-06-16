@@ -52,7 +52,7 @@ export async function startServers(tcpPort: number, wsPort: number,httpPort:numb
   storage.init(env.fileStorageDir!);
   setKvAndStorage(kv,storage)
   iRouter.setEnv(env,useCloudFlareWorker);
-  const httpServer = new HttpServer(httpPort,iRouter);
+  const httpServer = new HttpServer(httpPort).setRoute(iRouter);
   await httpServer.start();
   console.log(`HttpServer server started: http://localhost:${httpPort}`);
 
@@ -63,6 +63,5 @@ export async function startServers(tcpPort: number, wsPort: number,httpPort:numb
   const tcpServer = new TcpServer(tcpPort);
   await tcpServer.start();
   console.log(`TCP server started on port: localhost:${tcpPort}`);
-
 }
 

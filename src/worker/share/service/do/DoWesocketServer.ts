@@ -1,20 +1,12 @@
 import { Pdu } from '../../../../lib/ptp/protobuf/BaseMsg';
-import { AuthSessionType } from '../User';
 import { OtherNotify } from '../../../../lib/ptp/protobuf/PTPOther';
 import { ERR } from '../../../../lib/ptp/protobuf/PTPCommon/types';
 import { Environment, initEnv } from '../../../env';
-import MsgDispatcher from './../../../share/service/MsgDispatcher';
 import { ActionCommands } from '../../../../lib/ptp/protobuf/ActionCommands';
-import MsgConnectionManager from '../../../../server/service/MsgConnectionManager';
-import MsgConnectionApiHandler from '../../../../server/service/MsgConnectionApiHandler';
-
-export interface AccountUser {
-  websocket: WebSocket;
-  authSession?: AuthSessionType;
-  id: string;
-  city: string | undefined | any;
-  country: string | any;
-}
+import MsgConnectionApiHandler from '../../../services/MsgConnectionApiHandler';
+import MsgConnectionManager from '../../../services/MsgConnectionManager';
+import { WsDoConnection } from './WsDoConnection';
+import BusinessLogicProcessor from '../../../services/BusinessLogicProcessor';
 
 const healthCheckInterval = 10e3;
 
@@ -54,32 +46,31 @@ export class WebSocketDurableObject {
   async handleWebSocketSession(webSocket: WebSocket, metadata: IncomingRequestCfProperties) {
     //@ts-ignore
     webSocket.accept();
-
     const connId = crypto.randomUUID();
-    MsgDispatcher.getInstance(connId);
-
+    //@ts-ignore
+    const connection = new WsDoConnection(connId,webSocket)
     MsgConnectionManager.getInstance().addMsgConn(connId,{
       id: connId,
       city: metadata.city,
       country: metadata.country,
-      websocket: webSocket,
+      connection,
     })
 
     webSocket.addEventListener('message', async msg => {
+      const processor = BusinessLogicProcessor.getInstance(connId);
       try {
         const pdu = new Pdu(Buffer.from(msg.data));
-        const dispatcher = MsgDispatcher.getInstance(connId);
         switch (pdu.getCommandId()) {
           case ActionCommands.CID_AuthLoginReq:
-            const res = await dispatcher.handleAuthLoginReq(pdu);
+            const res = await processor.handleAuthLoginReq(pdu);
             if (res) {
               MsgConnectionManager.getInstance().updateMsgConn(connId,{
-                authSession: res,
+                session: res,
               })
             }
             return;
         }
-        await MsgDispatcher.handleWsMsg(connId, pdu);
+        await processor.handleWsMsg(pdu);
       } catch (err) {
         console.error(err);
       }

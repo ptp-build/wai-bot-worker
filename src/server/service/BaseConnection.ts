@@ -1,13 +1,12 @@
 import * as net from 'net';
-import * as WebSocket from 'ws';
 
-export abstract class Client {
+export abstract class BaseConnection {
   constructor(public id: string) {}
-
   abstract send(message: Buffer): void;
+  abstract close(): void;
 }
 
-export class TcpClient extends Client {
+export class TcpConnection extends BaseConnection {
   constructor(id: string, private socket: net.Socket) {
     super(id);
   }
@@ -15,14 +14,21 @@ export class TcpClient extends Client {
   send(message: Buffer): void {
     this.socket.write(message);
   }
+  close() {
+    //close
+  }
 }
 
-export class WsClient extends Client {
+export class WsConnection extends BaseConnection {
   constructor(id: string, private ws: WebSocket) {
     super(id);
   }
 
   send(message: Buffer): void {
     this.ws.send(message);
+  }
+
+  close() {
+    this.ws.close()
   }
 }

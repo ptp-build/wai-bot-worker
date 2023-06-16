@@ -1,7 +1,7 @@
 import {SendBotMsgReq} from "../../../../lib/ptp/protobuf/PTPMsg";
 import {Pdu} from "../../../../lib/ptp/protobuf/BaseMsg";
 import {ENV} from "../../../env";
-import {DoWebsocket} from "../do/DoWebsocket";
+import MsgConnectionApiHandler from '../../../services/MsgConnectionApiHandler';
 
 export class ChatGptWorker{
     private msgId?: number;
@@ -30,11 +30,6 @@ export class ChatGptWorker{
                 delete message.date;
             }
         });
-        // const body = JSON.stringify({
-        //     ...modelConfig,
-        //     messages,
-        //     stream: true,
-        // });
         console.log("=====>>>",{authUserId})
         const pdu1 = new SendBotMsgReq({
             ...other,
@@ -44,7 +39,7 @@ export class ChatGptWorker{
             senderId:authUserId
         }).pack()
         if(!customApiKey){
-            await new DoWebsocket().sendChatGptMsg(Buffer.from(pdu1.getPbData()),chatId!,msgConnId)
+            await MsgConnectionApiHandler.getInstance().sendChatGptMsg(msgConnId,Buffer.from(pdu1.getPbData()))
         }
     }
 }
