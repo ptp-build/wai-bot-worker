@@ -12,8 +12,10 @@ import { DTalkBotSendMessageAction } from '../worker/controller/DTalkController'
 import { RandomAction } from '../worker/controller/ApiController';
 import { MasterAccountsAction } from '../worker/controller/MasterController';
 import ProtoController from '../worker/controller/ProtoController';
-import { Environment } from '../worker/env';
+import { ENV, Environment, kv, setKvAndStorage, storage } from '../worker/env';
 import { isProd, parseAppArgs } from '../electron/utils/args';
+import LocalFileKv from '../worker/share/db/LocalFileKv';
+import FileStorage from '../worker/share/storage/FileStorage';
 const minimist = require('minimist');
 
 const iRouter = new WaiRouter({
@@ -44,6 +46,11 @@ export async function startServers(tcpPort: number, wsPort: number,httpPort:numb
     Access_Control_Allow_Origin, OPENAI_API_KEY,SERVER_USER_ID_START,TG_BOT_CHAT_ID_PAY,TG_BOT_TOKEN_PAY,WECHAT_APPID,WECHAT_APPSECRET,WECHAT_NOTIFY_TEMPLATE_ID,WECHAT_NOTIFY_USER,DTALK_ACCESS_TOKEN_PAY
   }
 
+  let kv = new LocalFileKv();
+  kv.init(env.localFileKvDir);
+  let storage = new FileStorage();
+  storage.init(env.fileStorageDir!);
+  setKvAndStorage(kv,storage)
   iRouter.setEnv(env,useCloudFlareWorker);
   const httpServer = new HttpServer(httpPort,iRouter);
   await httpServer.start();

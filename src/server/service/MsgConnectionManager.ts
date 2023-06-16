@@ -1,9 +1,4 @@
-import { SendBotMsgReq, SendMsgRes } from '../../lib/ptp/protobuf/PTPMsg';
-import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
-import { JSON_HEADERS } from '../../worker/setting';
-import { currentTs } from '../../worker/share/utils/utils';
 import { AccountUser } from '../../worker/share/service/do/DoWesocketServer';
-import { ENV } from '../../worker/env';
 import MsgConnChatGptBotWorkerManager from './MsgConnChatGptBotWorkerManager';
 
 let currentInstance:MsgConnectionManager;
@@ -46,6 +41,13 @@ export default class MsgConnectionManager {
   getMsgConn(id:string,){
     return this.accounts.get(id)
   }
+  getMsgConnMap(){
+    return this.accounts
+  }
+
+  getAddressAccountMap(){
+    return this.addressAccountMap
+  }
   removeMsgConn(id:string,){
     const account=this.accounts.get(id)
     if(account){
@@ -64,101 +66,28 @@ export default class MsgConnectionManager {
       }
     }
   }
-  async sendBotMsgRes(toUid:string,pduBuf:Buffer){
-    let hasSent = false
-    this.accounts!.forEach((account, key) => {
-      const {authUserId,chatId} = account.authSession!
-      // console.log("=====>>>>> sendBotMsgRes 1",{authUserId,toUid})
-      if (authUserId === toUid && !chatId) {
-        try {
-          account.websocket.send(pduBuf);
-          hasSent = true;
-        } catch (e) {
-          console.error(e);
-        }
+  broadcast(message:Buffer){
+    MsgConnectionManager.getInstance().getMsgConnMap().forEach((msgConn, _) => {
+      try {
+        msgConn.websocket.send(message);
+      } catch (err) {
+        console.error("[broadcast] error",err)
       }
     });
-    return hasSent
   }
-  async fetch(request:Request){
-    const uri = new URL(request.url)
-    let requestBody:any;
-    let hasSent = false;
-
-    if (uri.pathname.startsWith('/api/do/ws/sendBotMsgRes')) {
-      requestBody = await request.json();
-      let {pduBuf, toUid} = requestBody
-      pduBuf = Buffer.from(pduBuf,'hex')
-      const {text,streamStatus} = SendBotMsgReq.parseMsg(new Pdu(pduBuf))
-      console.log(">>>>> ",text,streamStatus)
-      this.accounts!.forEach((account, key) => {
-        const {authUserId,chatId} = account.authSession!
-        console.log("=====>>>>> sendBotMsgRes 1",{authUserId,toUid})
-        if (authUserId === toUid && !chatId) {
-          try {
-            account.websocket.send(pduBuf);
-            hasSent = true;
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      });
-      return new Response(null, { status: hasSent ? 200 : 404 });
-    }
-    if (uri.pathname.startsWith('/api/do/ws/sendChatGptMsg')) {
-      requestBody = await request.json();
-      let {pduBuf,msgConnId} = requestBody
-      pduBuf = Buffer.from(pduBuf,'hex')
-      const accountUser = this.accounts.get(msgConnId)
-      if(accountUser){
-        try {
-          accountUser.websocket.send(pduBuf)
-          hasSent = true
-        }catch (e){
-          hasSent = false
-        }
+  broadcastAlarm(message:Buffer){
+    MsgConnectionManager.getInstance().getMsgConnMap().forEach((msgConn, connId) => {
+      try {
+        msgConn.websocket.send(message);
+      } catch (err) {
+        msgConn.websocket.close()
       }
-      return new Response(null, { status: hasSent ? 200 : 404 });
-    }
-    if (uri.pathname.startsWith('/api/do/ws/__accounts')) {
-      const accounts:any[] = []
-      this.accounts.forEach((account, key) => {
-        accounts.push({
-          authSession:account.authSession,
-          id: account.id,
-          city:account.city,
-          country:account.country
-        })
-      });
-      return new Response(JSON.stringify({
-        accounts,
-        chatGptBotWorkers:Object.fromEntries(MsgConnChatGptBotWorkerManager.getInstance().getStatusMap()),
-        addressAccountMap:Object.fromEntries(this.addressAccountMap)
-      }), { status: 200,headers:JSON_HEADERS });
-    }
-    if (uri.pathname.startsWith('/api/do/ws/sendMessage')) {
-      requestBody = await request.json();
-      this.accounts.forEach((account, key) => {
-        if (account.authSession?.authUserId === requestBody.toUserId && !account.authSession?.chatId) {
-          console.log('[send]', account);
-          try {
-            account.websocket.send(
-              new SendMsgRes({
-                replyText: requestBody.text,
-                senderId: requestBody.fromUserId,
-                chatId: requestBody.chatId,
-                date: currentTs(),
-              })
-                .pack()
-                .getPbData()
-            );
-            hasSent = true;
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      });
-      return new Response(null, { status: hasSent ? 200 : 404 });
+    });
+  }
+  sendBuffer(msgConnId:string,message:Buffer){
+    const msgConn = MsgConnectionManager.getInstance().getMsgConn(msgConnId)
+    if(msgConn && msgConn.websocket){
+      msgConn.websocket.send(message)
     }
   }
 }

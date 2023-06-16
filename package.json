@@ -1,7 +1,7 @@
 {
   "name": "wai-bot-worker",
   "productName": "Wai Bot Worker",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "a project for wai bot worker",
   "main": ".webpack/main",
   "scripts": {
@@ -12,7 +12,7 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx .",
-    "dev:worker": "wrangler dev src/worker/index.ts --local --port 2235 --persist-to=./wrangler-local-state",
+    "dev:worker": "wrangler dev src/worker/index.ts --local --port 4081 --persist-to=./wrangler-local-state",
     "deploy:worker-websocket": "wrangler publish src/worker/worker_websocket.ts -c wrangler.prod.toml",
     "deploy:worker-upload": "wrangler publish src/worker/worker_upload.ts --name=wai-bot-upload -c wrangler.prod.toml",
     "deploy:worker-download": "wrangler publish src/worker/worker_upload.ts --name=wai-bot-download -c wrangler.prod.toml",

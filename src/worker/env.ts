@@ -2,9 +2,6 @@ import CloudFlareKv from './share/db/CloudFlareKv';
 import CloudFlareR2 from './share/storage/CloudFlareR2';
 import BaseKv from './share/db/BaseKv';
 import BaseStorage from './share/storage/BaseStorage';
-import LocalFileKv from './share/db/LocalFileKv';
-import FileStorage from './share/storage/FileStorage';
-
 export interface ExecutionContext {
   waitUntil(promise: Promise<any>): void;
   passThroughOnException(): void;
@@ -67,6 +64,11 @@ export const ENV: Environment = {
 export let kv: BaseKv;
 export let storage: BaseStorage;
 
+export function setKvAndStorage(kv1: BaseKv,storage1:BaseStorage) {
+  kv = kv1;
+  storage = storage1
+}
+
 export function initEnv(env: Environment,isCloudFlare:boolean = true) {
   Object.assign(ENV,env)
 
@@ -77,11 +79,6 @@ export function initEnv(env: Environment,isCloudFlare:boolean = true) {
     storage = new CloudFlareR2();
     //@ts-ignore
     storage.init(env[ENV.R2_STORAGE_BINDING_KEY]);
-  }else{
-    kv = new LocalFileKv();
-    kv.init(ENV.localFileKvDir);
-    storage = new FileStorage();
-    storage.init(ENV.fileStorageDir);
   }
 }
 

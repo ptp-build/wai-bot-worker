@@ -1,13 +1,14 @@
 import {ENV} from "../../../env";
 import {JSON_HEADERS} from "../../../setting";
 import MsgConnectionManager from '../../../../server/service/MsgConnectionManager';
+import MsgConnectionApiHandler from '../../../../server/service/MsgConnectionApiHandler';
 
 export class DoWebsocket{
     getHandler(){
         if(ENV.useCloudFlareWorker){
             return ENV.DO_WEBSOCKET!.get(ENV.DO_WEBSOCKET!.idFromName('/ws'))
         }else {
-            return MsgConnectionManager.getInstance()
+            return MsgConnectionApiHandler.getInstance()
         }
     }
     buildRequest(method:string,path:string,body?:Record<string, any>){

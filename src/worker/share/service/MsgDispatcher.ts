@@ -6,7 +6,7 @@ import { MsgReq, SendBotMsgReq, SendBotMsgRes, SendMsgRes, SendTextMsgReq } from
 import { ChatGptStreamStatus, ERR, MsgAction, UserStoreData_Type } from '../../../lib/ptp/protobuf/PTPCommon/types';
 import { PbMsg, PbUser, UserStoreData } from '../../../lib/ptp/protobuf/PTPCommon';
 import { SyncReq, SyncRes, TopCatsRes } from '../../../lib/ptp/protobuf/PTPSync';
-import { ENV, kv, storage } from '../../env';
+import { kv, storage } from '../../env';
 import { currentTs } from '../utils/utils';
 import UserSetting from './UserSetting';
 import { TelegramBot } from './third_party/Telegram';
@@ -17,15 +17,16 @@ import MsgConnectionManager from '../../../server/service/MsgConnectionManager';
 import MsgConnChatGptBotWorkerManager, {
   MsgConnChatGptBotWorkerStatus,
 } from '../../../server/service/MsgConnChatGptBotWorkerManager';
+import MsgConnectionApiHandler from '../../../server/service/MsgConnectionApiHandler';
 
 let dispatchers: Record<string, MsgDispatcher> = {};
 
 export default class MsgDispatcher {
-  private authUserId?: string;
   private accountId: string;
-  private address?: string;
+  private msgConnManager: MsgConnectionManager;
   constructor(accountId: string) {
     this.accountId = accountId;
+    this.msgConnManager = MsgConnectionManager.getInstance()
   }
 
   static getInstance(accountId: string) {
@@ -34,14 +35,37 @@ export default class MsgDispatcher {
     }
     return dispatchers[accountId];
   }
+  sendPdu(pdu: Pdu, seqNum: number = 0) {
+    pdu.updateSeqNo(seqNum);
+    MsgConnectionManager.getInstance().sendBuffer(this.accountId,Buffer.from(pdu.getPbData()));
+  }
+  static async handleWsMsg(accountId: string, pdu:Pdu) {
+    const dispatcher = MsgDispatcher.getInstance(accountId);
+    switch (pdu.getCommandId()) {
+      case ActionCommands.CID_SyncReq:
+        await dispatcher.handleSyncReq(pdu);
+        break;
+      case ActionCommands.CID_TopCatsReq:
+        await dispatcher.handleTopCatsReq(pdu);
+        break;
+      case ActionCommands.CID_SendBotMsgReq:
+        await dispatcher.handleSendBotMsgReq(pdu);
+        break;
+      case ActionCommands.CID_SendTextMsgReq:
+        await dispatcher.handleSendTextMsgReq(pdu);
+        break
+      case ActionCommands.CID_MsgReq:
+        await dispatcher.handleMsgReq(pdu);
+        break;
+    }
+  }
+
   async handleAuthLoginReq(pdu: Pdu): Promise<AuthSessionType | undefined> {
     const { sign, clientInfo } = AuthLoginReq.parseMsg(pdu);
     const res = await getSessionInfoFromSign(sign);
     console.log('[clientInfo]', JSON.stringify(clientInfo));
     console.log('[authSession]', JSON.stringify(res));
     if (res) {
-      this.setAuthUserId(res.authUserId);
-      this.setAddress(res.address);
       this.sendPdu(
         new AuthLoginRes({
           err: ERR.NO_ERROR,
@@ -52,9 +76,12 @@ export default class MsgDispatcher {
 
     return res;
   }
+  getAuthSession() {
+    return this.msgConnManager.getMsgConn(this.accountId)?.authSession
+  }
   async handleSyncReq(pdu: Pdu) {
     let { userStoreData } = SyncReq.parseMsg(pdu);
-    const {authUserId} = this;
+    const {authUserId} = this.getAuthSession()!;
     const userStoreDataStr = await kv.get(`W_U_S_D_${authUserId}`);
     let userStoreDataRes: UserStoreData_Type;
     if (userStoreDataStr) {
@@ -78,15 +105,13 @@ export default class MsgDispatcher {
     let {action,payload} = MsgReq.parseMsg(pdu)
     switch (action){
       case MsgAction.MsgAction_WaiChatGptPromptsInputReady:
-        // if(ENV.chatGptBotWorkers!.indexOf(this.address!) > -1){
-        // }
         MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.accountId,MsgConnChatGptBotWorkerStatus.READY)
         break
     }
   }
   async handleSendTextMsgReq(pdu: Pdu) {
     let req = SendTextMsgReq.parseMsg(pdu);
-    const { authUserId } = this;
+    const {authUserId} = this.getAuthSession()!;
     const msg = PbMsg.parseMsg(new Pdu(Buffer.from(req.msg!)));
     if(msg.senderId === "1"){
       msg.senderId = authUserId
@@ -144,6 +169,7 @@ export default class MsgDispatcher {
     );
   }
   async handleSendBotMsgReq(pdu: Pdu) {
+    const {authUserId} = this.getAuthSession()!;
     let { text, chatId,streamStatus, msgDate,msgAskId,msgAskDate, toUid,msgId, chatGpt } = SendBotMsgReq.parseMsg(pdu);
     // console.log('handleSendBotMsgReq', { text, chatId, msgId, chatGpt,senderId:this.authUserId,toUid });
     if (chatGpt) {
@@ -152,7 +178,7 @@ export default class MsgDispatcher {
       let reply = "..."
       if(msgConnId){
         manager.setStatus(msgConnId,MsgConnChatGptBotWorkerStatus.BUSY)
-        await new ChatGptWorker().process(pdu,this.authUserId!,msgConnId);
+        await new ChatGptWorker().process(pdu,authUserId,msgConnId);
       }else{
         reply = "Work is busy! pls Retry later"
       }
@@ -173,32 +199,20 @@ export default class MsgDispatcher {
         msgId,
         msgDate,
       }).pack(),pdu.getSeqNum())
-      await MsgConnectionManager.getInstance().sendBotMsgRes(toUid,
-            Buffer.from(
-              new SendBotMsgRes({
-                reply: text,
-                chatId,
-                msgId,
-                msgDate,
-                streamStatus
-              }).pack().getPbData()),
-        )
+
+      await MsgConnectionApiHandler.getInstance().sendBotMsgRes(toUid,
+        Buffer.from(
+          new SendBotMsgRes({
+            reply: text,
+            chatId,
+            msgId,
+            msgDate,
+            streamStatus
+          }).pack().getPbData()),
+      )
       if(streamStatus === ChatGptStreamStatus.ChatGptStreamStatus_DONE){
         MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.accountId,MsgConnChatGptBotWorkerStatus.READY)
       }
-      //
-      //
-      // await new DoWebsocket().sendBotMsgRes(
-      //     Buffer.from(
-      //       new SendBotMsgRes({
-      //         reply: text,
-      //         chatId,
-      //         msgId,
-      //         msgDate,
-      //         streamStatus
-      //       }).pack().getPbData()),
-      //     toUid
-      // )
     }
   }
 
@@ -237,48 +251,5 @@ export default class MsgDispatcher {
     );
   }
   static async handleUpdateCmdReq(pdu: Pdu, ws?: WebSocket) {}
-  static async handleWsMsg(accountId: string, pdu:Pdu) {
-    const dispatcher = MsgDispatcher.getInstance(accountId);
-    // console.log(
-    //   '[onMessage]',
-    //   getActionCommandsName(pdu.getCommandId()),
-    //   pdu.getSeqNum()
-    //   // pdu.getPbData().slice(0, 16)
-    // );
-    switch (pdu.getCommandId()) {
-      case ActionCommands.CID_SyncReq:
-        await dispatcher.handleSyncReq(pdu);
-        break;
-      case ActionCommands.CID_TopCatsReq:
-        await dispatcher.handleTopCatsReq(pdu);
-        break;
-      case ActionCommands.CID_SendBotMsgReq:
-        await dispatcher.handleSendBotMsgReq(pdu);
-        break;
-      case ActionCommands.CID_SendTextMsgReq:
-        await dispatcher.handleSendTextMsgReq(pdu);
-        break
-      case ActionCommands.CID_MsgReq:
-        await dispatcher.handleMsgReq(pdu);
-        break;
-    }
-  }
 
-  private ws: WebSocket | any;
-  setWs(ws: WebSocket | any) {
-    this.ws = ws;
-  }
-
-  setAuthUserId(authUserId: string) {
-    this.authUserId = authUserId;
-  }
-
-  setAddress(address: string) {
-    this.address = address;
-  }
-  sendPdu(pdu: Pdu, seqNum: number = 0) {
-    // console.log('sendPdu', getActionCommandsName(pdu.getCommandId()));
-    pdu.updateSeqNo(seqNum);
-    this.ws.send(pdu.getPbData());
-  }
 }
