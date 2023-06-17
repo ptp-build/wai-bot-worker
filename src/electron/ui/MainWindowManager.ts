@@ -64,7 +64,11 @@ export default class MainWindowManager {
         preload: PRELOAD_JS,
         nodeIntegration: true,
         contextIsolation: true,
-        additionalArguments: [String(this.botId),options.chatGptUsername || "",options.chatGptPassword || ""],
+        additionalArguments: [
+          this.botId,
+          `chatGptUsername=${options.chatGptUsername || ""}`,
+          `chatGptPassword=${options.chatGptPassword || ""}`,
+        ],
         partition: options.partitionName === DefaultPartition ? undefined : options.partitionName
       },
     });

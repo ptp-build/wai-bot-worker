@@ -151,7 +151,6 @@ export class ChatGpWorker {
   }
 
   async askMsg(text:string){
-    const platform = getAppPlatform()
     await this.inputPrompt(text);
     const [appPosX,appPosY] = this.mainWindow!.getMainWindow().getPosition();
     const [_,appHeight] = this.mainWindow!.getMainWindow().getSize();
@@ -179,17 +178,22 @@ export class ChatGpWorker {
         key:"enter"
       },
       {
-        cmd: 'sleep',
-        sec: 0.1,
-      },
-      {
         cmd: 'press',
         key: 'backspace',
       },
+
       {
-        cmd: 'hotkey',
-        keys: platform === 'win32' ? ['ctrl', 'enter'] : ['command', 'enter'],
+        cmd: 'press',
+        key: 'tab',
       },
+      {
+        cmd: 'press',
+        key: 'enter',
+      },
+      // {
+      //   cmd: 'hotkey',
+      //   keys: platform === 'win32' ? ['ctrl', 'enter'] : ['command', 'enter'],
+      // },
     ])
   }
 

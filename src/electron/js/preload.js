@@ -5,10 +5,12 @@ const args = process.argv.slice(-3);
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
 
 const botId = args[0]
-const chatGptUsername = args[1]
-const chatGptPassword = args[2]
+const chatGptUsername = args[1].replace("chatGptUsername=","")
+const chatGptPassword = args[2].replace("chatGptPassword=","")
 
-console.log("[Preload]",window.location.href,botId)
+console.log("[Preload]",window.location.href)
+console.log("[Preload] botId: ",botId,process.argv)
+console.log("[Preload] chatGptUsername: ",chatGptUsername,"chatGptPassword:",chatGptPassword)
 
 class ElectronIpcRender{
   addEvents(){
@@ -27,17 +29,12 @@ contextBridge.exposeInMainWorld('WaiApi', {
   },
 });
 
-async function readAppendFile(name){
+async function readAppendFile(name,code_pre = ''){
   try {
     const filePath = path.join(__dirname, name);
     const code = await fs.promises.readFile(filePath, 'utf8');
     const script = document.createElement('script');
-    script.textContent = `
-  const __botId = ${botId};
-  const __chatGptUsername = "${chatGptUsername}";
-  const __chatGptPassword = "${chatGptPassword}";
-  console.log("[args inject!]");
-  `+code;
+    script.textContent = code_pre + code;
     document.body.appendChild(script);
   } catch (err) {
     console.error(`Error reading ${name}:`, err);
@@ -47,7 +44,12 @@ async function readAppendFile(name){
 window.addEventListener('DOMContentLoaded', async () => {
   console.log('[DOMContentLoaded] event fired',window.version);
   await readAppendFile("zepto.js")
-  await readAppendFile("worker.js")
+  await readAppendFile("worker.js", `
+  const __botId = "${botId}";
+  const __chatGptUsername = "${chatGptUsername}";
+  const __chatGptPassword = "${chatGptPassword}";
+  console.log("[args inject!]");
+  `)
 });
 
 
