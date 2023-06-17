@@ -1,14 +1,14 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const fs = require('fs');
 const path = require('path');
-const args = process.argv.slice(-2);
+const args = process.argv.slice(-3);
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
 
 const botId = args[0]
-const optionsBufferHex = args[1]
-const options = JSON.parse(Buffer.from(optionsBufferHex,"hex").toString())
+const chatGptUsername = args[1]
+const chatGptPassword = args[2]
 
-console.log("[Preload]",window.location.href,botId,options)
+console.log("[Preload]",window.location.href,botId)
 
 class ElectronIpcRender{
   addEvents(){
@@ -53,8 +53,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   console.log('[DOMContentLoaded] event fired',window.version);
   await appendCode(`
   const __botId = ${botId};
-  const __chatGptUsername = "${options.chatGptUsername}";
-  const __chatGptPassword = "${options.chatGptPassword}";
+  const __chatGptUsername = "${chatGptUsername}";
+  const __chatGptPassword = "${chatGptPassword}";
   console.log("[args inject!]")
   `)
   await readAppendFile("zepto.js")

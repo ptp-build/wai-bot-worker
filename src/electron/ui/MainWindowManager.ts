@@ -64,7 +64,7 @@ export default class MainWindowManager {
         preload: PRELOAD_JS,
         nodeIntegration: true,
         contextIsolation: true,
-        additionalArguments: [String(this.botId),Buffer.from(JSON.stringify(options)).toString("hex")],
+        additionalArguments: [String(this.botId),options.chatGptUsername || "",options.chatGptPassword || ""],
         partition: options.partitionName === DefaultPartition ? undefined : options.partitionName
       },
     });
