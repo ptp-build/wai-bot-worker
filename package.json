@@ -1,7 +1,7 @@
 {
   "name": "wai-bot-worker",
   "productName": "Wai Bot Worker",
-  "version": "1.2.14",
+  "version": "1.2.15",
   "description": "Wai Bot Worker",
   "main": ".webpack/main",
   "scripts": {

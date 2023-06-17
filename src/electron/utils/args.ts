@@ -155,7 +155,7 @@ export function parseAppArgs():AppArgvType{
         value = getDefaultValue(value,10,'int')
         break
       case "appPosX":
-        value = getDefaultValue(value,320,'int')
+        value = getDefaultValue(value,0,'int')
         break
       case "appPosY":
       case "chatGptSendPromptSleep":
