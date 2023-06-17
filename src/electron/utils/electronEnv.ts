@@ -13,6 +13,7 @@ export function getElectronEnv():EnvType {
 
   return {
     userDataPath,
-    electronPath,appPath
+    electronPath,
+    appPath
   }
 }

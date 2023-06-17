@@ -1,10 +1,11 @@
-import { parseAppArgs } from '../../utils/args';
+import { isProd, parseAppArgs } from '../../utils/args';
 import Ui, { getAppPosition } from '../../ui/Ui';
 import MainWindowManager from '../../ui/MainWindowManager';
 import { parseCallBackButtonPayload } from '../../utils/utils';
 import { BotWsClient } from '../BotWsClient';
 import { getElectronEnv } from '../../utils/electronEnv';
 import PyAutoGuiRpa from '../PyAutoGuiRpa';
+const { shell } = require('electron');
 
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
 
@@ -158,9 +159,15 @@ export default class MainEvents {
       inlineButtons.push([
         {
           type:"callback",
-          text:"打开js目录",
+          text:"JS目录",
           data:"ipcMain/openJsDir"
         },
+        {
+          type:"callback",
+          text:"应用数据目录",
+          data:"ipcMain/openUserAppDataDir"
+        },
+
       ])
     }else{
       inlineButtons.push([
@@ -192,6 +199,8 @@ export default class MainEvents {
       return await this.createChatGptBotWorker(data)
     }
     switch (data){
+      case "ipcMain/openUserAppDataDir":
+        await this.openUserAppDataDir(payload.eventData!)
       case "ipcMain/openJsDir":
         await this.openJsDir(payload.eventData!)
         break
@@ -223,7 +232,20 @@ export default class MainEvents {
     await this.getAppInfo()
   }
   async openJsDir(eventData:any){
+    let {userDataPath} = getElectronEnv()
+    shell.openPath(userDataPath).catch((error) => {
+      console.error(`Failed to open directory: ${error}`);
+    });
+  }
 
+  async openUserAppDataDir(eventData:any){
+    let {appPath} = getElectronEnv()
+    if(isProd){
+      appPath += ".webpack/main/electron/js"
+    }
+    shell.openPath(appPath).catch((error) => {
+      console.error(`Failed to open directory: ${error}`);
+    });
   }
   async handlePosition(eventData:any){
     const displaySize = Ui.getDisplaySize(MainWindowManager.getInstance(this.botId).getMainWindow())
