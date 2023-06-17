@@ -8,7 +8,7 @@ import PyAutoGuiRpa from '../PyAutoGuiRpa';
 
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
 
-export default class ElectronMasterIpcMainEvents{
+export default class MainEvents {
   private __id:number;
   private botId:string;
   constructor(accountId:string,__id:number) {

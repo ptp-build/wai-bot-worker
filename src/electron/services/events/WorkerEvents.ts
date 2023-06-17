@@ -1,7 +1,7 @@
 import { ChatGpWorker } from '../worker/chatGpt/ChatGpWorker';
 
 
-export default class ElectronWorkerIpcMainEvents{
+export default class WorkerEvents {
   private __id:number;
   private botId:string;
   constructor(botId:string,__id:number) {

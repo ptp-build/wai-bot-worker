@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
-import MainWindowManager, { MasterWindowBotId } from '../ui/MainWindowManager';
-import ElectronMasterIpcMainEvents from './events/ElectronMasterIpcMainEvents';
-import ElectronWorkerIpcMainEvents from './events/ElectronWorkerIpcMainEvents';
+import MainWindowManager, { MasterWindowBotId } from '../../ui/MainWindowManager';
+import MainEvents from './MainEvents';
+import WorkerEvents from './WorkerEvents';
 
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
 
@@ -20,9 +20,9 @@ export default class ElectronIpcMain{
 
   async handleEvent(action:string,payload:any){
     if (this.botId === MasterWindowBotId){
-      return new ElectronMasterIpcMainEvents(this.botId,payload.__id || "").handleEvent(action,payload)
+      return new MainEvents(this.botId,payload.__id || "").handleEvent(action,payload)
     }else{
-      return new ElectronWorkerIpcMainEvents(this.botId,payload.__id || "").handleEvent(action,payload)
+      return new WorkerEvents(this.botId,payload.__id || "").handleEvent(action,payload)
     }
   }
   static addEvents(){

@@ -3,7 +3,7 @@ import { AppArgvType, DefaultPartition, getProxyConfig } from '../utils/args';
 import path from 'path';
 import { getErrorHtml } from '../utils/utils';
 import Ui from './Ui';
-import ElectronIpcMain from '../services/ElectronIpcMain';
+import ElectronIpcMain from '../services/events/ElectronIpcMain';
 import Devtool from './Devtool';
 import { startServers } from '../../server/server';
 
