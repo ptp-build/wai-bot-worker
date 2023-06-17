@@ -153,7 +153,14 @@ export default class MainEvents {
           type:"callback",
           text:"清空所有窗口",
           data:"local/clearAllWindow"
-        }
+        },
+      ])
+      inlineButtons.push([
+        {
+          type:"callback",
+          text:"打开js目录",
+          data:"ipcMain/openJsDir"
+        },
       ])
     }else{
       inlineButtons.push([
@@ -185,6 +192,9 @@ export default class MainEvents {
       return await this.createChatGptBotWorker(data)
     }
     switch (data){
+      case "ipcMain/openJsDir":
+        await this.openJsDir(payload.eventData!)
+        break
       case "ipcMain/getSize":
         await this.handlePosition(payload.eventData!)
         break
@@ -211,6 +221,9 @@ export default class MainEvents {
   }
   async appInfo(payload:any) {
     await this.getAppInfo()
+  }
+  async openJsDir(eventData:any){
+
   }
   async handlePosition(eventData:any){
     const displaySize = Ui.getDisplaySize(MainWindowManager.getInstance(this.botId).getMainWindow())

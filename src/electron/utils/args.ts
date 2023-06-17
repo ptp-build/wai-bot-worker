@@ -17,6 +17,8 @@ export interface AppArgvType{
   proxyUsername?:string,
   proxyPassword?:string,
 
+  startWsServer:boolean
+  waiServerRqaPort:number
   waiServerHttpPort:number
   waiServerWsPort:number
   waiServerTcpPort:number
@@ -60,7 +62,7 @@ const AppArgvKeys = [
   "appWidth","appHeight","appPosX","appPosY","partitionName",
   "useProxy","proxy","proxyType","proxyIp","proxyPort","proxyUsername","proxyPassword",
   "waiServerHttpPort","waiServerWsPort","waiServerTcpPort",
-  "startWsServer",
+  "startWsServer",'waiServerRqaPort',
   "useCloudFlareWorker",
   "chatGptBotWorkers",
   "Access_Control_Allow_Origin","OPENAI_API_KEY","SERVER_USER_ID_START","TG_BOT_CHAT_ID_PAY","TG_BOT_TOKEN_PAY","WECHAT_APPID","WECHAT_APPSECRET","WECHAT_NOTIFY_TEMPLATE_ID","WECHAT_NOTIFY_USER","DTALK_ACCESS_TOKEN_PAY"
@@ -124,6 +126,8 @@ export function parseAppArgs():AppArgvType{
         // value = getDefaultValue(value,"https://wai.chat")
         value = getDefaultValue(value,"wai/desktop/index.html")
         break
+      case "waiServerRqaPort":
+        value = getDefaultValue(value,5090,'int')
       case "waiServerHttpPort":
         value = getDefaultValue(value,5080,'int')
         break
@@ -171,6 +175,7 @@ export function parseAppArgs():AppArgvType{
       case "useCloudFlareWorker":
       case "openDevTool":
       case "useProxy":
+      case "startWsServer":
         value = getDefaultValue(value,false,'boolean')
         break
     }

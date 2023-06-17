@@ -18,10 +18,12 @@ export default class MainWindowManager {
   private mainWindow: BrowserWindow | null;
   private devTools: Devtool  | undefined;
   private options?: AppArgvType;
+  private isMaster: boolean;
 
   constructor(botId:string) {
     this.botId = botId
     this.mainWindow = null
+    this.isMaster = botId === MasterWindowBotId
   }
 
   static checkInstance(botId: string) {
@@ -59,7 +61,7 @@ export default class MainWindowManager {
       x: options.appPosX,
       y: options.appPosY,
       title: '-',
-      resizable:false,
+      resizable:this.isMaster,
       webPreferences: {
         preload: PRELOAD_JS,
         nodeIntegration: true,
@@ -146,9 +148,13 @@ export default class MainWindowManager {
 
     if(this.botId === MasterWindowBotId){
       ElectronIpcMain.addEvents()
-      if(this.getOptions().waiServerWsPort){
+      if(this.getOptions().startWsServer){
         const userDataPath = app.getPath('userData');
         startServers(this.getOptions().waiServerTcpPort, this.getOptions().waiServerWsPort,this.getOptions().waiServerHttpPort,userDataPath);
+      }
+
+      if(this.getOptions().waiServerRqaPort){
+
       }
     }
   }
