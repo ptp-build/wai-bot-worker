@@ -3,6 +3,7 @@ import { BaseConnection } from '../../../server/service/BaseConnection';
 
 
 export class WsDoConnection extends BaseConnection {
+
   constructor(id: string, private ws: WebSocket) {
     super(id);
   }

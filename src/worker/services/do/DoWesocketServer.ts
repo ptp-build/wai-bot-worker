@@ -6,6 +6,7 @@ import { ActionCommands } from '../../../lib/ptp/protobuf/ActionCommands';
 import { Pdu } from '../../../lib/ptp/protobuf/BaseMsg';
 import { OtherNotify } from '../../../lib/ptp/protobuf/PTPOther';
 import { ERR } from '../../../lib/ptp/protobuf/PTPCommon/types';
+import { WsDoConnection } from './WsDoConnection';
 
 const healthCheckInterval = 10e3;
 

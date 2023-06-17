@@ -120,9 +120,6 @@ export function parseAppArgs():AppArgvType{
     const valFromEnv = getFromProcessEnv(key)
     value = (value === undefined ) ? valFromEnv : value
     switch (key){
-      case "msgServer":
-        value = getDefaultValue(value,"wss://bot-api.wai.chat/ws")
-        break
       case "homeUrl":
         // value = getDefaultValue(value,"https://wai.chat")
         value = getDefaultValue(value,"wai/desktop/index.html")
