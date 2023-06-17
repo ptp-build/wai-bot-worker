@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const fs = require('fs');
 const path = require('path');
-const args = process.argv.slice(-3);
+const args = process.argv.slice(process.platform === "darwin" ? -3 : -4);
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
 
 const botId = args[0]

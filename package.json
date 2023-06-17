@@ -1,10 +1,11 @@
 {
   "name": "wai-bot-worker",
   "productName": "Wai Bot Worker",
-  "version": "1.2.20",
+  "version": "1.2.21",
   "description": "Wai Bot Worker",
   "main": ".webpack/main",
   "scripts": {
+    "build:wai-bot-rpa": "node tools/build-wai-bot-rpa.js",
     "start": "electron-forge start",
     "server:dev:nodemon": "nodemon",
     "server": "ts-node src/server/index.ts",
@@ -61,6 +62,7 @@
     "node-loader": "^2.0.0",
     "nodemon": "^2.0.22",
     "prettier": "^2.8.7",
+    "shelljs": "^0.8.5",
     "style-loader": "^3.0.0",
     "ts-jest": "^29.0.3",
     "ts-loader": "^9.2.2",

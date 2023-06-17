@@ -1,4 +1,4 @@
-import { getAppPlatform, parseAppArgs } from '../../../utils/args';
+import {parseAppArgs } from '../../../utils/args';
 import PyAutoGuiRpa from '../../PyAutoGuiRpa';
 import BotWebSocket from '../../BotWebSocket';
 import { ChatGptStreamStatus, MsgAction } from '../../../../lib/ptp/protobuf/PTPCommon/types';
@@ -19,7 +19,6 @@ export class ChatGpWorker {
   private helper: ChatGptHelper;
   private status?: ChatGptStreamStatus;
   private msgProcessor:ChatGptMsgProcessor;
-  private mainWindow:MainWindowManager;
   private botState:BotStateType
   constructor(botId:string) {
     this.botId = botId
@@ -27,7 +26,6 @@ export class ChatGpWorker {
     this.status = ChatGptStreamStatus.ChatGptStreamStatus_WAITING;
     this.helper = new ChatGptHelper()
     this.msgProcessor = new ChatGptMsgProcessor(this)
-    this.mainWindow = MainWindowManager.getInstance(botId)
   }
 
   static getInstance(botId: string) {
@@ -35,6 +33,9 @@ export class ChatGpWorker {
       __workers.set(botId,new ChatGpWorker(botId))
     }
     return __workers.get(botId)!;
+  }
+  getMainWindow(){
+    return MainWindowManager.getInstance(this.botId)!
   }
   getMsgProcessor(){
     return this.msgProcessor
@@ -72,7 +73,7 @@ export class ChatGpWorker {
 
   clickLogin(payload:{x:number,y:number}){
     console.log("[clickLogin]",payload)
-    const [appPosX,appPosY] = this.mainWindow!.getMainWindow().getPosition();
+    const [appPosX,appPosY] = this.getMainWindow().getMainWindow().getPosition();
 
     PyAutoGuiRpa.runPyCode([
       {
@@ -87,7 +88,7 @@ export class ChatGpWorker {
   }
   async inputUsername(payload:{x:number,y:number}){
     console.log("[inputUsername]",payload)
-    const [appPosX,appPosY] = this.mainWindow!.getMainWindow().getPosition();
+    const [appPosX,appPosY] = this.getMainWindow().getMainWindow().getPosition();
     await PyAutoGuiRpa.runPyCode([
       {
         cmd:"sleep",
@@ -110,7 +111,7 @@ export class ChatGpWorker {
   }
   async inputPassword(payload:{x:number,y:number}){
     console.log("[inputPassword]",payload)
-    const [appPosX,appPosY] = this.mainWindow!.getMainWindow().getPosition();
+    const [appPosX,appPosY] = this.getMainWindow().getMainWindow().getPosition();
     await PyAutoGuiRpa.runPyCode([
       {
         cmd:"sleep",
@@ -147,13 +148,13 @@ export class ChatGpWorker {
 
   async inputPrompt(text:string){
     const dataEncode = encodeToBase64(text)
-    await this.mainWindow.runJsCode(`document.getElementById("prompt-textarea").value = decodeURIComponent(escape(atob("${dataEncode}")))`)
+    await this.getMainWindow().runJsCode(`document.getElementById("prompt-textarea").value = decodeURIComponent(escape(atob("${dataEncode}")))`)
   }
 
   async askMsg(text:string){
     await this.inputPrompt(text);
-    const [appPosX,appPosY] = this.mainWindow!.getMainWindow().getPosition();
-    const [_,appHeight] = this.mainWindow!.getMainWindow().getSize();
+    const [appPosX,appPosY] = this.getMainWindow().getMainWindow().getPosition();
+    const [_,appHeight] = this.getMainWindow().getMainWindow().getSize();
     const {chatGptSendPromptSleep} = parseAppArgs()
     const inputPostX= 20 + appPosX + 4
     const inputPostY= appHeight - 65 + appPosY - 25

@@ -1,6 +1,3 @@
-
-
-import WaiBotRpa from './WaiBotRpa';
 import BotWebSocket, { BotWebSocketNotifyAction, BotWebSocketState } from './BotWebSocket';
 import Account from '../../worker/services/Account';
 import LocalStorage from '../../worker/services/db/LocalStorage';
@@ -9,10 +6,10 @@ let loading = false
 
 export default class WaiBotMaster{
   private sign: string;
-  private waiBotRpa: WaiBotRpa;
+  // private waiBotRpa: WaiBotRpa;
   constructor(sign:string) {
     this.sign = sign
-    this.waiBotRpa = new WaiBotRpa()
+    // this.waiBotRpa = new WaiBotRpa()
   }
   addChatGptMsgHanlder(){
     //@ts-ignore
