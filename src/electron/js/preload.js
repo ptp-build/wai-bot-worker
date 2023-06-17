@@ -32,31 +32,20 @@ async function readAppendFile(name){
     const filePath = path.join(__dirname, name);
     const code = await fs.promises.readFile(filePath, 'utf8');
     const script = document.createElement('script');
-    script.textContent = code;
+    script.textContent = `
+  const __botId = ${botId};
+  const __chatGptUsername = "${chatGptUsername}";
+  const __chatGptPassword = "${chatGptPassword}";
+  console.log("[args inject!]");
+  `+code;
     document.body.appendChild(script);
   } catch (err) {
     console.error(`Error reading ${name}:`, err);
   }
 }
 
-async function appendCode(code){
-  try {
-    const script = document.createElement('script');
-    script.textContent = code
-    document.body.appendChild(script);
-  } catch (err) {
-    console.error(`Error:`, err);
-  }
-}
-
 window.addEventListener('DOMContentLoaded', async () => {
   console.log('[DOMContentLoaded] event fired',window.version);
-  await appendCode(`
-  const __botId = ${botId};
-  const __chatGptUsername = "${chatGptUsername}";
-  const __chatGptPassword = "${chatGptPassword}";
-  console.log("[args inject!]")
-  `)
   await readAppendFile("zepto.js")
   await readAppendFile("worker.js")
 });
