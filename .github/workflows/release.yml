@@ -47,11 +47,11 @@ jobs:
         with:
           python-version: '3.9'
           cache: 'pip' # caching pip dependencies
-            - run: |
-                cd py-wai-bot-rpa
-                pip install -r requirements.txt
-                cd ..
-                npm run build:wai-bot-rpa
+        - run: |
+            cd py-wai-bot-rpa
+            pip install -r requirements.txt
+            cd ..
+            npm run build:wai-bot-rpa
       - name: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,11 +72,11 @@ jobs:
         with:
           python-version: '3.9'
           cache: 'pip' # caching pip dependencies
-            - run: |
-                cd py-wai-bot-rpa
-                pip install -r requirements.txt
-                cd ..
-                npm run build:wai-bot-rpa
+        - run: |
+            cd py-wai-bot-rpa
+            pip install -r requirements.txt
+            cd ..
+            npm run build:wai-bot-rpa
       - name: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
