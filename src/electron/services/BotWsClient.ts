@@ -1,4 +1,3 @@
-import { AppArgvType } from '../utils/args';
 import BotWebSocket, { BotWebSocketNotifyAction, BotWebSocketState } from './BotWebSocket';
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
 import { ActionCommands } from '../../lib/ptp/protobuf/ActionCommands';

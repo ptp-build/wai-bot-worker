@@ -6,6 +6,7 @@ import Ui from './Ui';
 import ElectronIpcMain from '../services/events/ElectronIpcMain';
 import Devtool from './Devtool';
 import { startServers } from '../../server/server';
+import { BotRqaServer } from '../services/BotRqaServer';
 
 export const MasterWindowBotId = "1"
 
@@ -148,12 +149,15 @@ export default class MainWindowManager {
 
     if(this.botId === MasterWindowBotId){
       ElectronIpcMain.addEvents()
+      const userDataPath = app.getPath('userData');
       if(this.getOptions().startWsServer){
-        const userDataPath = app.getPath('userData');
         startServers(this.getOptions().waiServerTcpPort, this.getOptions().waiServerWsPort,this.getOptions().waiServerHttpPort,userDataPath);
       }
 
       if(this.getOptions().waiServerRqaPort){
+        const rpaServer = BotRqaServer.getInstance(this.getOptions().waiServerRqaPort)
+        rpaServer.waitForServerIsOK();
+        rpaServer.start()
 
       }
     }

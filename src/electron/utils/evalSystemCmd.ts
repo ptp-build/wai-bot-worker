@@ -25,9 +25,8 @@ export function runCommand(command: string,args:any[]): Promise<string> {
   });
 }
 
-export function runPyCode(args: string): Promise<string> {
+export function getPythonExecName(){
   let pythonCommand;
-
   switch (process.platform) {
     case 'win32': // Windows
       pythonCommand = 'python'; // or 'python3' depending on the Python version installed
@@ -39,7 +38,10 @@ export function runPyCode(args: string): Promise<string> {
     default:
       throw new Error('Unsupported platform');
   }
-
+  return pythonCommand
+}
+export function runPyCode(args: string): Promise<string> {
+  let pythonCommand = getPythonExecName();
   return runCommand(pythonCommand, ['-c', args]);
 }
 

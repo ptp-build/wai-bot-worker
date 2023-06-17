@@ -20,6 +20,7 @@ log_format = '%(asctime)s - %(levelname)s - %(message)s'
 logging.basicConfig(filename=filename, filemode='a',
                     format=log_format,
                     level=logging.INFO)
+
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 console.setFormatter(logging.Formatter(log_format))
@@ -68,7 +69,9 @@ def worker():
                     y = step['y']
                     pyautogui.moveTo(x, y)
                 elif cmd == 'click':
-                    pyautogui.click()
+                    x = step['x']
+                    y = step['y']
+                    pyautogui.click(x, y)
                 elif cmd == 'typewrite':
                     text = step['text']
                     pyautogui.typewrite(text)
@@ -110,6 +113,7 @@ class SimpleAPIHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         """
         curl -X POST -H "Content-Type: application/json" -d @demo/openForceQuit-demo.json http://localhost:5090
+        curl -X POST -H "Content-Type: application/json" -d @demo/payload-demo.json http://localhost:5090
         curl -X POST -H "Content-Type: application/json" -d @demo/spotlight-demo.json http://localhost:5090
         """
         content_length = int(self.headers['Content-Length'])
