@@ -57,3 +57,13 @@ export function decodeFromBase64(input: string) {
     return null;
   }
 }
+
+export function parseCallBackButtonPayload(data:string){
+  const t  = data.split("/")
+  const payload = t[t.length - 1]
+  return JSON.parse(Buffer.from(payload,'hex').toString())
+}
+
+export function encodeCallBackButtonPayload(data:string,payload:any){
+  return `${data}/${Buffer.from(JSON.stringify(payload)).toString("hex")}`
+}

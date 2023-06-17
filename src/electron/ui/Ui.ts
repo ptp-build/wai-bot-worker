@@ -28,7 +28,7 @@ export function getAppPosition(accountIdsLength: number, displayWidth: number, d
 
   // Calculate the X and Y position
   const appPosX = col * (appWidth + gap);
-  const appPosY = row * (appHeight + gap);
+  const appPosY = row * (appHeight + gap) + 25;
 
   // Check if there's enough space in height for a new window
   if (displayHeight < appPosY + appHeight) {

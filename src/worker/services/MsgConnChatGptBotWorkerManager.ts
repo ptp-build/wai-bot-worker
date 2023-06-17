@@ -6,8 +6,15 @@ export enum MsgConnChatGptBotWorkerStatus {
   BUSY = 3,
 }
 
+
+export type MsgConnChatGptBotWorker = {
+  msgConnId:string,
+  botId:string,
+  status:MsgConnChatGptBotWorkerStatus
+}
+
 export default class MsgConnChatGptBotWorkerManager {
-  private statusMap: Map<string, MsgConnChatGptBotWorkerStatus>;
+  private statusMap: Map<string, MsgConnChatGptBotWorker>;
 
   static getInstance(){
     if(!currentInstance){
@@ -23,24 +30,28 @@ export default class MsgConnChatGptBotWorkerManager {
   getStatusMap() {
     return this.statusMap
   }
-  setStatus(msgConnId:string,status:MsgConnChatGptBotWorkerStatus){
-    this.statusMap.set(msgConnId,status)
+
+  setStatus(botId:string,msgConnId:string,status:MsgConnChatGptBotWorkerStatus){
+    this.statusMap.set(botId,{
+      msgConnId,
+      botId,
+      status
+    })
   }
 
-  getStatus(msgConnId:string){
-    return this.statusMap.get(msgConnId)
+  getStatus(botId:string){
+    return this.statusMap.get(botId)?.status
   }
-  remove(msgConnId:string){
-    this.statusMap.delete(msgConnId)
-  }
-  getRandomReadyWorker() {
-    const readyWorkers = Array.from(this.statusMap.entries()).filter(([_, status]) => status === MsgConnChatGptBotWorkerStatus.READY);
 
+  remove(botId:string){
+    this.statusMap.delete(botId)
+  }
+  getRandomReadyWorker(): MsgConnChatGptBotWorker | null {
+    const readyWorkers = Array.from(this.statusMap.values()).filter(worker => worker.status === MsgConnChatGptBotWorkerStatus.READY);
     if (readyWorkers.length === 0) {
       return null;
     }
-
     const randomIndex = Math.floor(Math.random() * readyWorkers.length);
-    return readyWorkers[randomIndex][0];
+    return readyWorkers[randomIndex];
   }
 }

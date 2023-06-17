@@ -11,6 +11,10 @@ enum MsgAction{
   MsgAction_WaiChatGptClickLogin = 3;
   MsgAction_WaiChatGptInputUsername = 4;
   MsgAction_WaiChatGptInputPassword = 5;
+    MsgAction_WaiChatGptCfChallenge = 6;
+
+  MsgAction_WaiChatGptUserAskMsg = 6001;
+  MsgAction_WaiChatGptBotAckMsg = 6002;
 }
 
 enum ERR{
@@ -345,6 +349,7 @@ message ClientInfo{
   required string deviceModel = 1;
   required string systemVersion = 2;
   required string appVersion = 3;
+  optional bool isBotWorker = 4;
 }
 
 message PbCatBot{
@@ -369,4 +374,18 @@ message MsgRow{
   required string senderId = 4;
   required uint32 msgDate = 5;
 }
+
+message UserAskChatGptMsg{
+  required string chatGptBotId = 1;
+  required string text = 2;
+  required string chatId = 3;
+  required uint32 msgId = 4;
+  required uint32 msgDate = 5;
+  required uint32 msgAskId = 6;
+  required uint32 msgAskDate = 7;
+  required string senderId = 8;
+  required ChatGptStreamStatus streamStatus = 9;
+}
+
+
 

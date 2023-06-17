@@ -121,7 +121,7 @@ message MsgReq{
 }
 
 message MsgRes{
-  required Common.MsgAction text = 1;
+  required Common.MsgAction action = 1;
   optional string payload = 2;
   optional Common.ERR err = 100;
 }

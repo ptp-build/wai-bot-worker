@@ -3,10 +3,23 @@ import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
 import { ActionCommands } from '../../lib/ptp/protobuf/ActionCommands';
 import { SyncReq, SyncRes, TopCatsRes } from '../../lib/ptp/protobuf/PTPSync';
 import { AuthLoginReq, AuthLoginRes } from '../../lib/ptp/protobuf/PTPAuth';
-import { ChatGptStreamStatus, ERR, MsgAction, UserStoreData_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
+import {
+  ChatGptStreamStatus,
+  ERR,
+  MsgAction,
+  UserAskChatGptMsg_Type,
+  UserStoreData_Type,
+} from '../../lib/ptp/protobuf/PTPCommon/types';
 import { kv, storage } from '../env';
 import { PbMsg, PbUser, UserStoreData } from '../../lib/ptp/protobuf/PTPCommon';
-import { MsgReq, SendBotMsgReq, SendBotMsgRes, SendMsgRes, SendTextMsgReq } from '../../lib/ptp/protobuf/PTPMsg';
+import {
+  MsgReq,
+  MsgRes,
+  SendBotMsgReq,
+  SendBotMsgRes,
+  SendMsgRes,
+  SendTextMsgReq,
+} from '../../lib/ptp/protobuf/PTPMsg';
 import MsgConnChatGptBotWorkerManager, { MsgConnChatGptBotWorkerStatus } from './MsgConnChatGptBotWorkerManager';
 
 import { currentTs } from '../share/utils/utils';
@@ -61,7 +74,7 @@ export default class BusinessLogicProcessor {
   }
 
   async handleAuthLoginReq(pdu: Pdu): Promise<AuthSessionType | undefined> {
-    const { sign, clientInfo } = AuthLoginReq.parseMsg(pdu);
+    const { sign } = AuthLoginReq.parseMsg(pdu);
     const res = await getSessionInfoFromSign(sign);
     if (res) {
       this.sendPdu(
@@ -99,9 +112,41 @@ export default class BusinessLogicProcessor {
   async handleMsgReq(pdu: Pdu) {
     let {action,payload} = MsgReq.parseMsg(pdu)
     switch (action){
-      case MsgAction.MsgAction_WaiChatGptPromptsInputReady:
-        MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.connId,MsgConnChatGptBotWorkerStatus.READY)
+      case MsgAction.MsgAction_WaiChatGptBotAckMsg:
+        console.log("[BL][MsgAction_WaiChatGptBotAckMsg]",payload)
+        await this.handleMsgAction_WaiChatGptBotAckMsg(JSON.parse(payload!) as UserAskChatGptMsg_Type,pdu.getSeqNum())
         break
+      case MsgAction.MsgAction_WaiChatGptPromptsInputReady:
+        console.log("[BL][MsgAction_WaiChatGptPromptsInputReady]",payload)
+        const MsgAction_WaiChatGptPromptsInputReadyData = JSON.parse(payload!)
+        MsgConnChatGptBotWorkerManager.getInstance().setStatus(
+          MsgAction_WaiChatGptPromptsInputReadyData.botId,
+          this.connId,
+          MsgConnChatGptBotWorkerStatus.READY
+        )
+        break
+    }
+  }
+  async handleMsgAction_WaiChatGptBotAckMsg({senderId,streamStatus,chatId,msgDate,chatGptBotId,msgId,text}:UserAskChatGptMsg_Type,seq_no:number) {
+    const toUid = senderId
+    kv.put(`${toUid}_${chatId}_${msgId}_${text!.split("_")[0]}`,text).catch(console.error)
+    console.log("[handleMsgAction_WaiChatGptBotAckMsg]",text)
+    this.sendPdu(new MsgRes({
+      action: MsgAction.MsgAction_WaiChatGptBotAckMsg,
+    }).pack(),seq_no)
+
+    await MsgConnectionApiHandler.getInstance().sendBotMsgRes(toUid,
+      Buffer.from(
+        new SendBotMsgRes({
+          reply: text,
+          chatId,
+          msgId,
+          msgDate,
+          streamStatus
+        }).pack().getPbData()),
+    )
+    if(streamStatus === ChatGptStreamStatus.ChatGptStreamStatus_DONE){
+      MsgConnChatGptBotWorkerManager.getInstance().setStatus(chatGptBotId,this.connId,MsgConnChatGptBotWorkerStatus.READY)
     }
   }
   async handleSendTextMsgReq(pdu: Pdu) {
@@ -165,15 +210,14 @@ export default class BusinessLogicProcessor {
   }
   async handleSendBotMsgReq(pdu: Pdu) {
     const {authUserId} = this.getAuthSession()!;
-    let { text, chatId,streamStatus, msgDate,msgAskId,msgAskDate, toUid,msgId, chatGpt } = SendBotMsgReq.parseMsg(pdu);
-    // console.log('handleSendBotMsgReq', { text, chatId, msgId, chatGpt,senderId:this.authUserId,toUid });
+    let { chatId, msgDate,toUid,msgId, chatGpt } = SendBotMsgReq.parseMsg(pdu);
     if (chatGpt) {
       const manager = MsgConnChatGptBotWorkerManager.getInstance();
-      const msgConnId = manager.getRandomReadyWorker()
+      const worker = manager.getRandomReadyWorker()
       let reply = "..."
-      if(msgConnId){
-        manager.setStatus(msgConnId,MsgConnChatGptBotWorkerStatus.BUSY)
-        await new ChatGptRequestHelper().process(pdu,authUserId,msgConnId);
+      if(worker){
+        manager.setStatus(worker.botId,worker.msgConnId,MsgConnChatGptBotWorkerStatus.BUSY)
+        await new ChatGptRequestHelper().process(pdu,authUserId,worker.msgConnId,worker.botId);
       }else{
         reply = "Work is busy! pls Retry later"
       }
@@ -185,28 +229,7 @@ export default class BusinessLogicProcessor {
       }).pack(),pdu.getSeqNum())
     }
     if(toUid){
-      kv.put(`${toUid}_${chatId}_${msgId}_${text!.split("_")[0]}`,text).catch(console.error)
-      console.log("[toUser]",text)
-      this.sendPdu(new SendBotMsgRes({
-        reply:"",
-        chatId,
-        msgId,
-        msgDate,
-      }).pack(),pdu.getSeqNum())
 
-      await MsgConnectionApiHandler.getInstance().sendBotMsgRes(toUid,
-        Buffer.from(
-          new SendBotMsgRes({
-            reply: text,
-            chatId,
-            msgId,
-            msgDate,
-            streamStatus
-          }).pack().getPbData()),
-      )
-      if(streamStatus === ChatGptStreamStatus.ChatGptStreamStatus_DONE){
-        MsgConnChatGptBotWorkerManager.getInstance().setStatus(this.connId,MsgConnChatGptBotWorkerStatus.READY)
-      }
     }
   }
 

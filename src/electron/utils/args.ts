@@ -16,14 +16,7 @@ export interface AppArgvType{
   proxy?:string,
   proxyUsername?:string,
   proxyPassword?:string,
-  accountSign?:string,
-  accountId?:number,
 
-  isBotWsClientMaster?:boolean
-  msgServer?:string
-  startWsServer?:boolean
-  startWsClient?:boolean
-  isWsClientMaster?:boolean
   waiServerHttpPort:number
   waiServerWsPort:number
   waiServerTcpPort:number
@@ -66,9 +59,7 @@ const AppArgvKeys = [
   "chatGptSendPromptSleep",
   "appWidth","appHeight","appPosX","appPosY","partitionName",
   "useProxy","proxy","proxyType","proxyIp","proxyPort","proxyUsername","proxyPassword",
-  "accountSign","accountId","msgServer",
   "waiServerHttpPort","waiServerWsPort","waiServerTcpPort",
-  "startWsClient","startWsServer","isWsClientMaster",
   "startWsServer",
   "useCloudFlareWorker",
   "chatGptBotWorkers",
@@ -131,7 +122,6 @@ export function parseAppArgs():AppArgvType{
     switch (key){
       case "msgServer":
         value = getDefaultValue(value,"wss://bot-api.wai.chat/ws")
-        // value = getDefaultValue(value,"ws://localhost:5081")
         break
       case "homeUrl":
         // value = getDefaultValue(value,"https://wai.chat")
@@ -150,7 +140,7 @@ export function parseAppArgs():AppArgvType{
         value = getDefaultValue(value,undefined,'int')
         break
       case "appWidth":
-        value = getDefaultValue(value,1024,'int')
+        value = getDefaultValue(value,300,'int')
         break
       case "appHeight":
         value = getDefaultValue(value,600,'int')
@@ -169,7 +159,7 @@ export function parseAppArgs():AppArgvType{
         break
       case "appPosY":
       case "chatGptSendPromptSleep":
-        value = getDefaultValue(value,0,'int')
+        value = getDefaultValue(value,25,'int')
         break
       case "partitionName":
         if(value === undefined ){
@@ -179,16 +169,9 @@ export function parseAppArgs():AppArgvType{
           value = "persist:" + value
         }
         break
-      case "startWsServer":
-        value = getDefaultValue(value,false,'boolean')
-        break
-      case "isWsClientMaster":
-        value = getDefaultValue(value,false,'boolean')
-        break
       case "useCloudFlareWorker":
       case "openDevTool":
       case "useProxy":
-      case "startWsClient":
         value = getDefaultValue(value,false,'boolean')
         break
     }

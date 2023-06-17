@@ -43,7 +43,7 @@ module.exports = {
           entryPoints: [
             {
               html: './src/electron/assets/index.html',
-              js: './src/electron/js/renderer.ts',
+              js: './src/electron/js/renderer.js',
               name: 'main_window',
               preload: {
                 js: './src/electron/js/preload.js',

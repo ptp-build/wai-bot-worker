@@ -1,34 +1,34 @@
 import { AppArgvType } from '../utils/args';
 import BotWebSocket, { BotWebSocketNotifyAction, BotWebSocketState } from './BotWebSocket';
-import BotWsClientMsgProcessor from './BotWsClientMsgProcessor';
+import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
+import { ActionCommands } from '../../lib/ptp/protobuf/ActionCommands';
+import { MsgReq } from '../../lib/ptp/protobuf/PTPMsg';
+import { ChatGpWorker } from './worker/chatGpt/ChatGpWorker';
+import { MsgAction, UserAskChatGptMsg_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
 
 
 export class BotWsClient {
-  private appArgs?: AppArgvType;
   private botWs?:BotWebSocket;
+  async start(msgServer:string,accountId:number,accountSign:string) {
 
-  private msgHandler?: { sendToRenderMsg: (action: string, payload?: any) => void; sendToMainMsg: (action: string, payload?: any) => void };
-  setMsgHandler(msgHandler:{
-    sendToRenderMsg:(action:string,payload?:any)=>void,
-    sendToMainMsg:(action:string,payload?:any)=>void
-  }){
-    this.msgHandler = msgHandler
-    return this
-  }
-
-  async start(appArgs:AppArgvType) {
-    this.appArgs = appArgs;
-    const {msgServer,accountId,accountSign} = this.appArgs
     if(!accountId || !accountSign || !msgServer){
       console.error("[BotWsClient start], error check the args!!!",JSON.stringify({msgServer,accountId,accountSign}))
       return
     }
-    this.msgHandler!.sendToRenderMsg("onStartBotWsClient",{accountId})
 
-    const botWs = BotWebSocket.getInstance(Number(accountId));
+    let botWs = BotWebSocket.getCurrentInstance();
+    if(!botWs || botWs.getMsgConnId() !== accountId){
+      if(botWs && botWs.isConnect()){
+        await botWs.close()
+        botWs.setAutoConnect(false)
+        await botWs.waitForMsgServerState(BotWebSocketState.closed)
+      }
+      botWs = new BotWebSocket(accountId)
+      botWs.setAutoConnect(true)
+    }
     botWs.session = accountSign!
     botWs.setWsUrl(msgServer);
-    botWs.clientInfo = { appVersion: 'Desktop', deviceModel: '', systemVersion: '' };
+    botWs.clientInfo = { appVersion: 'Desktop', deviceModel: '', systemVersion: '' ,isBotWorker: true};
     if (!botWs.isLogged()) {
         botWs.setMsgHandler(async (accountId, notifies) => {
           for (let i = 0; i < notifies.length; i++) {
@@ -49,7 +49,7 @@ export class BotWsClient {
                 if (payload.getCommandId() === 5001) {
                   return;
                 }
-                await BotWsClientMsgProcessor.getInstance(accountId).handleWsMsg(payload);
+                await this.handleWsMsg(payload);
                 break;
             }
 
@@ -72,10 +72,31 @@ export class BotWsClient {
 
     return this
   }
+
+  async handleWsMsg(pdu: Pdu) {
+    switch (pdu.getCommandId()) {
+      case ActionCommands.CID_MsgReq:
+        await this.handleMsgReq(pdu);
+        break;
+    }
+  }
+
+  async handleMsgReq(pdu: Pdu) {
+    let { action,payload } = MsgReq.parseMsg(pdu);
+    switch (action){
+      case MsgAction.MsgAction_WaiChatGptUserAskMsg:
+        const userAskChatGptMsg = JSON.parse(payload!) as UserAskChatGptMsg_Type
+        console.debug("[MsgAction_WaiChatGptUserAskMsg]",userAskChatGptMsg)
+        await ChatGpWorker.getInstance(userAskChatGptMsg.chatGptBotId)
+          .getMsgProcessor().setPayload(userAskChatGptMsg).process();
+        break
+    }
+
+  }
+
   close() {
     console.log("[BotWsClient close]",this.botWs)
-    const {startWsClient} = this.appArgs!
-    if(startWsClient && this.botWs){
+    if(this.botWs){
       this.botWs.close().catch(console.error)
     }
   }

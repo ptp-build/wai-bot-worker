@@ -4,6 +4,7 @@ import { AuthLoginReq } from '../../lib/ptp/protobuf/PTPAuth';
 import MessageSendHandler from './MessageSendHandler';
 import { MsgReq } from '../../lib/ptp/protobuf/PTPMsg';
 import { MsgReq_Type } from '../../lib/ptp/protobuf/PTPMsg/types';
+import * as PTPCommon from '../../lib/ptp/protobuf/PTPCommon/types';
 
 const WebSocket = require('ws');
 
@@ -30,7 +31,6 @@ export type MsgHandleType = (msgConnId: number, notifies: BotWebSocketNotify[]) 
 
 let reconnect_cnt = 0;
 let seq_num = 10;
-let clients: Record<string, BotWebSocket> = {};
 
 let currentMsgConn: BotWebSocket | null = null;
 
@@ -78,7 +78,6 @@ export default class BotWebSocket {
   }
 
   async close() {
-    this.notifyState(BotWebSocketState.closed);
     if (this.client && this.isConnect()) {
       this.client.close();
     }
@@ -275,7 +274,7 @@ export default class BotWebSocket {
     this.client.send(data);
   }
 
-  sendWithQueue(pdu:Pdu) {
+  sendWithQueue(pdu:Pdu,sync:boolean = false) {
     seq_num += 1;
     if (seq_num > 100000) {
       seq_num = 10;
@@ -283,7 +282,11 @@ export default class BotWebSocket {
     pdu.updateSeqNo(seq_num);
     MessageSendHandler.handleSendMsg(pdu,async (pdu)=>{
       try {
-        await this.sendPduWithCallback(pdu,5000,true)
+        if(sync){
+          await this.sendPduWithCallback(pdu,5000,true)
+        }else{
+          this.send(pdu.getPbData())
+        }
         return true
       }catch (e){
         console.log("[MessageSendHandler.handleSendMsg error]",e)
@@ -327,10 +330,15 @@ export default class BotWebSocket {
     await this.waitForMsgServerState(BotWebSocketState.closed);
   }
 
-  static async msgReq(msg:MsgReq_Type,sync:boolean = false){
-    if(sync){
+  static async msgReq(action:PTPCommon.MsgAction,payload?:any,needReturn:boolean = false,sync:boolean = false){
+    const msg = {
+      action,
+      payload:payload ? JSON.stringify(payload):undefined
+    }
+    if(!needReturn){
       return BotWebSocket.getCurrentInstance().sendWithQueue(
-        new MsgReq(msg).pack()
+        new MsgReq(msg).pack(),
+        sync
       )
     }else{
       return BotWebSocket.getCurrentInstance().sendPduWithCallback(

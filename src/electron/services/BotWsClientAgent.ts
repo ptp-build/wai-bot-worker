@@ -12,8 +12,8 @@ export class BotWsClientAgent{
     this.msgHandler = msgHandler
     return this
   }
-  start({waiServerWsPort,accountId}:AppArgvType){
-    this.accountId = accountId
+  start({waiServerWsPort}:AppArgvType){
+    this.accountId = 0
     const url = `ws://localhost:${waiServerWsPort}`
     console.log("[BotWsClientAgent connecting]",url)
     this.ws = new WebSocket(url);
