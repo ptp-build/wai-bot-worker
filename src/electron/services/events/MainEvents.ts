@@ -5,6 +5,7 @@ import { parseCallBackButtonPayload } from '../../utils/utils';
 import { BotWsClient } from '../BotWsClient';
 import { getElectronEnv } from '../../utils/electronEnv';
 import PyAutoGuiRpa from '../PyAutoGuiRpa';
+import path from 'path';
 const { shell } = require('electron');
 
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
@@ -231,17 +232,17 @@ export default class MainEvents {
   async appInfo(payload:any) {
     await this.getAppInfo()
   }
-  async openJsDir(eventData:any){
+  async openUserAppDataDir(eventData:any){
     let {userDataPath} = getElectronEnv()
     shell.openPath(userDataPath).catch((error) => {
       console.error(`Failed to open directory: ${error}`);
     });
   }
 
-  async openUserAppDataDir(eventData:any){
+  async openJsDir(eventData:any){
     let {appPath} = getElectronEnv()
     if(isProd){
-      appPath += ".webpack/main/electron/js"
+      appPath = path.join(appPath,".webpack","main","electron","js")
     }
     shell.openPath(appPath).catch((error) => {
       console.error(`Failed to open directory: ${error}`);
