@@ -158,8 +158,10 @@ export function parseAppArgs():AppArgvType{
         value = getDefaultValue(value,0,'int')
         break
       case "appPosY":
-      case "chatGptSendPromptSleep":
         value = getDefaultValue(value,25,'int')
+        break
+      case "chatGptSendPromptSleep":
+        value = getDefaultValue(value,0,'int')
         break
       case "partitionName":
         if(value === undefined ){
