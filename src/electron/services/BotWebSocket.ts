@@ -3,8 +3,8 @@ import { ClientInfo_Type } from '../../lib/ptp/protobuf/PTPCommon/types';
 import { AuthLoginReq } from '../../lib/ptp/protobuf/PTPAuth';
 import MessageSendHandler from './MessageSendHandler';
 import { MsgReq } from '../../lib/ptp/protobuf/PTPMsg';
-import { MsgReq_Type } from '../../lib/ptp/protobuf/PTPMsg/types';
 import * as PTPCommon from '../../lib/ptp/protobuf/PTPCommon/types';
+import { getActionCommandsName } from '../../lib/ptp/protobuf/ActionCommands';
 
 const WebSocket = require('ws');
 
@@ -289,13 +289,13 @@ export default class BotWebSocket {
         }
         return true
       }catch (e){
-        console.log("[MessageSendHandler.handleSendMsg error]",e)
+        console.log("[MessageSendHandler.handleSendMsg error]",e,pdu.getSeqNum(),getActionCommandsName(pdu.getCommandId()))
         return false
       }
     }).catch(console.error)
   }
 
-  sendPduWithCallback(pdu: Pdu, timeout: number = 5000,noSeqNum = false) {
+  sendPduWithCallback(pdu: Pdu, timeout = 5000,noSeqNum = false) {
     if(!noSeqNum){
       seq_num += 1;
       if (seq_num > 100000) {

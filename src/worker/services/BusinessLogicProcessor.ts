@@ -115,7 +115,7 @@ export default class BusinessLogicProcessor {
       case MsgAction.MsgAction_WaiChatGptBotAckMsg:
         console.log("[BL][MsgAction_WaiChatGptBotAckMsg]",payload)
         await this.handleMsgAction_WaiChatGptBotAckMsg(JSON.parse(payload!) as UserAskChatGptMsg_Type,pdu.getSeqNum())
-        break
+        return
       case MsgAction.MsgAction_WaiChatGptPromptsInputReady:
         console.log("[BL][MsgAction_WaiChatGptPromptsInputReady]",payload)
         const MsgAction_WaiChatGptPromptsInputReadyData = JSON.parse(payload!)
@@ -127,6 +127,10 @@ export default class BusinessLogicProcessor {
         )
         break
     }
+
+    await this.sendPdu(new MsgRes({
+      action
+    }).pack(),pdu.getSeqNum())
   }
   async handleMsgAction_WaiChatGptBotAckMsg({senderId,streamStatus,chatId,msgDate,chatGptBotId,msgId,text}:UserAskChatGptMsg_Type,seq_no:number) {
     const toUid = senderId
