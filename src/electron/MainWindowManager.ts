@@ -1,16 +1,16 @@
 import { app, BrowserWindow,session } from 'electron';
-import { AppArgvType, DefaultPartition, getProxyConfig } from '../utils/args';
+import { AppArgvType, DefaultPartition, getProxyConfig } from './args';
 import path from 'path';
-import { getErrorHtml } from '../utils/utils';
-import Ui from './Ui';
-import ElectronIpcMain from '../services/events/ElectronIpcMain';
-import Devtool from './Devtool';
-import { startServers } from '../../server/server';
-import { BotRqaServer } from '../services/BotRqaServer';
+import { getErrorHtml } from './utils/utils';
+import Ui from './ui/Ui';
+import ElectronIpcMain from './services/events/ElectronIpcMain';
+import Devtool from './ui/Devtool';
+import { startServers } from '../server/server';
+import { BotRqaServer } from './services/BotRqaServer';
 
 export const MasterWindowBotId = "1"
 
-let __managers = new Map<string, MainWindowManager>();
+const __managers = new Map<string, MainWindowManager>();
 
 const PRELOAD_JS = path.join(__dirname, 'electron','js', 'preload.js')
 
@@ -30,6 +30,11 @@ export default class MainWindowManager {
   static checkInstance(botId: string) {
     return __managers.has(botId);
   }
+
+  static getMasterInstance() {
+    return __managers.get(MasterWindowBotId)!;
+  }
+
   static getInstance(botId: string) {
     if(!__managers.has(botId)){
       __managers.set(botId,new MainWindowManager(botId))
@@ -100,7 +105,8 @@ export default class MainWindowManager {
     }catch (e:any){
       const {useProxy} = this.getOptions()
       const proxyConfig = getProxyConfig(this.getOptions())
-      //@ts-ignore
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       const htmlContent = getErrorHtml(e,!!useProxy,proxyConfig);
       await this.mainWindow!.loadURL(`data:text/html;charset=utf-8,${encodeURI(htmlContent)}`);
     }
@@ -110,16 +116,16 @@ export default class MainWindowManager {
     const {useProxy} = options
     if (useProxy) {
       const proxyConfig = getProxyConfig(options)
-      const mainWindowSession = this.mainWindow!.webContents.session;
+      const mainWindowSession = this.mainWindow?.webContents.session;
       await session.defaultSession.setProxy(proxyConfig)
-      await mainWindowSession.setProxy(proxyConfig)
+      await mainWindowSession!.setProxy(proxyConfig)
     }
     return this
   }
   addEvents(){
     const {mainWindow} = this
     this.mainWindow!.webContents.on('console-message', (event, level, message, line, sourceId) => {
-      console.debug(" =>",`${this.botId}`,message)
+      //console.debug(" =>",`${this.botId}`,message)
     });
     mainWindow!.webContents.on('did-finish-load', async () => {
       const displaySize = Ui.getDisplaySize(mainWindow!)
@@ -141,7 +147,7 @@ export default class MainWindowManager {
       if(__managers.has(this.botId)){
         __managers.delete(this.botId)
       }
-      console.log(`mainWindow closed`);
+      console.log(`mainWindow[${this.botId}] closed`);
       if(this.botId === MasterWindowBotId){
         app.quit()
       }
@@ -156,7 +162,6 @@ export default class MainWindowManager {
 
       if(this.getOptions().waiServerRqaPort){
         const rpaServer = BotRqaServer.getInstance(this.getOptions().waiServerRqaPort)
-        rpaServer.waitForServerIsOK();
         rpaServer.start()
       }
     }
@@ -166,7 +171,7 @@ export default class MainWindowManager {
     await this.loadUrl(homeUrl)
   }
   async sendToRenderMsg(action:string,payload?:any){
-    await this.mainWindow!.webContents.send("ipcRenderMsg", action,payload);
+    await this.mainWindow?.webContents.send("ipcRenderMsg", action,payload);
   }
   async runJsCode(code:string){
     console.log("[runJsCode]",code)

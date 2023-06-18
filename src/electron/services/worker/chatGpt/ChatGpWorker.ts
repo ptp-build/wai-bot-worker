@@ -1,4 +1,4 @@
-import {parseAppArgs } from '../../../utils/args';
+import {parseAppArgs } from '../../../args';
 import PyAutoGuiRpa from '../../PyAutoGuiRpa';
 import BotWebSocket from '../../BotWebSocket';
 import { ChatGptStreamStatus, MsgAction } from '../../../../lib/ptp/protobuf/PTPCommon/types';
@@ -6,7 +6,7 @@ import { sleep } from '../../../../worker/share/utils/utils';
 import { encodeToBase64 } from '../../../utils/utils';
 import ChatGptHelper from './ChatGptHelper';
 import { ChatGptMsgProcessor } from './ChatGptMsgProcessor';
-import MainWindowManager from '../../../ui/MainWindowManager';
+import MainWindowManager from '../../../MainWindowManager';
 
 let __workers = new Map<string, ChatGpWorker>();
 export enum BotStateType {
@@ -147,7 +147,7 @@ export class ChatGpWorker {
   }
 
   async heartBeat(){
-    console.debug("[worker] heartBeat",this.botId,this.botState,this.botState === BotStateType.READY)
+    // console.debug("[worker] heartBeat",this.botId,this.botState,this.botState === BotStateType.READY)
     if(this.botState === BotStateType.READY){
       return BotWebSocket.msgReq(MsgAction.MsgAction_WaiChatGptPromptsInputReady,{
         botId:this.getBotId()

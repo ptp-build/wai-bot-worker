@@ -1,6 +1,6 @@
 import * as electronLog from 'electron-log';
 import * as path from 'path';
-import { getElectronEnv } from './electronEnv';
+import MainWindowManager from '../MainWindowManager';
 
 export type LogLevelType = 'info' | 'error' | 'warn' | 'debug';
 
@@ -26,6 +26,7 @@ const logLevels = {
 };
 
 function logWithFileAndLine(name:string,minLevel: LogLevelType, level: LogLevelType, ...args: any[]) {
+
   if (logLevels[level] < logLevels[minLevel]) {
     return;
   }
@@ -45,13 +46,19 @@ function logWithFileAndLine(name:string,minLevel: LogLevelType, level: LogLevelT
     if (match) {
       functionName = match[1];
     }
-
+    if(MainWindowManager.getMasterInstance()){
+      MainWindowManager.getMasterInstance().sendToRenderMsg("CONSOLE_LOG",{
+        func:functionName.replace(".<anonymous>",""),
+        level:minLevel.toUpperCase(),
+        args
+      })
+    }
     // Using type assertion to inform TypeScript that level is a valid key
     (electronLog[level] as any)(`[${level.toUpperCase()}] [${name}] [${functionName.replace(".<anonymous>","")}]`, ...args);
   }
 }
 
-export function setUpLogs(name:string, minLevel: LogLevelType,dir?:string,fileName:string = 'app.log') {
+export function setUpLogs(name:string, minLevel: LogLevelType,dir?:string,fileName?:string) {
   electronLog.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] {text}';
   electronLog.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] {text}';
 
@@ -60,6 +67,6 @@ export function setUpLogs(name:string, minLevel: LogLevelType,dir?:string,fileNa
   console.warn = logWithFileAndLine.bind(null, name,minLevel, 'warn');
   console.debug = logWithFileAndLine.bind(null,name, minLevel, 'debug');
   electronLog.transports.file.resolvePath = () => {
-    return path.join(dir || __dirname, fileName);
+    return path.join(dir || __dirname, fileName || 'app.log');
   };
 }

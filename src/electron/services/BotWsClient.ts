@@ -7,8 +7,7 @@ import { MsgAction, UserAskChatGptMsg_Type } from '../../lib/ptp/protobuf/PTPCom
 
 
 export class BotWsClient {
-  private botWs?:BotWebSocket;
-  async start(msgServer:string,accountId:number,accountSign:string) {
+  static async start(msgServer:string,accountId:number,accountSign:string) {
 
     if(!accountId || !accountSign || !msgServer){
       console.error("[BotWsClient start], error check the args!!!",JSON.stringify({msgServer,accountId,accountSign}))
@@ -48,7 +47,7 @@ export class BotWsClient {
                 if (payload.getCommandId() === 5001) {
                   return;
                 }
-                await this.handleWsMsg(payload);
+                await BotWsClient.handleWsMsg(payload);
                 break;
             }
 
@@ -62,28 +61,26 @@ export class BotWsClient {
             await botWs.login();
           }
           await botWs.waitForMsgServerState(BotWebSocketState.logged);
-          this.botWs = botWs
         }catch (e){
           console.error("[BotWsClient]",e)
         }
 
     }
-
-    return this
   }
 
-  async handleWsMsg(pdu: Pdu) {
+  static async handleWsMsg(pdu: Pdu) {
     switch (pdu.getCommandId()) {
       case ActionCommands.CID_MsgReq:
-        await this.handleMsgReq(pdu);
+        await BotWsClient.handleMsgReq(pdu);
         break;
     }
   }
 
-  async handleMsgReq(pdu: Pdu) {
-    let { action,payload } = MsgReq.parseMsg(pdu);
+  static async handleMsgReq(pdu: Pdu) {
+    const { action,payload } = MsgReq.parseMsg(pdu);
     switch (action){
       case MsgAction.MsgAction_WaiChatGptUserAskMsg:
+        // eslint-disable-next-line no-case-declarations,@typescript-eslint/no-non-null-assertion
         const userAskChatGptMsg = JSON.parse(payload!) as UserAskChatGptMsg_Type
         console.debug("[MsgAction_WaiChatGptUserAskMsg]",userAskChatGptMsg)
         await ChatGpWorker.getInstance(userAskChatGptMsg.chatGptBotId)
@@ -93,10 +90,10 @@ export class BotWsClient {
 
   }
 
-  close() {
-    console.log("[BotWsClient close]",this.botWs)
-    if(this.botWs){
-      this.botWs.close().catch(console.error)
+  static close() {
+    console.log("[BotWsClient close]")
+    if(BotWebSocket.getCurrentInstance()){
+      BotWebSocket.getCurrentInstance().close().catch(console.error)
     }
   }
 }

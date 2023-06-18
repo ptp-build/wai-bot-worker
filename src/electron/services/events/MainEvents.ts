@@ -1,11 +1,12 @@
-import { isProd, parseAppArgs } from '../../utils/args';
+import { isProd, parseAppArgs } from '../../args';
 import Ui, { getAppPosition } from '../../ui/Ui';
-import MainWindowManager from '../../ui/MainWindowManager';
+import MainWindowManager from '../../MainWindowManager';
 import { parseCallBackButtonPayload } from '../../utils/utils';
 import { BotWsClient } from '../BotWsClient';
 import { getElectronEnv } from '../../utils/electronEnv';
 import PyAutoGuiRpa from '../PyAutoGuiRpa';
 import path from 'path';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { shell } = require('electron');
 
 const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
@@ -27,7 +28,7 @@ export default class MainEvents {
 
   async createChatGptBotWorker(data: string) {
     const eventData = parseCallBackButtonPayload(data)
-    let {botId,isCreate,accountNum,proxy,chatGptAuthUser} = eventData
+    let {botId,isCreate,isMasterBot,accountNum,proxy,chatGptAuthUser} = eventData
     console.log("[createChatGptBotWorker]",eventData)
     accountNum = accountNum || 0
     accountNum += 1
@@ -83,6 +84,7 @@ export default class MainEvents {
       this.sendAction("",{
         type:"chatGpt",
         isCreate,
+        isMasterBot,
         botId:eventData.botId,
         proxy,chatGptAuthUser,
         appWidth,appHeight,appPosX,appPosY
@@ -91,6 +93,8 @@ export default class MainEvents {
 
       await MainWindowManager.getInstance(botId).init({
         ...parseAppArgs(),
+        openDevTool:false,
+        startWsServer:false,
         partitionName,
         homeUrl,
         appWidth,
@@ -114,7 +118,7 @@ export default class MainEvents {
   getAdvanceInlineButtons(data:string,paload:any){
     const chatId = data.split("/")[data.split("/").length - 1]
     const isMaster = chatId === "1000";
-    let inlineButtons = [
+    const inlineButtons = [
       [
         {
           type:"callback",
@@ -189,7 +193,7 @@ export default class MainEvents {
   async ipcMainCallbackButton({data,...payload}:{__id:number,data:string,eventData?:any}){
     if(data.startsWith("ipcMain/startWsClient/")){
       const {msgServer,accountId,accountSign} = parseCallBackButtonPayload(data)
-      await new BotWsClient().start(msgServer,accountId,accountSign)
+      await BotWsClient.start(msgServer,accountId,accountSign)
       return
     }
 
@@ -223,7 +227,7 @@ export default class MainEvents {
     const electron_env = getElectronEnv()
     const appArgs_str = "```json\n" + JSON.stringify(appArgs, null, 2) + "```"
     const electron_env_str = "```json\n" + JSON.stringify(electron_env, null, 2) + "```"
-    const text = `appArgs:\n${appArgs_str}\electronEnv\n${electron_env_str}`
+    const text = `appArgs:\n${appArgs_str}\nelectronEnv\n${electron_env_str}`
     this.sendAction(text);
   }
 

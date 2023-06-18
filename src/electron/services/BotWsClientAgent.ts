@@ -1,4 +1,4 @@
-import { AppArgvType, parseAppArgs } from '../utils/args';
+import { AppArgvType, parseAppArgs } from '../args';
 const WebSocket = require('ws');
 
 export class BotWsClientAgent{

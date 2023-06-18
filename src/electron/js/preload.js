@@ -7,6 +7,7 @@ const IpcMainCallbackButtonAction = "ipcMainCallbackButton";
 const botId = args[0]
 const chatGptUsername = args[1].replace("chatGptUsername=","")
 const chatGptPassword = args[2].replace("chatGptPassword=","")
+const isMaster = botId === "1"
 
 console.log("[Preload]",window.location.href)
 console.log("[Preload] botId: ",botId,process.argv)
@@ -16,6 +17,11 @@ class ElectronIpcRender{
   addEvents(){
     console.log("[ElectronIpcRender addEvents!!!]")
     ipcRenderer.on('ipcRenderMsg', (event, action,payload) => {
+      if(action === "CONSOLE_LOG"){
+        const {args,level,func} = payload
+        console.log(`[${level}] [${func}]`,...args)
+        return
+      }
       console.log('[ipcRenderMsg]', action,payload);
       window.dispatchEvent(new CustomEvent('ipcJsMsg', {detail:{action,payload}} ));
     });

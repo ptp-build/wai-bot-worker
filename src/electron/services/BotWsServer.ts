@@ -3,7 +3,7 @@ import * as net from 'net';
 import { exec } from 'child_process';
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
 import { currentTs1000 } from '../../worker/share/utils/utils';
-import { AppArgvType } from '../utils/args';
+import { AppArgvType } from '../args';
 
 export class BotWsServer {
   private port?: number;

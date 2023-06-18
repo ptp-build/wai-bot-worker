@@ -92,7 +92,6 @@ dist/
 *.spec
 src/electron/assets/py
 pnpm-lock.yaml
-#src/electron/assets/wai/desktop
 wrangler-local-state/
 wrangler.toml
 wrangler.prod.toml

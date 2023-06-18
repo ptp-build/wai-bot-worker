@@ -64,8 +64,6 @@ export class BotRqaServer {
       const url =`http://127.0.0.1:${port}`
       console.log("[waitForServerIsOK]",url)
       const response = await fetch(url);
-      console.error(response.status)
-      // 如果状态码是200，那么服务器是运行的
       return response.status === 200;
     } catch (error:any) {
       console.error(error.message)
@@ -73,21 +71,26 @@ export class BotRqaServer {
     }
   }
   async start() {
+    const isPortUsed = await this.isPortOpen();
+    if(isPortUsed){
+      console.log("[isPortUsed] port:",this.port)
+      return
+    }
+
     let command = path.join(__dirname,"electron/assets/py/wai-bot-rpa")
     if(process.platform === "win32"){
       command += ".exe"
     }
     if (process.platform === 'win32') {
-      spawn('cmd.exe', ['/c', 'start', 'cmd.exe', '/k', command]);
-    }
-    else if (process.platform === 'darwin') {
+      spawn('cmd.exe', ['/k', command]);
+    } else if (process.platform === 'darwin') {
       spawn('chmod', ['+x',command]);
       spawn('osascript', ['-e', `tell application "Terminal" to do script "${command}"`]);
-    }
-    else {
+    } else {
       spawn('chmod', ['+x',command]);
       spawn('x-terminal-emulator', ['-e', command]);
     }
+    this.waitForServerIsOK();
     // // 检查端口是否被占用
     // const isPortUsed = await this.isPortInUse(this.port);
     //

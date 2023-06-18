@@ -274,7 +274,7 @@ export default class BotWebSocket {
     this.client.send(data);
   }
 
-  sendWithQueue(pdu:Pdu,sync:boolean = false) {
+  sendWithQueue(pdu:Pdu,sync = false) {
     seq_num += 1;
     if (seq_num > 100000) {
       seq_num = 10;
@@ -330,7 +330,10 @@ export default class BotWebSocket {
     await this.waitForMsgServerState(BotWebSocketState.closed);
   }
 
-  static async msgReq(action:PTPCommon.MsgAction,payload?:any,needReturn:boolean = false,sync:boolean = false){
+  static async msgReq(action:PTPCommon.MsgAction,payload?:any,needReturn = false,sync = false){
+    if(!BotWebSocket.getCurrentInstance()){
+      throw new Error("BotWebSocket is not connected!")
+    }
     const msg = {
       action,
       payload:payload ? JSON.stringify(payload):undefined

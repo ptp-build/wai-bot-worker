@@ -8,7 +8,7 @@ import { DTalkBotSendMessageAction } from '../worker/controller/DTalkController'
 import { MasterAccountsAction } from '../worker/controller/MasterController';
 import ProtoController from '../worker/controller/ProtoController';
 import { Environment, kv, setKvAndStorage, storage } from '../worker/env';
-import { isProd, parseAppArgs } from '../electron/utils/args';
+import { isProd, parseAppArgs } from '../electron/args';
 import LocalFileKv from '../worker/services/db/LocalFileKv';
 import FileStorage from '../worker/services/storage/FileStorage';
 
@@ -50,14 +50,14 @@ export async function startServers(tcpPort: number, wsPort: number,httpPort:numb
   iRouter.setEnv(env,useCloudFlareWorker);
   const httpServer = new HttpServer(httpPort).setRoute(iRouter);
   await httpServer.start();
-  console.log(`HttpServer server started: http://localhost:${httpPort}`);
+  console.log(`HttpServer server started: http://127.0.0.1:${httpPort}`);
 
   const wsServer = new WsServer(wsPort);
   wsServer.start();
-  console.log(`WebSocket server started: ws://localhost:${wsPort}`);
+  console.log(`WebSocket server started: ws://127.0.0.1:${wsPort}`);
 
   const tcpServer = new TcpServer(tcpPort);
   await tcpServer.start();
-  console.log(`TCP server started on port: localhost:${tcpPort}`);
+  console.log(`TCP server started on port: 127.0.0.1:${tcpPort}`);
 }
 

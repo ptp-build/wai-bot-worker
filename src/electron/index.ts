@@ -1,7 +1,7 @@
 import { app } from 'electron';
-import { isProd, parseAppArgs } from './utils/args';
+import { isProd, parseAppArgs } from './args';
 import { setUpLogs } from './utils/logs';
-import MainWindowManager, { MasterWindowBotId } from './ui/MainWindowManager';
+import MainWindowManager, { MasterWindowBotId } from './MainWindowManager';
 
 const userDataPath = app.getPath('userData');
 

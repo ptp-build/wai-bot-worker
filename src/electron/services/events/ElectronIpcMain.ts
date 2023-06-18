@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import MainWindowManager, { MasterWindowBotId } from '../../ui/MainWindowManager';
+import MainWindowManager, { MasterWindowBotId } from '../../MainWindowManager';
 import MainEvents from './MainEvents';
 import WorkerEvents from './WorkerEvents';
 
@@ -29,7 +29,9 @@ export default class ElectronIpcMain{
     console.log("[ElectronIpcMain addEvents!!!]")
     ipcMain.on('ipcMainMsg', async (event, action,payload) => {
       const {__botId} = payload || {}
-      console.debug("[ipcMainMsg]",__botId,action,payload)
+      if(action !== "MsgAction_WaiChatGptHeartBeat"){
+        console.debug("[ipcMainMsg]",__botId,action,payload)
+      }
       await new ElectronIpcMain(__botId).handleEvent(action,payload)
     });
   }
