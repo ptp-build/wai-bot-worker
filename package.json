@@ -1,11 +1,13 @@
 {
   "name": "wai-bot-worker",
   "productName": "Wai Bot Worker",
-  "version": "1.2.27",
+  "version": "1.2.28",
   "description": "Wai Bot Worker",
   "main": ".webpack/main",
   "scripts": {
     "build:wai-bot-rpa": "node tools/build-wai-bot-rpa.js",
+    "run:wai-bot-rpa": "/usr/bin/python3 py-wai-bot-rpa/wai-bot-rpa.py",
+    "run:wai-bot-click-position": "/usr/bin/python3 py-wai-bot-rpa/wai-click-position.py",
     "start": "electron-forge start",
     "server:dev:nodemon": "nodemon",
     "server": "ts-node src/server/index.ts",

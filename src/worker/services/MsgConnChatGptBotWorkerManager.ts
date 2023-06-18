@@ -1,3 +1,5 @@
+import { Msg } from './msg/Msg';
+
 let currentInstance:MsgConnChatGptBotWorkerManager;
 
 export enum MsgConnChatGptBotWorkerStatus {
@@ -10,6 +12,7 @@ export enum MsgConnChatGptBotWorkerStatus {
 export type MsgConnChatGptBotWorker = {
   msgConnId:string,
   botId:string,
+  ownerUid:string,
   status:MsgConnChatGptBotWorkerStatus
 }
 
@@ -31,11 +34,22 @@ export default class MsgConnChatGptBotWorkerManager {
     return this.statusMap
   }
 
-  setStatus(botId:string,msgConnId:string,status:MsgConnChatGptBotWorkerStatus){
+  setStatus(botId:string,ownerUid:string,msgConnId:string,status:MsgConnChatGptBotWorkerStatus){
     this.statusMap.set(botId,{
+      ownerUid,
       msgConnId,
       botId,
       status
+    })
+  }
+  setBotStatus(msgConnId:string,status:MsgConnChatGptBotWorkerStatus){
+    this.statusMap.forEach((worker,botId)=>{
+      if(worker.msgConnId === msgConnId){
+        this.statusMap.set(worker.botId,{
+          ...worker,
+          status
+        })
+      }
     })
   }
 
@@ -46,6 +60,7 @@ export default class MsgConnChatGptBotWorkerManager {
   remove(botId:string){
     this.statusMap.delete(botId)
   }
+
   getRandomReadyWorker(): MsgConnChatGptBotWorker | null {
     const readyWorkers = Array.from(this.statusMap.values()).filter(worker => worker.status === MsgConnChatGptBotWorkerStatus.READY);
     if (readyWorkers.length === 0) {

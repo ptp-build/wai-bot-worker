@@ -30,7 +30,7 @@ export class WebSocketDurableObject {
     console.log("[DO] fetch",request.url)
     const uri = new URL(request.url)
     if(uri.pathname.startsWith("/api")){
-      return MsgConnectionApiHandler.getInstance().fetch(request);
+      return await MsgConnectionApiHandler.getInstance().fetch(request);
     }
     //@ts-ignore
     const requestMetadata = request.cf;

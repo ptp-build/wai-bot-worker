@@ -28,6 +28,9 @@ export default class WorkerEvents {
       case "MsgAction_WaiChatGptPromptsInputReady":
         chatGptWorker.promptsInputReady()
         break
+      case "MsgAction_WaiChatGptHeartBeat":
+        chatGptWorker.heartBeat()
+        break
       case 'MsgAction_WaiChatGptOnRecvMsg':
         chatGptWorker.recvMsg(payload)
         break

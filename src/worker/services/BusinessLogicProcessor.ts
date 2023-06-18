@@ -121,6 +121,7 @@ export default class BusinessLogicProcessor {
         const MsgAction_WaiChatGptPromptsInputReadyData = JSON.parse(payload!)
         MsgConnChatGptBotWorkerManager.getInstance().setStatus(
           MsgAction_WaiChatGptPromptsInputReadyData.botId,
+          this.getAuthSession()?.authUserId!,
           this.connId,
           MsgConnChatGptBotWorkerStatus.READY
         )
@@ -146,7 +147,12 @@ export default class BusinessLogicProcessor {
         }).pack().getPbData()),
     )
     if(streamStatus === ChatGptStreamStatus.ChatGptStreamStatus_DONE){
-      MsgConnChatGptBotWorkerManager.getInstance().setStatus(chatGptBotId,this.connId,MsgConnChatGptBotWorkerStatus.READY)
+      MsgConnChatGptBotWorkerManager.getInstance().setStatus(
+        chatGptBotId,
+        this.getAuthSession()?.authUserId!,
+        this.connId,
+        MsgConnChatGptBotWorkerStatus.READY
+      )
     }
   }
   async handleSendTextMsgReq(pdu: Pdu) {
@@ -216,7 +222,10 @@ export default class BusinessLogicProcessor {
       const worker = manager.getRandomReadyWorker()
       let reply = "..."
       if(worker){
-        manager.setStatus(worker.botId,worker.msgConnId,MsgConnChatGptBotWorkerStatus.BUSY)
+        manager.setStatus(
+          worker.botId,
+          worker.ownerUid,
+          worker.msgConnId,MsgConnChatGptBotWorkerStatus.BUSY)
         await new ChatGptRequestHelper().process(pdu,authUserId,worker.msgConnId,worker.botId);
       }else{
         reply = "Work is busy! pls Retry later"

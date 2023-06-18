@@ -15,8 +15,9 @@ export class MasterAccountsAction extends WaiOpenAPIRoute {
     },
   };
   async handle(request: Request, data: Record<string, any>) {
+    const res = await new DoWebsocketApi().getAccounts()
     return {
-      accounts:await new DoWebsocketApi().getAccounts()
+      result:res
     }
   }
 }

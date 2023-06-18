@@ -1,4 +1,4 @@
-import MsgConnChatGptBotWorkerManager from './MsgConnChatGptBotWorkerManager';
+import MsgConnChatGptBotWorkerManager, { MsgConnChatGptBotWorkerStatus } from './MsgConnChatGptBotWorkerManager';
 import { BaseConnection } from '../../server/service/BaseConnection';
 import { AuthSessionType } from './user/User';
 
@@ -42,6 +42,7 @@ export default class MsgConnectionManager {
     this.accountUsers.set(id,account)
     this.addUserAccountMap(id,account)
   }
+
   updateMsgConn(id:string,account:Partial<AccountUser>){
     const account1 = this.getMsgConn(id)
     Object.assign(account1,account)
@@ -61,7 +62,7 @@ export default class MsgConnectionManager {
     const account=this.accountUsers.get(id)
     if(account){
       if(undefined !== MsgConnChatGptBotWorkerManager.getInstance().getStatus(id)){
-        MsgConnChatGptBotWorkerManager.getInstance().remove(id)
+        MsgConnChatGptBotWorkerManager.getInstance().setBotStatus(id,MsgConnChatGptBotWorkerStatus.OFFLINE)
       }
       this.accountUsers.delete(id)
       if(account.session){

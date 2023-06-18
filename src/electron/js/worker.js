@@ -97,7 +97,7 @@ class WaiChatGptBotWorker{
     return __currentWaiChatGptBotWorker;
   }
   init(){
-    console.log("===>>>> [WaiChatGptBotWorker inited]",this.id)
+    console.log("===>>>> [WaiChatGptBotWorker init]",this.id)
     invoke_api("MsgAction_WaiChatGptBotWorkerInit")
     window.addEventListener('ipcJsMsg', ({detail}) => {
       const { action,payload } = detail;
@@ -112,9 +112,13 @@ class WaiChatGptBotWorker{
   }
   loop(){
     // console.log("[Loop!!]",this.id,this.promptsInputReady)
-    if(document.querySelector("#prompt-textarea") && !this.promptsInputReady){
-      this.promptsInputReady = true;
-      invoke_api("MsgAction_WaiChatGptPromptsInputReady")
+    if(document.querySelector("#prompt-textarea")){
+      if(!this.promptsInputReady){
+        this.promptsInputReady = true;
+        invoke_api("MsgAction_WaiChatGptPromptsInputReady")
+      }else{
+        invoke_api("MsgAction_WaiChatGptHeartBeat")
+      }
     }
 
     if($(".absolute.inset-0").length > 0 && $(".absolute.inset-0").find("button")){

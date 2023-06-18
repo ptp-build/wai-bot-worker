@@ -50,7 +50,7 @@ export async function getSessionInfoFromSign(token: string) {
     authUserId = await genUserId();
     await account.saveUidFromCacheByAddress(address, authUserId);
   }
-  console.log("====>>",token,{ authUserId, ts, address, clientId,chatId })
+  // console.log("====>>",{ authUserId, ts, address, clientId,chatId })
   return { authUserId, ts, address, clientId,chatId:chatId ? chatId.toString() : undefined };
 }
 

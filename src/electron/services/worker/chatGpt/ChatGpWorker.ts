@@ -146,6 +146,14 @@ export class ChatGpWorker {
     this.askMsg("ping ,you reply:pong!!!!")
   }
 
+  async heartBeat(){
+    console.debug("[worker] heartBeat",this.botId,this.botState,this.botState === BotStateType.READY)
+    if(this.botState === BotStateType.READY){
+      return BotWebSocket.msgReq(MsgAction.MsgAction_WaiChatGptPromptsInputReady,{
+        botId:this.getBotId()
+      }).catch(console.error)
+    }
+  }
   async inputPrompt(text:string){
     const dataEncode = encodeToBase64(text)
     await this.getMainWindow().runJsCode(`document.getElementById("prompt-textarea").value = decodeURIComponent(escape(atob("${dataEncode}")))`)

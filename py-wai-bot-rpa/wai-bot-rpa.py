@@ -110,6 +110,11 @@ class SimpleAPIHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode())
     def do_GET(self):
         self.send_json({"status": 200})
+    def do_DELETE(self):
+        # Clear the task queue
+        with task_lock:
+            task_queue.queue.clear()
+        self.send_json({"status": 200})
     def do_POST(self):
         """
         curl -X POST -H "Content-Type: application/json" -d @demo/openForceQuit-demo.json http://localhost:5090
@@ -132,6 +137,8 @@ if len(sys.argv) > 2:
         log("Invalid port number. Using default port "+ str(PORT))
 
 with HTTPServer(("", PORT), SimpleAPIHandler) as httpd:
+    queue_length = task_queue.qsize()
+    print("[Task_queue] size:", queue_length)
     log(f"Serving API at http://localhost:{PORT}")
     httpd.serve_forever()
 

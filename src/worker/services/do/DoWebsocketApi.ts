@@ -47,7 +47,6 @@ export class DoWebsocketApi{
     }
     async getAccounts(){
         const handler = this.getHandler();
-        console.log("getAccounts")
         const res = await handler.fetch(this.buildRequest("GET","__accounts"))
         // @ts-ignore
         return await res.json();

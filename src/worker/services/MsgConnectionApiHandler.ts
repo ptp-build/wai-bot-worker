@@ -29,10 +29,12 @@ export default class MsgConnectionApiHandler {
         country:account.country
       })
     });
+    const chatGptBotWorkers = Object.fromEntries(MsgConnChatGptBotWorkerManager.getInstance().getStatusMap());
+    const addressAccountMap = Object.fromEntries(this.msgConnManager.getAddressAccountMap());
     return {
       accounts,
-      chatGptBotWorkers:Object.fromEntries(MsgConnChatGptBotWorkerManager.getInstance().getStatusMap()),
-      addressAccountMap:Object.fromEntries(this.msgConnManager.getAddressAccountMap())
+      chatGptBotWorkers,
+      addressAccountMap
     }
   }
   async sendBotMsgRes(toUid:string,pduBuf:Buffer){
@@ -93,7 +95,6 @@ export default class MsgConnectionApiHandler {
     const uri = new URL(request.url)
     let requestBody:any;
     let hasSent = false;
-    const msgConnManager = MsgConnectionManager.getInstance()
     if (uri.pathname.startsWith('/api/do/ws/sendBotMsgRes')) {
       requestBody = await request.json();
       let {pduBuf, toUid} = requestBody
@@ -115,7 +116,7 @@ export default class MsgConnectionApiHandler {
       return new Response(null, { status: hasSent ? 200 : 404 });
     }
     if (uri.pathname.startsWith('/api/do/ws/__accounts')) {
-      return new Response(JSON.stringify(this.getOnlineAccounts()), { status: 200,headers:JSON_HEADERS });
+      return new Response(JSON.stringify(await this.getOnlineAccounts()), { status: 200,headers:JSON_HEADERS });
     }
   }
 }
