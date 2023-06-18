@@ -330,7 +330,19 @@ export default class BotWebSocket {
     await this.waitForMsgServerState(BotWebSocketState.closed);
   }
 
-  static async msgReq(action:PTPCommon.MsgAction,payload?:any,needReturn = false,sync = false){
+  static async sendMsgReq(action:PTPCommon.MsgAction,payload?:any){
+    if(!BotWebSocket.getCurrentInstance()){
+      throw new Error("BotWebSocket is not connected!")
+    }
+    BotWebSocket.getCurrentInstance().send(
+      new MsgReq({
+        action,
+        payload:payload ? JSON.stringify(payload):undefined
+      }).pack().getPbData()
+    )
+  }
+
+  static async sendMsgReqWithQueue(action:PTPCommon.MsgAction,payload?:any){
     if(!BotWebSocket.getCurrentInstance()){
       throw new Error("BotWebSocket is not connected!")
     }
@@ -338,15 +350,21 @@ export default class BotWebSocket {
       action,
       payload:payload ? JSON.stringify(payload):undefined
     }
-    if(!needReturn){
-      return BotWebSocket.getCurrentInstance().sendWithQueue(
-        new MsgReq(msg).pack(),
-        sync
-      )
-    }else{
-      return BotWebSocket.getCurrentInstance().sendPduWithCallback(
-        new MsgReq(msg).pack()
-      )
+    BotWebSocket.getCurrentInstance().sendWithQueue(
+      new MsgReq(msg).pack(),
+      true
+    )
+  }
+  static async sendMsgReqWithCallback(action:PTPCommon.MsgAction,payload?:any){
+    if(!BotWebSocket.getCurrentInstance()){
+      throw new Error("BotWebSocket is not connected!")
     }
+    const msg = {
+      action,
+      payload:payload ? JSON.stringify(payload):undefined
+    }
+    return BotWebSocket.getCurrentInstance().sendPduWithCallback(
+      new MsgReq(msg).pack()
+    )
   }
 }

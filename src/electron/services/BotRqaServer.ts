@@ -82,7 +82,7 @@ export class BotRqaServer {
       command += ".exe"
     }
     if (process.platform === 'win32') {
-      spawn('cmd.exe', ['/k', command]);
+      spawn('cmd.exe', ['/c', 'start', 'cmd.exe', '/k', command]);
     } else if (process.platform === 'darwin') {
       spawn('chmod', ['+x',command]);
       spawn('osascript', ['-e', `tell application "Terminal" to do script "${command}"`]);

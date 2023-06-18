@@ -1,11 +1,8 @@
 import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
+import { sleep } from '../../worker/share/utils/utils';
 
 const msgList:Pdu[] = []
 let handleSendMsgIsRun = false
-
-function sleep(ms:number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 export default class MessageSendHandler{
   static addMsg(msg:Pdu){
@@ -29,7 +26,7 @@ export default class MessageSendHandler{
         // console.log("handleSendMsg res",i,res)
         if(!res){
           console.log("handleSendMsg... left messages:",msgList.length,i)
-          await sleep(200)
+          await sleep(1000)
           msgList.unshift(msg)
         }
       }else{

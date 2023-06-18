@@ -172,8 +172,10 @@ export function parseAppArgs():AppArgvType{
           value = "persist:" + value
         }
         break
-      case "useCloudFlareWorker":
       case "openDevTool":
+        value = getDefaultValue(value,true,'boolean')
+        break
+      case "useCloudFlareWorker":
       case "useProxy":
       case "startWsServer":
         value = getDefaultValue(value,false,'boolean')

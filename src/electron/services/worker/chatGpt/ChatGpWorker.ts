@@ -149,7 +149,7 @@ export class ChatGpWorker {
   async heartBeat(){
     // console.debug("[worker] heartBeat",this.botId,this.botState,this.botState === BotStateType.READY)
     if(this.botState === BotStateType.READY){
-      return BotWebSocket.msgReq(MsgAction.MsgAction_WaiChatGptPromptsInputReady,{
+      return BotWebSocket.sendMsgReq(MsgAction.MsgAction_WaiChatGptPromptsInputReady,{
         botId:this.getBotId()
       }).catch(console.error)
     }
@@ -211,7 +211,7 @@ export class ChatGpWorker {
     if(this.botState === BotStateType.WAITING){
       if(text && text.toLowerCase().includes("done")){
         this.botState = BotStateType.READY
-        return BotWebSocket.msgReq(MsgAction.MsgAction_WaiChatGptPromptsInputReady,{
+        return BotWebSocket.sendMsgReq(MsgAction.MsgAction_WaiChatGptPromptsInputReady,{
           botId:this.getBotId()
         }).catch(console.error)
       }

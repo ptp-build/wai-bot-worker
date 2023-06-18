@@ -48,7 +48,7 @@ export class ChatGptMsgProcessor {
     this.worker.setState(status);
     let { chatId, msgId, msgDate, msgAskId, msgAskDate, senderId } = this;
 
-    BotWebSocket.msgReq(
+    BotWebSocket.sendMsgReqWithQueue(
       MsgAction.MsgAction_WaiChatGptBotAckMsg,
       {
         chatGptBotId:this.worker.getBotId(),
@@ -60,7 +60,7 @@ export class ChatGptMsgProcessor {
         msgAskDate,
         msgId,
         streamStatus: status,
-      },false,true).catch(console.error)
+      }).catch(console.error)
   }
 
   onStart() {
@@ -74,5 +74,4 @@ export class ChatGptMsgProcessor {
   onData(err: string) {
     this.reply(ChatGptStreamStatus.ChatGptStreamStatus_ERROR, err);
   }
-
 }
