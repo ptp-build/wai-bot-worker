@@ -1,5 +1,6 @@
-import { ENV, kv } from '../../env';
-import { currentTs } from '../../share/utils/utils';
+import { ENV } from '../../env';
+import { currentTs } from '../../utils/utils';
+import KvCache from '../kv/KvCache';
 
 interface AccessTokenResponse {
   access_token: string;
@@ -36,16 +37,15 @@ export class WechatMessage {
     return `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${APPSECRET}`;
   }
   async fetchAccessToken() {
-    const response = await fetch(this.getAccessTokenUrl(ENV.WECHAT_APPID, ENV.WECHAT_APPSECRET));
+    const response = await fetch(this.getAccessTokenUrl(ENV.WECHAT_APPID!, ENV.WECHAT_APPSECRET!));
     const data: AccessTokenResponse = await response.json();
     data.expires_at = currentTs() + data.expires_in - 10;
-    await kv.put('WECHAT_ACCESS_TOKEN', JSON.stringify(data));
+    await KvCache.getInstance().put('WECHAT_ACCESS_TOKEN', data);
     return data.access_token;
   }
   async getAccessToken(): Promise<string> {
-    const str = await kv.get('WECHAT_ACCESS_TOKEN');
-    if (str) {
-      const obj = JSON.parse(str) as AccessTokenResponse;
+    const obj = await KvCache.getInstance().get('WECHAT_ACCESS_TOKEN') as AccessTokenResponse;
+    if (obj) {
       if (obj.expires_at && obj.expires_at < currentTs()) {
         return this.fetchAccessToken();
       } else {
@@ -72,8 +72,8 @@ export class WechatMessage {
   async sendNotify(text: string) {
     const accessToken = await this.getAccessToken();
     const request: SendTemplateMsgRequest = {
-      touser: ENV.WECHAT_NOTIFY_USER,
-      template_id: ENV.WECHAT_NOTIFY_TEMPLATE_ID,
+      touser: ENV.WECHAT_NOTIFY_USER!,
+      template_id: ENV.WECHAT_NOTIFY_TEMPLATE_ID!,
       data: {
         note: {
           value: text,

@@ -34,3 +34,19 @@ jest.mock('ws', () => {
 
   return WebSocket;
 });
+
+global.DBInstanceConfig = {
+  host: "127.0.0.1",
+  user: "root",
+  password: "root",
+  database: "wai-test",
+  port:3306
+}
+
+global.RedisConfig = {
+  url: 'redis://localhost:6379/12',
+}
+
+
+jest.setTimeout(100000)
+

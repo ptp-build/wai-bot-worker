@@ -1,5 +1,3 @@
-import { Msg } from './msg/Msg';
-
 let currentInstance:MsgConnChatGptBotWorkerManager;
 
 export enum MsgConnChatGptBotWorkerStatus {

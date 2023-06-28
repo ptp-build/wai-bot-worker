@@ -1,10 +1,10 @@
-
 import {OpenAPIRoute} from '@cloudflare/itty-router-openapi';
-import { getCorsHeader } from '../share/utils/utils';
 import { ENV } from '../env';
+import {getCorsHeader} from "../utils/utils";
 
 //@ts-ignore
 export default class BaseOpenAPIRoute extends OpenAPIRoute {
+
   jsonResp(params: { data: Record<string, any>; status?: number }): Response {
     return new Response(JSON.stringify(params.data), {
       headers: {

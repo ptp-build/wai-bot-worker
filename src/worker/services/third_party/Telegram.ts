@@ -41,7 +41,7 @@ export class TelegramBot {
   }
 
   async sendPayMsg(text: string, buttons: any[]) {
-    const token = ENV.TG_BOT_TOKEN_PAY;
+    const token = ENV.TG_BOT_TOKEN_PAY!;
     const chat_id = ENV.TG_BOT_CHAT_ID_PAY;
     return sendMessageToTelegram(
         {

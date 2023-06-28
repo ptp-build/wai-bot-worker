@@ -13,10 +13,14 @@ export default class FileStorage extends BaseStorage {
     return this.storagePath!
   }
   init(storagePath: string) {
-    this.storagePath = storagePath;
+    if(!storagePath.endsWith("/")){
+      storagePath += "/"
+    }
+    this.storagePath = storagePath + "storage";
     if (!fs.existsSync(this.storagePath)) {
       fs.mkdirSync(this.getStoragePath(), { recursive: true });
     }
+    return this
   }
 
   async put(filePath: string, data: Buffer) {

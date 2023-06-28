@@ -1,7 +1,10 @@
-import {ENV, Environment, ExecutionContext, initEnv, kv, setGlobalCtx} from './env';
+import {ENV, Environment, ExecutionContext, initEnv, setGlobalCtx} from './env';
 import {SWAGGER_DOC} from './setting';
-import {currentTs1000, getCorsOptionsHeader} from './share/utils/utils';
-import {OpenAPIRouter, OpenAPIRouterSchema} from '@cloudflare/itty-router-openapi';
+import {OpenAPIRouter, OpenAPIRouterSchema, OpenAPIRouteSchema} from '@cloudflare/itty-router-openapi';
+import {getCorsOptionsHeader} from "./utils/utils";
+import {currentTs1000} from "./utils/utils";
+import KvCache from "./services/kv/KvCache";
+import WaiOpenAPIRoute from "./services/WaiOpenAPIRoute";
 
 export class WaiRouter {
   private version?: string;
@@ -28,7 +31,7 @@ export class WaiRouter {
       },
     });
     this.router = router;
-    router.all('*', async (request: Request) => {
+    const preRouteHandler = async (request: Request) => {
       if (request.method === 'OPTIONS') {
         return new Response('', {
           headers: {
@@ -36,15 +39,20 @@ export class WaiRouter {
           },
         });
       }
-    });
+    }
+    //@ts-ignore
+    router.all('*', preRouteHandler as OpenAPIRouteSchema);
 
     iRoute(router);
     router.original.get('/', (request:Request) => Response.redirect(`${request.url}docs`, 302));
-    router.all('*', () => new Response('Not Found.', { status: 404 }));
+    const allHandler = () => new Response('Not Found.', { status: 404 })
+    //@ts-ignore
+    router.all('*', allHandler as OpenAPIRouteSchema);
     return this;
   }
-  setEnv(env: Environment,isCloudFlare:boolean = true) {
-    initEnv(env,isCloudFlare);
+
+  setEnv(env: Environment) {
+    initEnv(env);
     return this;
   }
 
@@ -68,18 +76,25 @@ export class WaiRouter {
       const res =  await this.router.handle(request);
       const text = await res.text();
       return new Response(text.replace("<title>SwaggerUI</title>",`<title>${this.title} - SwaggerUI</title>`), {
-        headers: {
+           headers: {
           'content-type': 'text/html; charset=UTF-8',
         },
         status: 200,
       });
     }else{
-      return this.router.handle(request);
+      try {
+        return this.router.handle(request);
+      }catch (e){
+        console.log("router handle ERROR",e)
+        return WaiOpenAPIRoute.responseJson({
+          status:500
+        },500)
+      }
     }
   }
 
   async handleMobilePage(platform: 'android' | 'ios', version: string,theme:string = "light",test:boolean = false) {
-    const page = await kv.get(`mobile_index_${version}.html`);
+    const page = await KvCache.getInstance().get(`mobile_index_${version}.html`);
     const option = {
       status: 200,
       headers: {
@@ -103,7 +118,7 @@ export class WaiRouter {
       const home_res = await fetch(`https://wai.chat/?${t}`);
       const html = await home_res.text();
       if(v === version){
-        await kv.put(`mobile_index_${v.trim()}.html`, html);
+        await KvCache.getInstance().put(`mobile_index_${v.trim()}.html`, html);
         return new Response(
             `<script>
                     window.__PLATFORM='${platform}';
@@ -122,6 +137,4 @@ export class WaiRouter {
       }
     }
   }
-
-  async handleScheduled(event: ScheduledController, ctx: ExecutionContext) {}
 }

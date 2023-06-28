@@ -1,10 +1,5 @@
 import * as net from 'net';
-
-export abstract class BaseConnection {
-  constructor(public id: string) {}
-  abstract send(message: Buffer): void;
-  abstract close(): void;
-}
+import {BaseConnection} from "../../types";
 
 export class TcpConnection extends BaseConnection {
   constructor(id: string, private socket: net.Socket) {
@@ -15,7 +10,7 @@ export class TcpConnection extends BaseConnection {
     this.socket.write(message);
   }
   close() {
-    //close
+
   }
 }
 

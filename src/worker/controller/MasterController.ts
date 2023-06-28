@@ -1,6 +1,5 @@
 import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
-import { DoWebsocketApi } from '../services/do/DoWebsocketApi';
-
+import MsgConnectionApiHandler, {API_HOST_INNER} from "../services/MsgConnectionApiHandler";
 
 export class MasterAccountsAction extends WaiOpenAPIRoute {
   static schema = {
@@ -15,7 +14,8 @@ export class MasterAccountsAction extends WaiOpenAPIRoute {
     },
   };
   async handle(request: Request, data: Record<string, any>) {
-    const res = await new DoWebsocketApi().getAccounts()
+    const res = await MsgConnectionApiHandler.getInstance()
+      .fetch(new Request(`${API_HOST_INNER}/__accounts`))
     return {
       result:res
     }

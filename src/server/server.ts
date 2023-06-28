@@ -1,63 +1,23 @@
-import { TcpServer } from './service/TcpServer';
-import { WsServer } from './service/WsServer';
-import { HttpServer } from './service/HttpServer';
-import { WaiRouter } from '../worker/route';
-import { TelegramBotSendMessageAction } from '../worker/controller/TelegramController';
-import { WechatBotSendMessageAction } from '../worker/controller/WechatController';
-import { DTalkBotSendMessageAction } from '../worker/controller/DTalkController';
-import { MasterAccountsAction } from '../worker/controller/MasterController';
-import ProtoController from '../worker/controller/ProtoController';
-import { Environment, kv, setKvAndStorage, storage } from '../worker/env';
-import { isProd, parseAppArgs } from '../electron/args';
-import LocalFileKv from '../worker/services/db/LocalFileKv';
-import FileStorage from '../worker/services/storage/FileStorage';
-
-const minimist = require('minimist');
+import {WaiRouter} from '../worker/route';
+import {Environment} from '../worker/env';
+import {WaiAction} from "../worker/controller/WaiController";
+import {WaiServer} from "./service/WaiServer";
 
 const iRouter = new WaiRouter({
-  title: 'Worker Wai Chat',
+  title: 'Wai Bot Worker',
   version: '1.0.1',
 }).setRoute((router: any) => {
-  router.post('/api/telegram/bot/sendMessage', TelegramBotSendMessageAction);
-  router.post('/api/wechat/bot/sendMessage', WechatBotSendMessageAction);
-  router.post('/api/dtalk/bot/sendMessage', DTalkBotSendMessageAction);
-
-  router.get('/api/master/accounts', MasterAccountsAction);
-  router.post('/api/proto', ProtoController);
+  router.post('/api/wai', WaiAction);
 });
 
-
-export async function startServers(tcpPort: number, wsPort: number,httpPort:number,userDataPath?:string): Promise<void> {
-  const avgs = parseAppArgs()
-  const {
-    chatGptBotWorkers,useCloudFlareWorker,Access_Control_Allow_Origin,
-    OPENAI_API_KEY,SERVER_USER_ID_START,TG_BOT_CHAT_ID_PAY,TG_BOT_TOKEN_PAY,
-    WECHAT_APPID,WECHAT_APPSECRET,WECHAT_NOTIFY_TEMPLATE_ID,WECHAT_NOTIFY_USER,DTALK_ACCESS_TOKEN_PAY} = avgs
-  const env:Environment = {
-    IS_PROD: isProd,
-    localFileKvDir:userDataPath+"/"+"kv",
-    fileStorageDir:userDataPath+"/"+"storage",
-    chatGptBotWorkers,
-    useCloudFlareWorker,
-    Access_Control_Allow_Origin, OPENAI_API_KEY,SERVER_USER_ID_START,TG_BOT_CHAT_ID_PAY,TG_BOT_TOKEN_PAY,WECHAT_APPID,WECHAT_APPSECRET,WECHAT_NOTIFY_TEMPLATE_ID,WECHAT_NOTIFY_USER,DTALK_ACCESS_TOKEN_PAY
-  }
-
-  let kv = new LocalFileKv();
-  kv.init(env.localFileKvDir);
-  let storage = new FileStorage();
-  storage.init(env.fileStorageDir!);
-  setKvAndStorage(kv,storage)
-  iRouter.setEnv(env,useCloudFlareWorker);
-  const httpServer = new HttpServer(httpPort).setRoute(iRouter);
-  await httpServer.start();
-  console.log(`HttpServer server started: http://127.0.0.1:${httpPort}`);
-
-  const wsServer = new WsServer(wsPort);
-  wsServer.start();
-  console.log(`WebSocket server started: ws://127.0.0.1:${wsPort}`);
-
-  const tcpServer = new TcpServer(tcpPort);
-  await tcpServer.start();
-  console.log(`TCP server started on port: 127.0.0.1:${tcpPort}`);
+export async function startServers(
+  port:number,
+  env:Environment,
+  ): Promise<void> {
+  iRouter.setEnv(env);
+  const server = new WaiServer(port).setRoute(iRouter).setEnableWebSite(false);
+  await server.start();
+  console.log(`HttpServer server started: http://127.0.0.1:${port}`);
+  console.log(`WebSocket server started: ws://127.0.0.1:${port}`);
 }
 

@@ -1,64 +1,43 @@
-
 import BaseOpenAPIRoute from "./BaseOpenAPIRoute";
-import { AuthSessionType, genUserId } from './user/User';
-import UserBalance from './user/UserBalance';
-import Account from './Account';
-import { kv } from '../env';
-import { Pdu } from '../../lib/ptp/protobuf/BaseMsg';
+import ServerSession from "./ServerSession";
+import UserTable from "../models/mysql/UserTable";
 
 export default class WaiOpenAPIRoute extends BaseOpenAPIRoute {
-  private authSession: AuthSessionType | undefined;
-  getAuthSession() {
-    return this.authSession;
+  private token: string | undefined;
+  private session: ServerSession | undefined;
+  async sessionStart(request:Request){
+    await this.checkAuth(request)
+
   }
-  async getUserTotalEarn() {
-    return await new UserBalance(this.authSession?.authUserId!).getTotalEarn();
+  getSession(){
+    return this.session
   }
-  async getUserBalance() {
-    return await new UserBalance(this.authSession?.authUserId!).getBalance();
+  getToken() {
+    return this.token;
   }
-  async getUserTotalSpend() {
-    return await new UserBalance(this.authSession?.authUserId!).getTotalSpend();
-  }
-  async checkIfTokenIsInvalid(request: Request) {
+  async checkAuth(request: Request) {
     const auth = request.headers.get('Authorization');
     if (!auth) {
       return WaiOpenAPIRoute.responseError('Authorization invalid', 400);
     }
+    this.token = request.headers.get('Authorization')!.replace("Bearer ","");
 
-    if (auth) {
-      const token = auth.replace('Bearer ', '');
-      if (token.indexOf('_') === -1) {
-        return WaiOpenAPIRoute.responseError('Authorization is null', 400);
+    const user = await new UserTable().getRowByToken(this.token)
+    this.session = new ServerSession(request)
+
+    if(!user){
+      const userId = await new UserTable().save({
+        token:this.token,
+        address:this.token
+      })
+      if(!userId){
+        return WaiOpenAPIRoute.responseError('System Error', 500);
+      }else{
+        this.session.setUserId(userId)
       }
-      const res = token.split('_');
-      const sign = res[0];
-      const ts = parseInt(res[1]);
-      const clientId = parseInt(res[3]);
-      const account = new Account(ts);
-      const { address } = account.recoverAddressAndPubKey(Buffer.from(sign, 'hex'), ts.toString());
-      if (!address) {
-        return WaiOpenAPIRoute.responseError('Authorization error', 400);
-      }
-      Account.setServerKv(kv);
-      let authUserId = await account.getUidFromCacheByAddress(address);
-      if (!authUserId) {
-        authUserId = await genUserId();
-        await new UserBalance(authUserId).firstLogin();
-        await account.saveUidFromCacheByAddress(address, authUserId);
-      }
-      this.authSession = {
-        address,
-        authUserId,
-        ts,
-        clientId,
-      };
-      // console.log('[checkTokenIsInvalid]', JSON.stringify(this.authSession));
+    }else{
+      this.session.setUserId(user.id!)
     }
     return false;
-  }
-
-  static responsePdu(data: Pdu, status = 200) {
-    return WaiOpenAPIRoute.responseBuffer(Buffer.from(data.getPbData()), status);
   }
 }

@@ -1,16 +1,8 @@
-import MsgConnChatGptBotWorkerManager, { MsgConnChatGptBotWorkerStatus } from './MsgConnChatGptBotWorkerManager';
-import { BaseConnection } from '../../server/service/BaseConnection';
-import { AuthSessionType } from './user/User';
+import MsgConnChatGptBotWorkerManager, {MsgConnChatGptBotWorkerStatus} from './MsgConnChatGptBotWorkerManager';
+import {AccountUser} from "../../types";
 
 let currentInstance:MsgConnectionManager;
 
-export interface AccountUser {
-  connection:BaseConnection,
-  session?: AuthSessionType;
-  id: string;
-  city: string | undefined | any;
-  country: string | any;
-}
 
 export default class MsgConnectionManager {
   private accountUsers: Map<string, AccountUser>;
@@ -91,6 +83,14 @@ export default class MsgConnectionManager {
         msgConn.connection.send(message);
       } catch (err) {
         msgConn.connection.close()
+      }
+    });
+  }
+  sendMsgByToken(token:string,msg:object){
+    const message = Buffer.from(JSON.stringify(msg))
+    MsgConnectionManager.getInstance().getMsgConnMap().forEach((msgConn, connId) => {
+      if(msgConn.token === token){
+        msgConn.connection.send(message)
       }
     });
   }

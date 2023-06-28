@@ -1,7 +1,7 @@
 import { ENV } from '../../env';
 
 export class DTalk {
-  private token: string;
+  private token?: string;
   constructor() {
     this.token = ENV.DTALK_ACCESS_TOKEN_PAY;
   }

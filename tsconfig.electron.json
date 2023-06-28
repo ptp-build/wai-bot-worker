@@ -19,6 +19,6 @@
       "*": ["node_modules/*"]
     }
   },
-  "include": ["src/electron/*"],
-  "exclude": ["dist", "node_modules","src/worker/share/service"]
+  "include": ["src/*"],
+  "exclude": ["dist", "node_modules"]
 }

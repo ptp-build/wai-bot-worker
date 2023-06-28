@@ -1,8 +1,8 @@
-import { SendMsgRes } from '../../lib/ptp/protobuf/PTPMsg';
-import { JSON_HEADERS } from '../setting';
-import { currentTs } from '../share/utils/utils';
+import {JSON_HEADERS} from '../setting';
 import MsgConnChatGptBotWorkerManager from './MsgConnChatGptBotWorkerManager';
 import MsgConnectionManager from './MsgConnectionManager';
+
+export const API_HOST_INNER = "http://127.0.0.1:8080/api/server"
 
 let currentInstance:MsgConnectionApiHandler;
 
@@ -25,8 +25,6 @@ export default class MsgConnectionApiHandler {
       accounts.push({
         authSession:account.session,
         id: account.id,
-        city:account.city,
-        country:account.country
       })
     });
     const chatGptBotWorkers = Object.fromEntries(MsgConnChatGptBotWorkerManager.getInstance().getStatusMap());
@@ -66,56 +64,11 @@ export default class MsgConnectionApiHandler {
     }
     return hasSent
   }
-
-  async sendMessage(requestBody:{toUserId:string,text:string,fromUserId:string,chatId:string}){
-    let hasSent = false;
-    this.msgConnManager.getMsgConnMap().forEach((account, key) => {
-      if (account.session?.authUserId === requestBody.toUserId && !account.session?.chatId) {
-        console.log('[send]', account);
-        try {
-          account.connection.send(
-            Buffer.from(new SendMsgRes({
-              replyText: requestBody.text,
-              senderId: requestBody.fromUserId,
-              chatId: requestBody.chatId,
-              date: currentTs(),
-            })
-              .pack()
-              .getPbData())
-          );
-          hasSent = true;
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    });
-    return hasSent
-  }
   async fetch(request:Request){
     const uri = new URL(request.url)
     let requestBody:any;
     let hasSent = false;
-    if (uri.pathname.startsWith('/api/do/ws/sendBotMsgRes')) {
-      requestBody = await request.json();
-      let {pduBuf, toUid} = requestBody
-      pduBuf = Buffer.from(pduBuf,'hex')
-      hasSent = await this.sendBotMsgRes(toUid,pduBuf)
-      return new Response(null, { status: hasSent ? 200 : 404 });
-    }
-    if (uri.pathname.startsWith('/api/do/ws/sendChatGptMsg')) {
-      requestBody = await request.json();
-      let {pduBuf,msgConnId} = requestBody
-      pduBuf = Buffer.from(pduBuf,'hex')
-      hasSent = await this.sendChatGptMsg(msgConnId,pduBuf)
-      return new Response(null, { status: hasSent ? 200 : 404 });
-    }
-
-    if (uri.pathname.startsWith('/api/do/ws/sendMessage')) {
-      requestBody = await request.json();
-      hasSent = await this.sendMessage(requestBody)
-      return new Response(null, { status: hasSent ? 200 : 404 });
-    }
-    if (uri.pathname.startsWith('/api/do/ws/__accounts')) {
+    if (uri.pathname.startsWith('/api/server/__accounts')) {
       return new Response(JSON.stringify(await this.getOnlineAccounts()), { status: 200,headers:JSON_HEADERS });
     }
   }
