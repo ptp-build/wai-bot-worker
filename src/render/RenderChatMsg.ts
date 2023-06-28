@@ -1,5 +1,5 @@
 import KvCache from "../worker/services/kv/KvCache";
-import {UserIdFirstBot} from "../setting";
+import {UserIdFirstBot} from "../masterChat/setting";
 import {
   BotWorkerStatusType,
   CallbackButtonAction,
@@ -8,7 +8,7 @@ import {
   WindowActions,
   WorkerEventActions
 } from "../types";
-import {currentTs} from "../utils/utils";
+import {currentTs} from "../utils/time";
 import {ipcRenderer} from "electron";
 import ChatAiMsg from "../window/ChatAiMsg";
 import MsgHelper from "../masterChat/MsgHelper";

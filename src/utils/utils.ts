@@ -234,39 +234,6 @@ export function ResponseJson(result: object, status = 200,Access_Control_Allow_O
   });
 }
 
-export function currentTs(){
-  return Math.ceil(+(new Date)/1000)
-}
-
-export function currentTs1000(){
-  return Math.ceil(+(new Date))
-}
-
-export async function fileToArrayBuffer(file:File) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result);
-    };
-    reader.onerror = () => {
-      reject(reader.error);
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-export async function fileToBuffer(file:File) {
-  return new Promise<Buffer>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // @ts-ignore
-      const buffer = Buffer.from(reader.result);
-      resolve(buffer);
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
 function downloadText(text:string, filename:string,type = "text/json") {
   var element = document.createElement('a');
   element.setAttribute('href', 'data:'+type+';charset=utf-8,' + encodeURIComponent(text));
@@ -278,19 +245,6 @@ function downloadText(text:string, filename:string,type = "text/json") {
   document.body.removeChild(element);
 }
 
-function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
-  return new Promise<ArrayBuffer>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsArrayBuffer(blob);
-    reader.onload = () => resolve(reader.result as ArrayBuffer);
-    reader.onerror = reject;
-  });
-}
-
-export async function blobToBuffer(blob:Blob) {
-  const ab = await blobToArrayBuffer(blob);
-  return Buffer.from(ab)
-}
 
 export function isPositiveInteger(str: string): boolean {
   const reg = /^[1-9]\d*$/; // 正则表达式

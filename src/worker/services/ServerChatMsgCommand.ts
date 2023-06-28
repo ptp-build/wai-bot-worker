@@ -1,5 +1,5 @@
 import ServerChatMsg from "./ServerChatMsg";
-import {UserIdFirstBot} from "../../setting";
+import {UserIdFirstBot} from "../../masterChat/setting";
 import ServerSession from "./ServerSession";
 import ServerChatConfig from "./ServerChatConfig";
 import MsgHelper from "../../masterChat/MsgHelper";

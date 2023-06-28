@@ -1,7 +1,7 @@
 import RenderChatMsg from "./RenderChatMsg";
 import MsgHelper from "../masterChat/MsgHelper";
 import {BotStatusType, CallbackButtonAction, WorkerCallbackButtonAction} from "../types";
-import {UserIdFirstBot} from "../setting";
+import {UserIdFirstBot} from "../masterChat/setting";
 import ChatConfig from "../window/ChatConfig";
 import ChatAiMsg from "../window/ChatAiMsg";
 import RenderBotWorkerStatus from "./RenderBotWorkerStatus";

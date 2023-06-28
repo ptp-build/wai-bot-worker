@@ -1,6 +1,6 @@
 import {NewMessage} from "../types";
 import MsgTable from "../worker/models/mysql/MsgTable";
-import {currentTs} from "../utils/utils";
+import {currentTs} from "../utils/time";
 import KvCache from "../worker/services/kv/KvCache";
 import WorkerAccount from "./woker/WorkerAccount";
 import DbStorage from "../worker/services/db/DbStorage";

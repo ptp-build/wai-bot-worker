@@ -1,9 +1,9 @@
 import MsgTable from "../models/mysql/MsgTable";
 import KvCache from "./kv/KvCache";
 import {NewMessage} from "../../types";
-import {currentTs} from "../utils/utils";
 import BaseObject from "./BaseObject";
 import ServerSession from "./ServerSession";
+import { currentTs } from '../../utils/time';
 
 export default class ServerChatMsgStorage extends BaseObject{
   private tableMsg: MsgTable;

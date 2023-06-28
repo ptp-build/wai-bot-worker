@@ -1,5 +1,5 @@
 import KvCache from "../worker/services/kv/KvCache";
-import {UserIdFirstBot} from "../setting";
+import {UserIdFirstBot} from "../masterChat/setting";
 
 export type ChatConfigKey = "enableMultipleQuestion"
 

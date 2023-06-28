@@ -11,13 +11,12 @@ import {
   WorkerEvents
 } from "../../../types";
 import {JSON_HEADERS} from "../../../worker/setting";
-import {generateUniqueId} from "../../../worker/utils/utils";
-import {currentTs1000} from "../../../utils/utils";
 import {sendActionToWorkerWindow} from "../common/helper";
 import MsgHelper from "../../../masterChat/MsgHelper";
+import { generateRandomString } from '../../../utils/utils';
 
 let i = 0;
-const token = generateUniqueId();
+const token = generateRandomString(16);
 export default class BotWorker extends BaseWorker {
   private tasks:Map<number,ChatGptAiTaskType>
   private statusBot?:BotStatusType;

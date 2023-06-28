@@ -34,8 +34,11 @@ app.on('ready',async () => {
   }
 
   BigStorage.getInstance().setKvHandler(new FileStorage().init(app.getPath("userData")))
-  await start_electron_server()
-  createWindow("http://localhost:"+WAI_SERVER_PORT);
+  const port = process.env.WAI_SERVER_PORT || 5080
+  await start_electron_server(Number(port))
+  let homeUrl = app.isPackaged ? "http://127.0.0.1:"+port : "http://127.0.0.1:1234"
+
+  createWindow(homeUrl);
   setupElectronActionHandlers();
   setupCloseHandlers();
 });

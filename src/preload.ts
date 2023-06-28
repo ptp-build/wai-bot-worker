@@ -6,7 +6,8 @@ import BigStorage from "./worker/services/storage/BigStorage";
 import LocalFileKv from "./worker/services/kv/LocalFileKv";
 import FileStorage from "./worker/services/storage/FileStorage";
 import {
-  ElectronApi,
+  ElectronAction,
+  ElectronApi, ElectronEvent,
   MasterEventActions,
   MasterEvents,
   WindowActions,
@@ -63,7 +64,12 @@ const electronApi: ElectronApi = {
 
   invokeWindowDbAction: (actionData:WindowDbActionData) => ipcRenderer.invoke(WindowActions.WindowDbAction,actionData),
 
-  on: (eventName: MasterEvents | WorkerEvents, callback) => {
+  isFullscreen: () => ipcRenderer.invoke(ElectronAction.GET_IS_FULLSCREEN),
+  installUpdate: () => ipcRenderer.invoke(ElectronAction.INSTALL_UPDATE),
+  handleDoubleClick: () => ipcRenderer.invoke(ElectronAction.HANDLE_DOUBLE_CLICK),
+  openNewWindow: (url: string) => ipcRenderer.invoke(ElectronAction.OPEN_NEW_WINDOW, url),
+
+  on: (eventName: ElectronEvent | MasterEvents | WorkerEvents, callback) => {
     const subscription = (event: IpcRendererEvent, ...args: any) => callback(...args);
     ipcRenderer.on(eventName, subscription);
     return () => {

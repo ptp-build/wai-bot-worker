@@ -1,8 +1,8 @@
 import DbStorage from "../../../services/db/DbStorage";
 import {MysqlClient} from "../../../services/db/MysqlClient";
 import MsgTable from "../MsgTable";
-import {currentTs} from "../../../utils/utils";
 import {NewMessage} from "../../../../types";
+import { currentTs } from '../../../../utils/time';
 
 describe('MsgTable', () => {
   let storage: MsgTable;

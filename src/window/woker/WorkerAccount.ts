@@ -1,6 +1,6 @@
 import KvCache from "../../worker/services/kv/KvCache";
 import {LocalWorkerAccountType} from "../../types";
-import {UserIdFirstBot} from "../../setting";
+import {UserIdFirstBot} from "../../masterChat/setting";
 
 export default class WorkerAccount{
   private botId: string;

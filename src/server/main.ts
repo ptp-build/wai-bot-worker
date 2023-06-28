@@ -1,5 +1,4 @@
 import {startServers} from './server';
-import {WAI_SERVER_PORT} from "../worker/setting";
 import KvCache from "../worker/services/kv/KvCache";
 import BigStorage from "../worker/services/storage/BigStorage";
 import FileStorage from "../worker/services/storage/FileStorage";
@@ -25,9 +24,9 @@ async function main() {
   BigStorage.getInstance().setKvHandler(
     new FileStorage().init("/tmp")
   )
-
+  const port = process.env.WAI_SERVER_PORT || 5088
   await startServers(
-    WAI_SERVER_PORT,
+    Number(port),
     {
       IS_DEV:true,
       IN_ELECTRON:false

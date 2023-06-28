@@ -14,7 +14,6 @@ export class DevAction extends BaseOpenAPIRoute {
 	};
 
 	async handle(request: Request, data: Record<string, any>) {
-
     const tables = await DbStorage.getInstance().query("show tables;")
     const tableRow = await DbStorage.getInstance().query("select * from products;")
     const table = await DbStorage.getInstance().query("desc products;")

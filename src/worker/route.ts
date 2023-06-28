@@ -1,10 +1,10 @@
 import {ENV, Environment, ExecutionContext, initEnv, setGlobalCtx} from './env';
 import {SWAGGER_DOC} from './setting';
 import {OpenAPIRouter, OpenAPIRouterSchema, OpenAPIRouteSchema} from '@cloudflare/itty-router-openapi';
-import {getCorsOptionsHeader} from "./utils/utils";
-import {currentTs1000} from "./utils/utils";
 import KvCache from "./services/kv/KvCache";
 import WaiOpenAPIRoute from "./services/WaiOpenAPIRoute";
+import { currentTs1000 } from '../utils/time';
+import { getCorsOptionsHeader } from '../utils/utils';
 
 export class WaiRouter {
   private version?: string;

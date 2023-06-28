@@ -12,6 +12,19 @@ declare global {
   }
 }
 
+export enum ElectronEvent {
+  FULLSCREEN_CHANGE = 'fullscreen-change',
+  UPDATE_ERROR = 'update-error',
+  UPDATE_DOWNLOADED = 'update-downloaded',
+}
+
+export enum ElectronAction {
+  GET_IS_FULLSCREEN = 'get-is-fullscreen',
+  INSTALL_UPDATE = 'install-update',
+  HANDLE_DOUBLE_CLICK = 'handle-double-click',
+  OPEN_NEW_WINDOW = 'open-new-window',
+}
+
 export interface ElectronApi {
   invokeRenderBridgeAction:(botId:string,action:RenderActions,payload:any)=>Promise<any|undefined>
   invokeWorkerWindowAction:(botId:string,action:WorkerEventActions,payload:any)=>Promise<void>
@@ -19,7 +32,12 @@ export interface ElectronApi {
   invokeWindowDbAction:(actionData:WindowDbActionData)=>Promise<any>
   invokeWorkerWindowKeyboardEventAction:(botId:string,type:string,keyCode:string)=>Promise<void>
   invokeWorkerWindowMouseEventAction:(botId:string,paylaod:any)=>Promise<void>
-  on: (eventName: WorkerEvents | MasterEvents, callback: any) => VoidFunction;
+  isFullscreen: () => Promise<boolean>;
+  installUpdate: () => Promise<void>;
+  handleDoubleClick: () => Promise<void>;
+  openNewWindow: (url: string) => Promise<void>;
+
+  on: (eventName: ElectronEvent| WorkerEvents | MasterEvents, callback: any) => VoidFunction;
 }
 
 

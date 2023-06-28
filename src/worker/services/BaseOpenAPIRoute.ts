@@ -1,6 +1,6 @@
 import {OpenAPIRoute} from '@cloudflare/itty-router-openapi';
 import { ENV } from '../env';
-import {getCorsHeader} from "../utils/utils";
+import { getCorsHeader } from '../../utils/utils';
 
 //@ts-ignore
 export default class BaseOpenAPIRoute extends OpenAPIRoute {

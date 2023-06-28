@@ -1,6 +1,6 @@
 import ServerSession from "./ServerSession";
 import BaseObject from "./BaseObject";
-import {currentTs1000} from "../../utils/utils";
+import {currentTs1000} from "../../utils/time";
 import ServerChatAiMsg from "./ServerChatAiMsg";
 import ServerChatMsgStorage from "./ServerChatMsgStorage";
 import {ReportChatGptAiTaskType} from "../../types";
