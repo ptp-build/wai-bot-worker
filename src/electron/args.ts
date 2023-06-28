@@ -147,10 +147,10 @@ export function parseAppArgs():AppArgvType{
         value = getDefaultValue(value,600,'int')
         break
       case "appSubWidth":
-        value = getDefaultValue(value,300,'int')
+        value = getDefaultValue(value,600,'int')
         break
       case "appSubHeight":
-        value = getDefaultValue(value,600,'int')
+        value = getDefaultValue(value,800,'int')
         break
       case "windowGap":
         value = getDefaultValue(value,10,'int')

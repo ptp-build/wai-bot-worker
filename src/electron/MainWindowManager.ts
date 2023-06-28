@@ -67,7 +67,7 @@ export default class MainWindowManager {
       x: options.appPosX,
       y: options.appPosY,
       title: '-',
-      resizable:this.isMaster,
+      // resizable:this.isMaster,
       webPreferences: {
         preload: PRELOAD_JS,
         nodeIntegration: true,
@@ -105,7 +105,6 @@ export default class MainWindowManager {
     }catch (e:any){
       const {useProxy} = this.getOptions()
       const proxyConfig = getProxyConfig(this.getOptions())
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const htmlContent = getErrorHtml(e,!!useProxy,proxyConfig);
       await this.mainWindow!.loadURL(`data:text/html;charset=utf-8,${encodeURI(htmlContent)}`);
@@ -124,12 +123,20 @@ export default class MainWindowManager {
   }
   addEvents(){
     const {mainWindow} = this
+
+    const pageTitleUpdatedHandler = (event:any) => {
+      event.preventDefault();
+      mainWindow!.webContents.removeListener('page-title-updated', pageTitleUpdatedHandler);
+    };
+
     this.mainWindow!.webContents.on('console-message', (event, level, message, line, sourceId) => {
       //console.debug(" =>",`${this.botId}`,message)
+
     });
     mainWindow!.webContents.on('did-finish-load', async () => {
       const displaySize = Ui.getDisplaySize(mainWindow!)
       console.log("[displaySize]",displaySize)
+      mainWindow!.webContents.on('page-title-updated', pageTitleUpdatedHandler);
     });
 
     mainWindow!.on('resize', () => {

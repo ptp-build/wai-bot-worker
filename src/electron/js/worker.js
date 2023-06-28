@@ -119,6 +119,11 @@ class WaiChatGptBotWorker{
       }else{
         invoke_api("MsgAction_WaiChatGptHeartBeat")
       }
+      if($("#prompt-textarea").next("button").length > 0
+        && $("#prompt-textarea").val.length > 0
+        && !$("#prompt-textarea").next("button")[0].disabled){
+        $("#prompt-textarea").next("button").click()
+      }
     }
 
     if($(".absolute.inset-0").length > 0 && $(".absolute.inset-0").find("button")){

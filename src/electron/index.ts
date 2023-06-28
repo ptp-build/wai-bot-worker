@@ -16,6 +16,7 @@ setUpLogs("default",logLevel,userDataPath)
 app.on('ready', async () => {
   await MainWindowManager.getInstance(MasterWindowBotId).init(appArgs)
 });
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
