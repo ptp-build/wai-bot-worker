@@ -1,6 +1,4 @@
-import BaseStorage from "./BaseStorage";
-
-export default class Html5Cache extends BaseStorage {
+export default class Html5Cache {
   private cache?: Cache;
   private cacheName?:string
 

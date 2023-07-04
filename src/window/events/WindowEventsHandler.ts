@@ -1,51 +1,72 @@
-import {MasterEventActions, MasterEvents, WorkerEventActions, WorkerEvents} from "../../types";
-import MainWindowManager from "../../ui/MainWindowManager";
-import RenderChatMsg from "../../render/RenderChatMsg";
-import {getMasterWindow} from "../../ui/window";
-import ChatAiMsg from "../ChatAiMsg";
-import MainChatMsgStorage from "../MainChatMsgStorage";
+import { MasterEventActions, MasterEvents, WorkerEventActions, WorkerEvents } from '../../types';
+import MainWindowManager from '../../ui/MainWindowManager';
+import RenderChatMsg from '../../render/RenderChatMsg';
+import { getMasterWindow } from '../../ui/window';
+import ChatAiMsg from '../ChatAiMsg';
+import MainChatMsgStorage from '../MainChatMsgStorage';
+import WindowBotWorkerStatus from '../WindowBotWorkerStatus';
 
 export default class WindowEventsHandler {
-  static async sendEventToMasterChat(action:MasterEventActions,payload?:any){
+
+  private static async handleNewMessageAction(payload: any) {
     const mainChatMsgStorage = new MainChatMsgStorage();
+    if(!payload.newMessage.msgId){
+      payload.newMessage.msgId = await new RenderChatMsg(payload.newMessage.chatId).genMsgId();
+    }
+    await mainChatMsgStorage.addNewMessage(payload.newMessage)
+    console.log("[handleNewMessageAction]",payload)
+    if(payload.newMessage.isOutgoing){
+      if(!payload.sendToMainChat){
+        return
+      }
+    }
+    return payload.newMessage.msgId;
+  }
+
+  static async sendEventToMasterChat(action:MasterEventActions,payload?:any){
+    let res;
     switch (action){
+      case MasterEventActions.UpdateWorkerStatus:
+        WindowBotWorkerStatus.update(payload);
+        break
       case MasterEventActions.FinishChatGptReply:
         void await new ChatAiMsg(payload.chatId).finishChatGptReply(payload)
         break
       case MasterEventActions.DeleteMessages:
-        void await mainChatMsgStorage.deleteMessages(payload.chatId,payload.ids)
+        void await new MainChatMsgStorage().deleteMessages(payload.chatId,payload.ids)
         break
+      case MasterEventActions.NewContentMessage:
       case MasterEventActions.NewMessage:
-        if(!payload.newMessage.msgId){
-          payload.newMessage.msgId = await new RenderChatMsg(payload.newMessage.chatId).genMsgId();
-        }
-        void await mainChatMsgStorage.addNewMessage(payload.newMessage)
-        if(payload.newMessage.isOutgoing){
+        res = await WindowEventsHandler.handleNewMessageAction(payload);
+        if(!res){
           return
         }
         break
       case MasterEventActions.UpdateMessage:
-        void await mainChatMsgStorage.updateMessage(payload.updateMessage)
+        void await new MainChatMsgStorage().updateMessage(payload.updateMessage)
         break
     }
 
     if(getMasterWindow() && getMasterWindow()?.webContents){
-      return getMasterWindow()
+      getMasterWindow()
         ?.webContents
         .send(MasterEvents.Master_Chat_Msg, action, payload);
     }
+    return res
   }
 
-  static async replyChatMsg(text:string,chatId:string){
+  static async replyChatMsg(text:string,chatId:string,inlineButtons?:any[]){
     const msgId = await new RenderChatMsg(chatId).genMsgId();
-    await WindowEventsHandler.sendEventToMasterChat(MasterEventActions.NewMessage,{
+    return await WindowEventsHandler.sendEventToMasterChat(MasterEventActions.NewMessage,{
       newMessage:{
         text,
         msgId,
-        chatId
+        chatId,
+        inlineButtons
       }
     })
   }
+
   static sendEventToWorker(botId:string,action:WorkerEventActions,payload?:any){
     if(
       MainWindowManager.getInstance(botId) &&

@@ -17,10 +17,9 @@ import { generateRandomString } from '../../../utils/utils';
 
 let i = 0;
 const token = generateRandomString(16);
+
 export default class BotWorker extends BaseWorker {
   private tasks:Map<number,ChatGptAiTaskType>
-  private statusBot?:BotStatusType;
-  private statusBotWorker?:BotWorkerStatusType;
   constructor(workerAccount:LocalWorkerAccountType) {
     super(workerAccount);
     this.tasks = new Map<number, ChatGptAiTaskType>();
@@ -110,7 +109,7 @@ export default class BotWorker extends BaseWorker {
           await sendActionToWorkerWindow(this.botId,WorkerEventActions.Worker_Reload, {})
           break
         case BotStatusType.TaskWorkerNoApi:
-          this.replyMessageWithCancel("Setup Task Work api",[
+          this.replyTextWithCancel("Setup Task Work api",[
             [
               MsgHelper.buildCallBackAction("Click Me!",CallbackButtonAction.Local_setupTaskUri)
             ]

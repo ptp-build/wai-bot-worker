@@ -1,6 +1,6 @@
 import BaseOpenAPIRoute from "./BaseOpenAPIRoute";
 import ServerSession from "./ServerSession";
-import UserTable from "../models/mysql/UserTable";
+import UserTable from "../models/rdms/UserTable";
 
 export default class WaiOpenAPIRoute extends BaseOpenAPIRoute {
   private token: string | undefined;

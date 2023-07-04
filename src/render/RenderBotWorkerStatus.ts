@@ -1,14 +1,9 @@
-import {BotStatusType, BotWorkerStatusType, CallbackButtonAction, WorkerCallbackButtonAction} from "../types";
-import MsgHelper from "../masterChat/MsgHelper";
+import { BotStatusType, BotWorkerStatusType, CallbackButtonAction } from '../types';
+import MsgHelper from '../masterChat/MsgHelper';
+import WindowBotWorkerStatus from '../window/WindowBotWorkerStatus';
 
-export const __StatusBotCenter:Record<string, BotStatusType> = {}
-export const __StatusBotWorkerCenter:Record<string, BotWorkerStatusType> = {}
+export default class RenderBotWorkerStatus extends WindowBotWorkerStatus{
 
-export default class RenderBotWorkerStatus {
-  static update(botId:string,statusBot:BotStatusType,statusBotWorker:BotWorkerStatusType){
-    __StatusBotCenter[botId] = statusBot
-    __StatusBotWorkerCenter[botId] = statusBotWorker
-  }
   static getBeforeBotReadyReadyButtons(botId:string,__StatusBotCenter:Record<string, BotStatusType>){
     let inlineButtons:any = []
     const status = __StatusBotCenter[botId]
@@ -45,15 +40,5 @@ export default class RenderBotWorkerStatus {
       }
     }
     return {text,inlineButtons,botStatus:__StatusBotCenter[botId],botWorkerStatus:__StatusBotWorkerCenter[botId],}
-  }
-  static get(botId:string){
-    return {
-      statusBot:__StatusBotCenter[botId],
-      statusBotWorker:__StatusBotWorkerCenter[botId]
-    }
-  }
-
-  static getStatusBotCenter(){
-    return __StatusBotCenter
   }
 }

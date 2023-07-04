@@ -1,5 +1,5 @@
 import {NewMessage} from "../types";
-import MsgTable from "../worker/models/mysql/MsgTable";
+import MsgTable from "../worker/models/rdms/MsgTable";
 import {currentTs} from "../utils/time";
 import KvCache from "../worker/services/kv/KvCache";
 import WorkerAccount from "./woker/WorkerAccount";
@@ -66,6 +66,13 @@ export default class MainChatMsgStorage{
     if(msg.entities === undefined){
       msg.entities = []
     }
+    if(msg.content === undefined){
+      msg.content = {}
+    }
+    if(msg.text === undefined) {
+      msg.text = ""
+    }
+
     if(await this.isEnableMysql()){
       await this.tableMsg.save(msg)
     }else{

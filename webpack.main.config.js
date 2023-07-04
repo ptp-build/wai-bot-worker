@@ -1,17 +1,12 @@
 import path from 'path';
 
 module.exports = {
-  /**
-   * This is the main entry point for your application, it's the first file
-   * that runs in the main process.
-   */
-  // entry: './src/main.ts',
-
   entry: {
     main: './src/main.ts',
     worker_chatGpt: './src/plugins/js/worker_chatGpt.ts',
-    worker_taskWorker: './src/plugins/js/worker_taskWorker.ts',
+    worker_telegram: './src/plugins/js/worker_telegram.ts',
     worker_custom: './src/plugins/js/worker_custom.ts',
+    testCase: './src/plugins/js/testCase.ts',
     preload: './src/preload.ts',
   },
 

@@ -24,6 +24,9 @@ export default class MasterWindowCallbackAction {
       case CallbackButtonAction.Master_createCustomWorker:
         await this.createWorker("custom")
         break
+      case CallbackButtonAction.Master_createCodingWorker:
+        await this.createWorker("coding")
+        break
       case CallbackButtonAction.Master_createTaskWorker:
         await this.createWorker("taskWorker")
         break
@@ -80,11 +83,18 @@ export default class MasterWindowCallbackAction {
     const botId = await User.genUserId()
     let username = "";
     let name = "";
+    let pluginJs = "worker_custom.js";
 
     switch (type){
+      case 'coding':
+        username = `Coding_${botId}_bot`;
+        name = `Coding #${botId}`
+        pluginJs = "worker_coding.js"
+        break
       case 'chatGpt':
         username = `ChatGpt_${botId}_bot`;
         name = `ChatGpt #${botId}`
+        pluginJs = "worker_chatGpt.js"
         break
       case 'taskWorker':
         username = `TaskWorker_${botId}_bot`;
@@ -108,6 +118,7 @@ export default class MasterWindowCallbackAction {
       chatGptAuth:account?.chatGptAuth || "",
       taskWorkerUri:account?.taskWorkerUri || "",
       customWorkerUrl:account?.customWorkerUrl || "",
+      pluginJs,
       proxy:account?.proxy || "",
     }
     await new WorkerAccount(botId).updateWorkersAccount(account)
@@ -115,7 +126,13 @@ export default class MasterWindowCallbackAction {
     await WindowEventsHandler.sendEventToMasterChat(MasterEventActions.CreateWorker,{
       account
     })
-    await this.initWindow(account)
+    switch (type){
+      case 'coding':
+        break
+      default:
+        await this.initWindow(account)
+        break
+    }
   }
   async initWindow(account:LocalWorkerAccountType){
     let homeUrl = ""
@@ -144,7 +161,7 @@ export default class MasterWindowCallbackAction {
     const electron_env = getElectronEnv()
     const electron_env_str = "```json\n" + JSON.stringify(electron_env, null, 2) + "```"
     const text = `electronEnv:\n${electron_env_str}`
-    await WindowEventsHandler.replyChatMsg(text,params.chatId)
+    return await WindowEventsHandler.replyChatMsg(text,params.chatId)
   }
 
   async openUserAppDataDir(params:{chatId:string}){

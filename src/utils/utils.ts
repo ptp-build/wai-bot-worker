@@ -342,7 +342,6 @@ export function getProxyConfigFromProxyConfStr(proxy?:string){
   };
 }
 
-
 /**
  * Sleeps a specified amount of time
  * @param ms time in milliseconds

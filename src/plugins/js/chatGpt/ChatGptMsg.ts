@@ -14,7 +14,7 @@ export default class ChatGptMsg {
     this.taskId = taskId;
   }
 
-  parseOnData(chunk: string): { state: string; text: string } {
+  parseOnData(chunk: string): { state: string; text: string, conversation_id?:string } {
     this.tempTexts += chunk;
     const dataText = "\n\n" + this.tempTexts.trim();
     const rows = dataText.split("\n\ndata: {\"message\": {\"id\":");
@@ -32,14 +32,15 @@ export default class ChatGptMsg {
     lastLine = "{\"message\": {\"id\":" + lastLine;
     try {
       const res = JSON.parse(lastLine);
-      const text1 = res.message.content.parts[0];
-      const text = text1.replace(this.tempLastText, "");
-      this.tempLastText = text1;
+      const {conversation_id} = res
+      console.log(res)
+      this.tempLastText = res.message.content.parts[0];
       this.sendIndex += 1;
       if (isDone) {
         this.sendIndex = 0;
         return {
           state: 'DONE',
+          conversation_id,
           text: this.tempLastText
         };
       } else {

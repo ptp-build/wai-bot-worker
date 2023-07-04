@@ -1,5 +1,5 @@
 import {WindowDbActionData} from "../../types";
-import {HttpRequestStorage} from "../../worker/models/mysql/HttpRequestStorage";
+import {HttpRequestStorage} from "../../worker/models/rdms/HttpRequestStorage";
 
 export default class WindowDbAction {
 

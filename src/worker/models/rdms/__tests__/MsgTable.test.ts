@@ -19,6 +19,7 @@ describe('MsgTable', () => {
       "  `text` longtext,\n" +
       "  `inlineButtons` json DEFAULT NULL,\n" +
       "  `entities` json DEFAULT NULL,\n" +
+      "  `content` json DEFAULT NULL,\n" +
       "  `msgDate` int DEFAULT NULL,\n" +
       "  `senderId` varchar(20) DEFAULT NULL,\n" +
       "  `isOutgoing` tinyint(1) DEFAULT NULL,\n" +
@@ -46,6 +47,7 @@ describe('MsgTable', () => {
         isOutgoing: true,
         senderId: "user123",
         msgDate: currentTs(),
+        content: {},
         inlineButtons: [],
         entities: [],
       };
@@ -60,7 +62,7 @@ describe('MsgTable', () => {
         chatId: "chat456",
         text: "Updated message",
         isOutgoing: false,
-
+        content: {text:{text:"test"}},
         inlineButtons: [[{test:1}]],
         entities: [{test:2}],
       };
@@ -87,6 +89,7 @@ describe('MsgTable', () => {
         senderId: "user123",
         msgDate: currentTs(),
         chatId: "chat456",
+        content: {text:{text:"test"}},
         inlineButtons: [[{test:1}]],
         entities: [{test:2}],
       };

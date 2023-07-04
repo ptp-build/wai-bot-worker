@@ -1,4 +1,4 @@
-import MsgTable from "../models/mysql/MsgTable";
+import MsgTable from "../models/rdms/MsgTable";
 import KvCache from "./kv/KvCache";
 import {NewMessage} from "../../types";
 import BaseObject from "./BaseObject";

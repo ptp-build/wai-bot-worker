@@ -5,7 +5,8 @@ import Devtool from "./Devtool";
 import {getErrorHtml} from "./Ui";
 import {isProd} from "../utils/electronEnv";
 import WindowEventsHandler from "../window/events/WindowEventsHandler";
-import {BotStatusType, BotWorkerStatusType, MasterEventActions} from "../types";
+import { BotStatusType, BotWorkerStatusType, LocalWorkerAccountType, MasterEventActions } from '../types';
+import WorkerAccount from '../window/woker/WorkerAccount';
 
 const __managers = new Map<string, MainWindowManager>();
 
@@ -96,6 +97,11 @@ export default class MainWindowManager {
       this.mainWindow!.reload()
     }
   }
+  goBack(){
+    if(this.mainWindow && this.mainWindow.webContents && this.mainWindow.webContents.canGoBack()){
+      this.mainWindow.webContents.goBack()
+    }
+  }
   getMainWindow(){
     return this.mainWindow!
   }
@@ -134,6 +140,7 @@ export default class MainWindowManager {
         additionalArguments: [
           `--botId=${this.botId}`,
           `--isProd=${isProd}`,
+          `--homeUrl=${homeUrl}`,
         ],
         partition: `persist:Bot-chatGpt-${this.botId}`
       },
@@ -149,10 +156,20 @@ export default class MainWindowManager {
     this.devTools = new Devtool(this.mainWindow!)
   }
 
+  showDevTools(){
+    if(this.devTools){
+      this.devTools.open()
+    }
+  }
   async loadUrl (url:string){
     try{
+      const account = await new WorkerAccount(this.botId).getWorkersAccount() as LocalWorkerAccountType
+      let userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43'
+      if(account && account.browserUserAgent){
+        userAgent = account.browserUserAgent
+      }
       await this.mainWindow!.loadURL(url,{
-        userAgent:'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43'
+        userAgent
       })
     }catch (e:any){
       const {proxy} = this.getOptions()
@@ -174,9 +191,24 @@ export default class MainWindowManager {
     }
     return this
   }
+
   addEvents(){
     const {mainWindow} = this
+    mainWindow?.webContents.session.webRequest.onBeforeRequest((details, callback) => {
 
+      if (details.url.includes('blocked-domain.com')) {
+        callback({ cancel: true });
+        return;
+      }
+      if (details.url.includes('original-url.com')) {
+        const modifiedURL = details.url.replace('original', 'modified');
+        callback({ redirectURL: modifiedURL });
+        return;
+      }
+
+      // Allow the request to proceed as-is
+      callback({ cancel: false });
+    });
     this.mainWindow!.webContents.on('console-message', (event, level, message, line, sourceId) => {
       if(!isProd){
         let func = ""
@@ -199,7 +231,7 @@ export default class MainWindowManager {
     mainWindow!.on('closed', (e: any) => {
       console.log("[CLOSED] mainWindow",this.botId)
       if(__managers.has(this.botId)){
-        WindowEventsHandler.sendEventToMasterChat(MasterEventActions.UpdateWorkerStatus, {
+        void WindowEventsHandler.sendEventToMasterChat(MasterEventActions.UpdateWorkerStatus, {
           statusBot: BotStatusType.OFFLINE,
           statusBotWorker: BotWorkerStatusType.WaitToReady,
           botId:this.botId

@@ -27,7 +27,7 @@ export default class ServerBotAccount extends BaseObject{
   }
 
   static async initWaiApp(accountAddress:string){
-    const botIds = await ServerBotAccount.getBotList(accountAddress)
+    const botIds = await ServerBotAccount.getBotList(accountAddress) || []
     const botAccounts = []
     for (let i = 0; i < botIds.length; i++) {
       botAccounts.push(await new ServerBotAccount(new ServerSession(new Request("")).setAccountAddress(accountAddress),botIds[i]).get())

@@ -3,6 +3,8 @@ import * as path from 'path';
 import WindowEventsHandler from "../window/events/WindowEventsHandler";
 import {MasterEventActions} from "../types";
 
+import { app } from 'electron';
+
 export type LogLevelType = 'info' | 'error' | 'warn' | 'debug';
 
 export const ignoreConsoleMessage = (message: string) => {
@@ -60,7 +62,10 @@ function logWithFileAndLine(level: LogLevelType, ...args: any[]) {
 }
 
 export function setUpLogs(minLevel: LogLevelType,dir?:string,fileName?:string) {
-  console.log("1")
+
+
+  app.commandLine.appendSwitch('disable-features', 'LoggingSeverity=0');
+
   electronLog.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] {text}';
   electronLog.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] {text}';
 

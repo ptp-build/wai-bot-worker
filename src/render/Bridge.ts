@@ -1,10 +1,11 @@
 import RenderCallbackButton from "./RenderCallbackButton";
 import RenderChatMsgCommand from "./RenderChatMsgCommand";
-import {RenderActions, SendMessageRequest, WindowActions, WorkerEventActions} from "../types";
+import { MasterEventActions, RenderActions, SendMessageRequest, WindowActions, WorkerEventActions } from '../types';
 import WorkerAccount from "../window/woker/WorkerAccount";
 import RenderBotWorkerStatus from "./RenderBotWorkerStatus";
 import RenderChatMsg from "./RenderChatMsg";
 import {ipcRenderer} from "electron";
+import RenderChatMsgText from './RenderChatMsgText';
 
 export default class Bridge {
   static async initWaiApp(){
@@ -13,8 +14,16 @@ export default class Bridge {
     for (let i = 0; i < botIds.length; i++) {
       botAccounts.push(await new WorkerAccount(botIds[i]).getWorkersAccount())
     }
+    const botWorkersStatus = await ipcRenderer.invoke(
+      WindowActions.MasterWindowAction,
+      "1",
+      MasterEventActions.GetWorkersStatus,
+      {}
+    )
+    RenderBotWorkerStatus.updateAll(botWorkersStatus)
     return {
-      botAccounts
+      botAccounts,
+      botWorkersStatus
     }
   }
   static async callApi(botId:string,action:RenderActions,payload:any){
@@ -32,7 +41,7 @@ export default class Bridge {
         case RenderActions.SendBotCommand:
           return await new RenderChatMsgCommand(payload.chatId,payload.localMsgId).processBotCommand(payload.command)
         case RenderActions.SendMessage:
-          return await new RenderChatMsg(payload.chatId,payload.localMsgId).processMessage(payload as SendMessageRequest)
+          return await new RenderChatMsgText(payload.chatId,payload.localMsgId).processMessage(payload as SendMessageRequest)
         case RenderActions.UpdateMessage:
             const {localMsgId,chatId,text,entities,msgId} = payload
           return await new RenderChatMsg(chatId,localMsgId).updateMessage({msgId,text,entities})
@@ -57,17 +66,39 @@ export default class Bridge {
         case RenderActions.GetWorkerAccountChatGptAuth:
           return await new WorkerAccount(payload.chatId).getChatGptAuth()
         case RenderActions.UpdateWorkerStatus:
-          return RenderBotWorkerStatus.update(payload.botId,payload.statusBot,payload.statusBotWorker)
+          return RenderBotWorkerStatus.update(payload)
       }
     }
   }
-  static async getWorkerStatus(chatId:string){
-    await ipcRenderer.invoke(
+  static async getWorkerStatus(botId:string){
+    return Bridge.sendEventActionToWorker(botId,WorkerEventActions.Worker_GetWorkerStatus,{
+      chatId:botId
+    })
+  }
+
+  static invokeMasterWindow(botId:string,action:MasterEventActions,payload:any){
+    return ipcRenderer.invoke(
+      WindowActions.MasterWindowAction,
+      botId,
+      action,
+      payload
+    )
+  }
+
+  static async sendChatMsgToWorker(botId:string,payload:any){
+    return await ipcRenderer.invoke(
       WindowActions.WorkerWindowAction,
-      chatId,
-      WorkerEventActions.Worker_GetWorkerStatus,
-      {
-        chatId
-      })
+      botId,
+      WorkerEventActions.Worker_AskMsg,
+      payload
+    )
+  }
+  static async sendEventActionToWorker(botId:string,action:WorkerEventActions,payload:any){
+    return await ipcRenderer.invoke(
+      WindowActions.WorkerWindowAction,
+      botId,
+      action,
+      payload
+    )
   }
 }

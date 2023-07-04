@@ -6,8 +6,8 @@ import ServerChatAiMsg from './ServerChatAiMsg';
 import ServerChatMsgStorage from './ServerChatMsgStorage';
 import { CallbackButtonAction, NewMessage } from '../../types';
 import MsgHelper from '../../masterChat/MsgHelper';
-import UserMsgTable from '../models/mysql/UserMsgTable';
-import TaskTable from '../models/mysql/TaskTable';
+import UserMsgTable from '../models/rdms/UserMsgTable';
+import TaskTable from '../models/rdms/TaskTable';
 import { currentTs } from '../../utils/time';
 
 export default class ServerChatMsg extends BaseObject{

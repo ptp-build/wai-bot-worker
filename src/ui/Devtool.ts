@@ -7,9 +7,13 @@ export default class Devtool{
     this.mainWindow = mainWindow
   }
   openDevToolInner(){
-    this.mainWindow.webContents.openDevTools({mode:"detach"});
+    this.open("detach")
   }
-  open(){
-    this.openDevToolInner()
+  open(mode:'left' | 'right' | 'bottom' | 'undocked' | 'detach' = "undocked"){
+    if(!this.mainWindow.webContents.isDevToolsOpened()){
+      this.mainWindow.webContents.openDevTools({mode:"detach"});
+    }else{
+      this.mainWindow.webContents.closeDevTools()
+    }
   }
 }

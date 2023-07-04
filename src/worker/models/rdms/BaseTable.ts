@@ -30,7 +30,7 @@ export default class BaseTable{
       const result = await this.getDb().execute(sql, params);
       return result.insertId;
     } catch (error) {
-      console.error("Error adding HTTP request:", error);
+      console.error("Error adding row:", error);
       return null;
     }
   }

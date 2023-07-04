@@ -32,6 +32,7 @@ export class MysqlClient extends BaseDb {
 
   async query(sql: string,args?:any[]): Promise<any> {
     const connection = await this.getConnection();
+    console.debug(sql,args)
     const [rows] = await connection.query(sql,args||[]);
     return rows;
   }

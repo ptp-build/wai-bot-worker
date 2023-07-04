@@ -1,14 +1,10 @@
 
 declare global {
   interface Window {
-    DBInstanceConfig?:any
-  }
-  interface Window {
     electron?: ElectronApi;
     $?: any;
-    wai_worker?:any;
-    wai_selector?:any;
-    __worker_account?:any;
+    WORKER_ACCOUNT?:any;
+    TestCase?:any;
   }
 }
 
@@ -66,6 +62,7 @@ export type NewMessage = {
   chatId:string,
   msgId:number,
   text?:string,
+  content?:object,
   isOutgoing?:boolean,
   senderId?:string,
   msgDate?:number,
@@ -110,7 +107,7 @@ export interface AccountUser {
 }
 
 
-export type LocalWorkerType="chatGpt" | 'taskWorker'| 'custom'
+export type LocalWorkerType="chatGpt" | 'taskWorker'| 'custom' | 'coding'  | 'sql'
 
 export type LocalWorkerAccountType = {
   botId:string,
@@ -118,15 +115,21 @@ export type LocalWorkerAccountType = {
   bio:string,
   type:LocalWorkerType,
   name:string,
-  proxy?:string,
-  chatGptAuth?:string,
-  taskWorkerUri?:string,
-  customWorkerUrl?:string,
-  mysqlMsgStorageDsn?:string,
   appWidth:number,
   appHeight:number,
   appPosX:number,
   appPosY:number
+  proxy?:string,
+  chatGptAuth?:string,
+  browserUserAgent?:string,
+  chatGptRole?:string,
+  promptFormat?:string,
+  replyParser?:string,
+  taskWorkerUri?:string,
+  customWorkerUrl?:string,
+  pluginJs?:string,
+  mysqlMsgStorageDsn?:string,
+  projectRootDir?:string,
 }
 
 export type UserInfoType = {
@@ -145,9 +148,12 @@ export enum WorkerEventActions {
   Worker_AskMsg = 'Worker_AskMsg',
   Worker_LoadUrl = 'Worker_LoadUrl',
   Worker_Reload = 'Worker_Reload',
+  Worker_ShowDevTools = 'Worker_ShowDevTools',
+  Worker_GoBack = 'Worker_GoBack',
   Worker_ActiveWindow = 'Worker_ActiveWindow',
 
   Worker_GetWorkerStatus = 'Worker_GetWorkerStatus',
+  Worker_UpdateWorkerAccount = 'Worker_UpdateWorkerAccount',
   Worker_NotifyWorkerStatus = 'Worker_NotifyWorkerStatus',
   Worker_CallBackButton = 'Worker_CallBackButton',
 }
@@ -157,10 +163,13 @@ export enum MasterEvents {
 }
 
 export enum MasterEventActions {
+  GetFileData = "GetFileData",
+  SaveFileData = "SaveFileData",
   CreateWorker = "CreateWorker",
   CreateChatGptBot = 'CreateChatGptBot',
   CreateTaskWorkerBot = 'CreateTaskWorkerBot',
   NewMessage = 'NewMessage',
+  NewContentMessage = 'NewContentMessage',
   NewMessageByTaskWorker = "NewMessageByTaskWorker",
   UpdateMessage = 'UpdateMessage',
   FinishChatGptReply = 'FinishChatGptReply',
@@ -169,6 +178,9 @@ export enum MasterEventActions {
   MessageListScrollDownEnd = 'MessageListScrollDownEnd',
   UpdateWorkerStatus = 'UpdateWorkerStatus',
   GetWorkersStatus = 'GetWorkersStatus',
+  RestartWorkerWindow = 'RestartWorkerWindow',
+  GetWorkersAccount = 'GetWorkersAccount',
+  UpdateUserInfo = 'UpdateUserInfo',
 }
 
 export enum ServerEventActions {
@@ -214,6 +226,7 @@ export enum WindowActions {
 export enum CallbackButtonAction {
   Master_createTaskWorker = 'Master_createTaskWorker',
   Master_createCustomWorker = 'Master_createCustomWorker',
+  Master_createCodingWorker = 'Master_createCodingWorker',
   Master_createChatGptBotWorker = 'Master_createChatGptBotWorker',
   Master_OpenWorkerWindow = 'Master_OpenWorkerWindow',
   Master_openUserAppDataDir = 'Master_openUserAppDataDir',
@@ -225,33 +238,49 @@ export enum CallbackButtonAction {
   Local_setupProxy = 'Local_setupProxy',
   Local_setupChatGptAuth = 'Local_setupChatGptAuth',
   Local_setupWorkerName = 'Local_setupWorkerName',
+  Local_setupBrowserUserAgent = 'Local_setupBrowserUserAgent',
   Local_setupTaskUri = 'Local_setupTaskUri',
   Local_setupHomeUrl = 'Local_setupHomeUrl',
+  Local_setupPluginJs = 'Local_setupPluginJs',
+  Local_setupProjectRootDir = 'Local_setupProjectRootDir',
   Local_mysqlMsgStorage = 'Local_mysqlMsgStorage',
   Local_clearHistory = 'Local_clearHistory',
   Local_cancelMessage = 'Local_cancelMessage',
+  Local_setupPromptFormat = 'Local_setupPromptFormat',
+  Local_setupReplyParser = 'Local_setupReplyParser',
+  Local_resend = 'Local_resend',
 
   Local_cancelInlineButtons = 'Local_cancelInlineButtons',
 
   Render_refreshControlPanel = 'Render_refreshControlPanel',
-
+  Render_cancelMessage = 'Render_cancelMessage',
+  Render_cancelRoleConfig = 'Render_cancelRoleConfig',
   Render_saveWorkerAccount = 'Render_saveWorkerAccount',
   Render_resendAiMsg = 'Render_resendAiMsg',
-  Render_saveWorkerAccountChatGptAuth = 'Render_saveWorkerAccountChatGptAuth',
-  Render_saveWorkerAccountProxy = 'Render_saveWorkerAccountProxy',
+  Render_workerStatus = 'Render_workerStatus',
+  Render_setupChatGptRole = 'Render_setupChatGptRole',
+  Render_sendRoleDirectly = 'Render_sendRoleDirectly',
+
+
 }
 
 export enum WorkerCallbackButtonAction {
+  Worker_fetchSiteInfo = 'Worker_fetchSiteInfo',
   Worker_clickLoginButton = 'Worker_clickLoginButton',
   Worker_inputPrompts = 'Worker_inputPrompts',
-  Worker_getCommands = 'Worker_getCommands',
+  Worker_getActions = 'Worker_getActions',
   Worker_sendPromptTextareaMouseClick = "Worker_sendPromptTextareaMouseClick",
   Worker_sendInputSpaceEvent = 'Worker_sendInputSpaceEvent',
   Worker_performClickSendPromptButton = "Worker_performClickSendPromptButton",
   Worker_clickRegenerateResponseButton = "Worker_clickRegenerateResponseButton",
   Worker_locationReload = "Worker_locationReload",
-  Worker_historyGoBack = "Worker_historyGoBack"
+  Worker_historyGoBack = "Worker_historyGoBack",
 
+  Worker_openDevTools = "Worker_openDevTools",
+  Worker_browserUserAgent = "Worker_browserUserAgent",
+
+  Worker_Tg_Chats = 'Worker_Tg_Chats',
+  Worker_Tg_Open_Chat = 'Worker_Tg_Open_Chat',
 }
 
 export enum ServerCallbackButtonAction {
@@ -299,6 +328,7 @@ export enum BotWorkerStatusType {
 }
 
 export const EVENT_MESSAGE_LIST_SCROLL_DOWN_END = "EVENT_MESSAGE_LIST_SCROLL_DOWN_END"
+export const EVENT_MESSAGE_LIST_ENABLE_SCROLL_DOWN_END = "EVENT_MESSAGE_LIST_ENABLE_SCROLL_DOWN_END"
 
 export type ServerBotAccountType = {
   botId:string,
@@ -325,4 +355,15 @@ export type ChatGptAiTaskType = {
   isDone?:boolean;
   isError?:boolean;
   msgDate?:number
+}
+
+export type SaveFileDataType = {
+  type: "string" | "hex" | "base64";
+  filePath:string,
+  content:string
+}
+
+export type GetFileDataType = {
+  filePath:string,
+  type: "string" | "hex" | "base64" | "buffer";
 }

@@ -4,7 +4,7 @@ import {currentTs1000} from "../../utils/time";
 import ServerChatAiMsg from "./ServerChatAiMsg";
 import ServerChatMsgStorage from "./ServerChatMsgStorage";
 import {ReportChatGptAiTaskType} from "../../types";
-import TaskTable from "../models/mysql/TaskTable";
+import TaskTable from "../models/rdms/TaskTable";
 
 export default class ServerChatAiTask extends BaseObject{
   constructor(session:ServerSession) {

@@ -15,6 +15,10 @@ export default class KvCache{
     this.handler = handler;
   }
 
+  getKvHandler() {
+    return this.handler
+  }
+
   async put(key: string, value: any) {
     return await this.handler!.put(key,value)
   }

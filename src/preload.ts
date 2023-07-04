@@ -1,13 +1,10 @@
-import type {IpcRendererEvent} from 'electron';
-import {contextBridge, ipcRenderer} from 'electron';
-import Bridge from "./render/Bridge";
-import KvCache from "./worker/services/kv/KvCache";
-import BigStorage from "./worker/services/storage/BigStorage";
-import LocalFileKv from "./worker/services/kv/LocalFileKv";
-import FileStorage from "./worker/services/storage/FileStorage";
+import type { IpcRendererEvent } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
+import Bridge from './render/Bridge';
 import {
   ElectronAction,
-  ElectronApi, ElectronEvent,
+  ElectronApi,
+  ElectronEvent, LocalWorkerAccountType,
   MasterEventActions,
   MasterEvents,
   WindowActions,
@@ -15,7 +12,8 @@ import {
   WorkerEventActions,
   WorkerEvents,
 } from './types';
-import WorkerAccount from "./window/woker/WorkerAccount";
+import { setComponents } from './utils/electronCommon';
+import BotWorkerCustom from './plugins/js/customeWorker';
 
 const fs = require('fs');
 const path = require('path');
@@ -30,6 +28,7 @@ const appPath = argv['app-path']
 const pluginsJsPath = isProd ? path.join(appPath,"plugins","js") : path.join(appPath,'.webpack/main',"plugins","js")
 
 let botId = argv['botId']
+const isMasterChat = botId === 1
 
 console.log("[Preload]",window.location.href)
 console.log("[Preload] argv: ",argv)
@@ -39,20 +38,25 @@ console.log("[Preload] appPath: ",appPath)
 console.log("[Preload] userDataPath: ",userDataPath)
 console.log("[Preload] pluginsJsPath: ",pluginsJsPath)
 
-KvCache.getInstance().setKvHandler(new LocalFileKv().init(userDataPath))
-BigStorage.getInstance().setKvHandler(new FileStorage().init(userDataPath))
+setComponents(isProd,userDataPath)
 
 async function readAppendFile(name:string,code_pre = ''){
-  try {
+  const filePath = (name === "lib_zepto.js") ? path.join(pluginsJsPath,"..","..","lib", name) : path.join(pluginsJsPath, name);
+  let code = await fs.promises.readFile(filePath, 'utf8');
+  code = ` 
+    window['__dirname'] = "./"
 
-    const filePath = (name === "lib_zepto.js") ? path.join(pluginsJsPath,"..","..","lib", name) : path.join(pluginsJsPath, name);
-    const code = await fs.promises.readFile(filePath, 'utf8');
-    const script = document.createElement('script');
-    script.textContent = code_pre + code;
-    document.body.appendChild(script);
-  } catch (err) {
-    console.error(`Error reading ${name}:`, err);
-  }
+    if(!window.module){
+      window.module = {}
+    }
+    if(!window.module.exports){
+      window.module.exports = {}
+    }` + code_pre + code
+
+  const script = document.createElement('script');
+  // console.log("[readAppendFile]",name,code)
+  script.textContent = code;
+  document.body.appendChild(script);
 }
 
 const electronApi: ElectronApi = {
@@ -81,13 +85,29 @@ const electronApi: ElectronApi = {
 contextBridge.exposeInMainWorld('electron', electronApi);
 
 window.addEventListener('DOMContentLoaded', async () => {
-  await readAppendFile("lib_zepto.js")
-  if(botId > 1 && botId !== 1000){
-    const account = await new WorkerAccount(botId).getWorkersAccount()
-    if(!account){
-      return
+  window.electron = electronApi
+  const account = await Bridge.invokeMasterWindow(botId.toString(),MasterEventActions.GetWorkersAccount,{botId:botId.toString()}) as LocalWorkerAccountType
+  if(!isMasterChat){
+    let {pluginJs} = account
+    if(!pluginJs){
+      pluginJs = "worker_custom.js"
     }
-    console.debug("[Preload] account: ",account)
-    await readAppendFile(`worker_${account.type}.js`, `window.__worker_account = ${JSON.stringify(account)};`)
+    let appendChild = true
+    if(account && account.customWorkerUrl){
+      const {customWorkerUrl} = account
+      if(customWorkerUrl!.includes("twitter") || customWorkerUrl!.includes("discord")){
+        appendChild = false
+      }
+    }
+    if(appendChild){
+      await readAppendFile("lib_zepto.js","")
+      await readAppendFile(pluginJs, `window.WORKER_ACCOUNT = ${JSON.stringify(account)};`)
+      if(!isProd){
+        await readAppendFile("testCase.js",`window.WORKER_ACCOUNT = ${JSON.stringify(account)};`)
+      }
+    }else{
+      window.electron = electronApi
+      new BotWorkerCustom(account).addEvents()
+    }
   }
 });

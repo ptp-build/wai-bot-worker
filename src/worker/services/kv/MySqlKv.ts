@@ -1,5 +1,5 @@
 import BaseKv from './BaseKv';
-import KvTable from "../../models/mysql/KvTable";
+import KvTable from "../../models/rdms/KvTable";
 
 export default class MySqlKv extends BaseKv{
   private db: any;

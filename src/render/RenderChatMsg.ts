@@ -1,33 +1,34 @@
-import KvCache from "../worker/services/kv/KvCache";
-import {UserIdFirstBot} from "../masterChat/setting";
+import KvCache from '../worker/services/kv/KvCache';
+import { UserIdFirstBot } from '../masterChat/setting';
 import {
   BotWorkerStatusType,
   CallbackButtonAction,
+  LocalWorkerAccountType,
   MasterEventActions,
   NewMessage,
   WindowActions,
-  WorkerEventActions
-} from "../types";
-import {currentTs} from "../utils/time";
-import {ipcRenderer} from "electron";
-import ChatAiMsg from "../window/ChatAiMsg";
-import MsgHelper from "../masterChat/MsgHelper";
-import ChatConfig from "../window/ChatConfig";
-import MainChatMsgStorage from "../window/MainChatMsgStorage";
-import WorkerAccount from "../window/woker/WorkerAccount";
-import RenderBotWorkerStatus from "./RenderBotWorkerStatus";
+  WorkerCallbackButtonAction,
+  WorkerEventActions,
+} from '../types';
+import { currentTs } from '../utils/time';
+import { ipcRenderer } from 'electron';
+import ChatAiMsg from '../window/ChatAiMsg';
+import MsgHelper from '../masterChat/MsgHelper';
+import ChatConfig from '../window/ChatConfig';
+import MainChatMsgStorage from '../window/MainChatMsgStorage';
+import WorkerAccount from '../window/woker/WorkerAccount';
+import RenderBotWorkerStatus from './RenderBotWorkerStatus';
+import { encodeCallBackButtonPayload } from '../utils/utils';
 
 export default class RenderChatMsg {
   private isMasterBot: boolean;
   private chatId: string;
   private localMsgId?: number;
   private msgId?:number;
-  private chatAiMsg: ChatAiMsg;
   constructor(chatId:string,localMsgId?:number) {
     this.chatId = chatId
     this.localMsgId =localMsgId
     this.isMasterBot = chatId === UserIdFirstBot
-    this.chatAiMsg = new ChatAiMsg(chatId)
   }
   getChatId(){
     return this.chatId
@@ -35,8 +36,8 @@ export default class RenderChatMsg {
   getLocalMsgId(){
     return this.localMsgId
   }
-  async getWorkerAccount(){
-    return await new WorkerAccount(this.getChatId()).getWorkersAccount()
+  async getWorkerAccount():Promise<LocalWorkerAccountType>{
+    return await new WorkerAccount(this.getChatId()).getWorkersAccount() as LocalWorkerAccountType
   }
   async applyMsgId(){
     return {
@@ -101,7 +102,7 @@ export default class RenderChatMsg {
       botId,
       WorkerEventActions.Worker_AskMsg,
       {
-        text:text,
+        text,
         updateMessage:msg,
         fromBotId:this.getChatId(),
         taskId
@@ -109,8 +110,11 @@ export default class RenderChatMsg {
     return this
   }
 
-  async askChatGptMessage(text:string,taskId?:number){
-    const msgId = await this.genMsgId()
+  async askChatGptMessage(text:string,taskId?:number,msgId?:number){
+    if(!msgId){
+      msgId = await this.genMsgId()
+    }
+
     const msg = {
       chatId:this.getChatId(),
       msgId,
@@ -127,14 +131,28 @@ export default class RenderChatMsg {
     return msgId
   }
 
-  async handleNewMessage(newMessage:NewMessage){
+  async handleNewMessage(newMessage:NewMessage,sendToMainChat?:boolean){
     await ipcRenderer.invoke(
       WindowActions.MasterWindowAction,
       this.getChatId(),
       MasterEventActions.NewMessage,
       {
+        sendToMainChat,
         newMessage
       })
+  }
+
+
+  async replyNewMessage(text:string, inlineButtons?: object[][],isOutgoing?:boolean,sendToMainChat?:boolean){
+    const newMessage = {
+      msgId:await this.genMsgId(),
+      text,
+      isOutgoing:isOutgoing === undefined ? false : isOutgoing,
+      chatId:this.chatId,
+      inlineButtons
+    }
+    await this.handleNewMessage(newMessage,sendToMainChat)
+    return newMessage.msgId
   }
 
   async handleUpdateMessage(msg:Partial<NewMessage>){
@@ -167,38 +185,7 @@ export default class RenderChatMsg {
       msgId,text,entities,chatId:this.getChatId(),inlineButtons
     })
   }
-  async processMessage({text,entities,taskId}:{text:string,entities?:any[],taskId?:number}){
-    const msgId = await this.genMsgId()
-    const newMessage = {
-      chatId:this.getChatId(),
-      msgId,
-      text,
-      entities:entities||[],
-      inlineButtons:[],
-      isOutgoing:true,
-      senderId:"1",
-      msgDate:currentTs(),
-    }
-    await this.handleNewMessage(newMessage)
 
-    const workerAccount = await new WorkerAccount(this.getChatId()).getWorkersAccount()
-
-    if((workerAccount && workerAccount.type !== "chatGpt")){
-      if(!taskId){
-        return {msgId,sendingState:undefined}
-      }
-    }
-
-    const enableMultipleQuestion = await ChatConfig.isEnableMultipleQuestion(this.getChatId())
-    if(enableMultipleQuestion){
-      await this.chatAiMsg.addAskList(newMessage.msgId)
-      return {msgId,sendingState:"messageSendingStatePending"}
-    }else{
-      const aiMsgId = await this.askChatGptMessage(text,taskId)
-      await new ChatAiMsg(this.getChatId()).save(msgId,aiMsgId)
-      return {aiMsgId,msgId,sendingState:undefined}
-    }
-  }
 
   async sendMultipleQuestion(){
     const {chatId} = this
@@ -250,49 +237,23 @@ export default class RenderChatMsg {
       )
     await new ChatAiMsg(this.chatId).deleteAskList(ids)
   }
+  invokeWorkerCallBackButton(action:WorkerCallbackButtonAction,payload:any = {}){
+    return ipcRenderer.invoke(
+      WindowActions.WorkerWindowCallbackAction,
+      encodeCallBackButtonPayload(action,{
+        chatId:this.getChatId(),
+        ...payload
+      })
+    )
+  }
 
-  async resendAiMsg(msgId:number){
-    const {chatId} =this
-    const chatAiMsg = new ChatAiMsg(chatId)
-    const mainChatMsgStorage = new MainChatMsgStorage()
-    const aiMsgId = await chatAiMsg.get(msgId);
-    const msgListTmp = await chatAiMsg.getAskList();
-    console.debug("resendAiMsg",{msgId,aiMsgId,msgListTmp})
-    if(aiMsgId && !msgListTmp.includes(msgId)){
-      const msg = await mainChatMsgStorage.getRow(chatId,msgId)
-      const aiMsg = await mainChatMsgStorage.getRow(chatId,aiMsgId)
-      if(aiMsg && msg && msg.text){
-        let text = "";
-        const enableMultipleQuestion = await ChatConfig.isEnableMultipleQuestion(chatId)
-        if(enableMultipleQuestion){
-          const preAiMsgList = await chatAiMsg.getAskListFinished(aiMsg.msgId)
-          if(preAiMsgList.length > 0){
-            for (let i = 0; i < preAiMsgList.length; i++) {
-              const aiMsg1 = await mainChatMsgStorage.getRow(chatId,preAiMsgList[i])
-              if(aiMsg1 && aiMsg1.text){
-                text += aiMsg1.text + "\n"
-              }
-            }
-            text = text.trim()
-          }
-        }else{
-          const aiMsg1 = await mainChatMsgStorage.getRow(chatId,msgId)
-          if(aiMsg1 && aiMsg1.text){
-            text += aiMsg1.text
-          }
-        }
-        if(text){
-          await this.invokeAskChatGptMsg(text,aiMsg)
-          await this.handleUpdateMessage({
-            ...aiMsg,
-            text:"..."
-          })
-          await this.handleUpdateMessage({
-            ...msg,
-            inlineButtons:[]
-          })
-        }
-      }
-    }
+  invokeMasterCallBackButton(action:CallbackButtonAction,payload:any = {}){
+    return ipcRenderer.invoke(
+      WindowActions.MasterWindowCallbackAction,
+      encodeCallBackButtonPayload(action,{
+        chatId:this.getChatId(),
+        ...payload
+      })
+    )
   }
 }

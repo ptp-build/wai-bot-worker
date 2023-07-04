@@ -6,20 +6,20 @@ export default class MsgTable extends BaseTable{
     super("wai_msg");
   }
   async save(row:NewMessage){
-    const sql = `
-    INSERT INTO ${this.getTable()} (chatId,msgId,text,inlineButtons,entities,msgDate,senderId,isOutgoing)
-    VALUES (?, ?, ?, ?, ?, ?,?,?)
+    const sql = `INSERT INTO ${this.getTable()} (chatId,msgId,text,inlineButtons,entities,content,msgDate,senderId,isOutgoing)
+    VALUES (?, ?, ?, ?, ?, ?, ?,?,?)
     ON DUPLICATE KEY UPDATE
       text = VALUES(text),
       inlineButtons = VALUES(inlineButtons),
       entities = VALUES(entities),
       msgDate = VALUES(msgDate),
+      content = VALUES(content),
       senderId = VALUES(senderId),
-      isOutgoing = VALUES(isOutgoing)
-  `;
+      isOutgoing = VALUES(isOutgoing)`;
     try {
-      const { chatId,msgId,text,inlineButtons,entities,msgDate,senderId,isOutgoing} = row;
-      const params = [chatId,msgId,text,inlineButtons || [],entities || [],msgDate,senderId,isOutgoing];
+      const { chatId,msgId,text,inlineButtons,entities,content,msgDate,senderId,isOutgoing} = row;
+      const params = [chatId,msgId,text,inlineButtons || [],entities || [],content|| {},msgDate,senderId,isOutgoing];
+      console.log({params})
       const result = await this.getDb().execute(sql, params);
       return result.insertId;
     } catch (error) {
