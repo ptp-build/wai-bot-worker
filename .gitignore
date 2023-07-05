@@ -100,3 +100,4 @@ wrangler.websocket.prod.toml
 wrangler.*.prod.toml
 wrangler.stage.toml
 
+native_modules/

@@ -1,25 +1,22 @@
-import RenderCallbackButton from "./RenderCallbackButton";
-import RenderChatMsgCommand from "./RenderChatMsgCommand";
-import { MasterEventActions, RenderActions, SendMessageRequest, WindowActions, WorkerEventActions } from '../types';
-import WorkerAccount from "../window/woker/WorkerAccount";
-import RenderBotWorkerStatus from "./RenderBotWorkerStatus";
-import RenderChatMsg from "./RenderChatMsg";
-import {ipcRenderer} from "electron";
+import RenderCallbackButton from './RenderCallbackButton';
+import RenderChatMsgCommand from './RenderChatMsgCommand';
+import { RenderActions, SendMessageRequest, WindowActions } from '../types';
+import WorkerAccount from '../window/woker/WorkerAccount';
+import RenderBotWorkerStatus from './RenderBotWorkerStatus';
+import RenderChatMsg from './RenderChatMsg';
 import RenderChatMsgText from './RenderChatMsgText';
+import { MasterBotId } from '../setting';
+import BridgeMasterWindow from '../bridge/BridgeMasterWindow';
+import BridgeWorkerWindow from '../bridge/BridgeWorkerWindow';
 
-export default class Bridge {
+export default class RenderBridge {
   static async initWaiApp(){
     const botIds = await WorkerAccount.getBotList()
     const botAccounts = []
     for (let i = 0; i < botIds.length; i++) {
       botAccounts.push(await new WorkerAccount(botIds[i]).getWorkersAccount())
     }
-    const botWorkersStatus = await ipcRenderer.invoke(
-      WindowActions.MasterWindowAction,
-      "1",
-      MasterEventActions.GetWorkersStatus,
-      {}
-    )
+    const botWorkersStatus = await new BridgeMasterWindow().getWorkersStatus()
     RenderBotWorkerStatus.updateAll(botWorkersStatus)
     return {
       botAccounts,
@@ -32,10 +29,10 @@ export default class Bridge {
     ){
       console.debug("[callApi]",action,payload)
     }
-    if(parseInt(botId) === 1){ //master render
+    if(botId === MasterBotId){ //master render
       switch (action){
         case RenderActions.InitWaiApp:
-          return await Bridge.initWaiApp()
+          return await RenderBridge.initWaiApp()
         case RenderActions.ApplyMsgId:
           return await new RenderChatMsg(payload.chatId!).applyMsgId()
         case RenderActions.SendBotCommand:
@@ -54,7 +51,7 @@ export default class Bridge {
         case RenderActions.EnableMultipleQuestion:
           return await new RenderChatMsgCommand(payload.chatId).enableMultipleQuestion(payload.command)
         case RenderActions.GetWorkerStatus:
-          return await Bridge.getWorkerStatus(payload.chatId!)
+          return await RenderBridge.getWorkerStatus(payload.botId)
         case RenderActions.LoadBotCommands:
           return await new RenderChatMsgCommand(payload.botId).loadBotCommands()
         case RenderActions.AnswerCallbackButton:
@@ -71,34 +68,8 @@ export default class Bridge {
     }
   }
   static async getWorkerStatus(botId:string){
-    return Bridge.sendEventActionToWorker(botId,WorkerEventActions.Worker_GetWorkerStatus,{
+    return new BridgeWorkerWindow(botId).getWorkerStatus({
       chatId:botId
     })
-  }
-
-  static invokeMasterWindow(botId:string,action:MasterEventActions,payload:any){
-    return ipcRenderer.invoke(
-      WindowActions.MasterWindowAction,
-      botId,
-      action,
-      payload
-    )
-  }
-
-  static async sendChatMsgToWorker(botId:string,payload:any){
-    return await ipcRenderer.invoke(
-      WindowActions.WorkerWindowAction,
-      botId,
-      WorkerEventActions.Worker_AskMsg,
-      payload
-    )
-  }
-  static async sendEventActionToWorker(botId:string,action:WorkerEventActions,payload:any){
-    return await ipcRenderer.invoke(
-      WindowActions.WorkerWindowAction,
-      botId,
-      action,
-      payload
-    )
   }
 }

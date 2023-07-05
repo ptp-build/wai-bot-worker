@@ -1,5 +1,5 @@
 import KvCache from "../worker/services/kv/KvCache";
-import {UserIdFirstBot} from "../masterChat/setting";
+import { MasterBotId } from '../setting';
 
 export type ChatConfigKey = "enableMultipleQuestion"
 
@@ -9,7 +9,7 @@ export default class ChatConfig{
     this.chatId = chatId
   }
   static getMasterConfig():ChatConfig{
-    return new ChatConfig(UserIdFirstBot)
+    return new ChatConfig(MasterBotId)
   }
   async getConfig(key:ChatConfigKey){
     return await KvCache.getInstance().get(`ChatConfig_${this.chatId}_${key}`) || null

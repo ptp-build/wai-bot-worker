@@ -289,10 +289,17 @@ export function decodeFromBase64(input: string) {
   }
 }
 
-export function parseCallBackButtonPayload(data:string){
-  const t  = data.split("/hex")
+export function parseCallBackButtonPayload(data:string,type:"hex"|"base64" = "base64"){
+  const t  = type === "hex" ?  data.split("/hex") :  data.split("/base64")
   if(t.length === 2){
-    const params = JSON.parse(Buffer.from(t[1],'hex').toString())
+    let params
+    if(type === "hex"){
+      params =  JSON.parse(Buffer.from(t[1],'hex').toString())
+    }else{
+      const tt = decodeFromBase64(t[1])
+      console.log(t,tt)
+      params =  JSON.parse(tt!)
+    }
     return {
       path:t[0],
       params
@@ -305,15 +312,17 @@ export function parseCallBackButtonPayload(data:string){
   }
 }
 
-export function encodeCallBackButtonPayload(data:string,payload?:any){
+export function encodeCallBackButtonPayload(data:string,payload?:any,type:"hex"|"base64" = "base64"){
   if(payload){
-    return `${data}/hex${Buffer.from(JSON.stringify(payload)).toString("hex")}`
+    if(type === "hex"){
+      return `${data}/hex${Buffer.from(JSON.stringify(payload)).toString("hex")}`
+    }else{
+      return `${data}/base64${encodeToBase64(JSON.stringify(payload))}`
+    }
   }else{
     return data
   }
 }
-
-
 
 export function getProxyConfigFromProxyConfStr(proxy?:string){
   if(!proxy){

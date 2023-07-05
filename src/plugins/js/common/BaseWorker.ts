@@ -1,9 +1,8 @@
-import { currentTs, sendActionToMasterWindow, sendActionToWorkerWindow } from './helper';
+import { currentTs } from './helper';
 import {
   BotStatusType,
   BotWorkerStatusType,
   LocalWorkerAccountType,
-  MasterEventActions,
   WorkerCallbackButtonAction,
   WorkerEventActions,
   WorkerEvents,
@@ -44,7 +43,7 @@ export default class BaseWorker extends BaseWorkerMsg{
     if(statusBot !== this.statusBot_pre || statusBotWorker !== this.statusBotWorker_pre){
       this.statusBot_pre = statusBot
       this.statusBotWorker_pre = statusBotWorker
-      sendActionToMasterWindow(this.botId, MasterEventActions.UpdateWorkerStatus, {
+      this.getBridgeMasterWindow().updateWorkerStatus({
         statusBot,
         statusBotWorker,
         botId: this.botId,
@@ -53,20 +52,16 @@ export default class BaseWorker extends BaseWorkerMsg{
   }
 
   getWorkersStatus() {
-    sendActionToMasterWindow(this.botId, MasterEventActions.GetWorkersStatus, {
-      botId: this.botId,
-    }).catch(console.error);
+    void this.getBridgeMasterWindow().getWorkersStatus()
   }
-
   restartWorkerWindow() {
-    return sendActionToMasterWindow(this.botId, MasterEventActions.RestartWorkerWindow, {
+    return this.getBridgeMasterWindow().restartWorkerWindow({
       botId: this.botId,
-    }).catch(console.error);
+    })
   }
   handleEvent(action:WorkerEventActions, payload:any) {
     switch (action) {
       case WorkerEventActions.Worker_UpdateWorkerAccount:
-        console.log("[Worker_UpdateWorkerAccount]",payload)
         if(
           payload.browserUserAgent !== this.workerAccount.browserUserAgent ||
           payload.proxy !== this.workerAccount.proxy ||
@@ -77,7 +72,6 @@ export default class BaseWorker extends BaseWorkerMsg{
           void this.restartWorkerWindow()
         }
         this.workerAccount = payload
-
         break;
       case WorkerEventActions.Worker_GetWorkerStatus:
         this.reportStatus(this.statusBot!,this.statusBotWorker!)
@@ -119,13 +113,13 @@ export default class BaseWorker extends BaseWorkerMsg{
         await this.replyTextWithCancel(window.navigator.userAgent)
         break;
       case WorkerCallbackButtonAction.Worker_openDevTools:
-        await sendActionToWorkerWindow(this.botId,WorkerEventActions.Worker_ShowDevTools, {})
+        await this.getBridgeWorkerWindow().showDevTools()
         break;
       case WorkerCallbackButtonAction.Worker_locationReload:
-        await sendActionToWorkerWindow(this.botId,WorkerEventActions.Worker_Reload, {})
+        await this.getBridgeWorkerWindow().reload()
         break;
       case WorkerCallbackButtonAction.Worker_historyGoBack:
-        await sendActionToWorkerWindow(this.botId,WorkerEventActions.Worker_GoBack, {})
+        await this.getBridgeWorkerWindow().goBack()
         break;
       case WorkerCallbackButtonAction.Worker_fetchSiteInfo:
         const siteInfo = this.handleSiteInfo()
@@ -150,6 +144,9 @@ export default class BaseWorker extends BaseWorkerMsg{
     })
   }
   async handleSiteLogo(siteInfo:SiteInfo){
+    if(this.workerAccount.avatarHash){
+      return
+    }
     if(!this.isLogoUpdated()){
       let hasLogo = false
       if(siteInfo.logo) {

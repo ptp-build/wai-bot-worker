@@ -4,8 +4,9 @@ import RenderBotWorkerStatus from '../RenderBotWorkerStatus';
 import ChatConfig from '../../window/ChatConfig';
 import KvCache from '../../worker/services/kv/KvCache';
 import WorkerAccount from '../../window/woker/WorkerAccount';
-import Bridge from '../Bridge';
+import RenderBridge from '../RenderBridge';
 import BaseCommand from './BaseCommand';
+import BridgeWorkerWindow from '../../bridge/BridgeWorkerWindow';
 
 export default class ChatGptCommand extends BaseCommand{
 
@@ -53,7 +54,6 @@ export default class ChatGptCommand extends BaseCommand{
     const buttons = this.getSettingButtons()
 
     buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️ Worker Name",CallbackButtonAction.Local_setupWorkerName),
       MsgHelper.buildCallBackAction("🛠️️ ChatGpt Auth",CallbackButtonAction.Local_setupChatGptAuth),
       MsgHelper.buildCallBackAction("🛠️️️ Plugin Js",CallbackButtonAction.Local_setupPluginJs),
     ])
@@ -92,7 +92,7 @@ export default class ChatGptCommand extends BaseCommand{
       chatGptRole:text
     }
     await new WorkerAccount(this.getChatId()).updateWorkersAccount(newAccount)
-    await Bridge.sendEventActionToWorker(this.getChatId(),WorkerEventActions.Worker_UpdateWorkerAccount, newAccount)
+    await new BridgeWorkerWindow(this.getChatId()).updateWorkerAccount(newAccount)
   }
   async sendRoleDirectly(messageId:number){
     if(!await this.isSetupChatGptRole()){

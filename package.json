@@ -5,7 +5,7 @@
   "description": "Wai Bot Worker",
   "main": ".webpack/main",
   "scripts": {
-    "cp:types": "cp src/types.ts /Users/jack/projects/github/telegram-tt-bak/src/electron/types.ts",
+    "cp:typesAndBridge": "cp src/types.ts /Users/jack/projects/github/telegram-tt-bak/src/electron/types.ts && cp -a src/bridge/ /Users/jack/projects/github/telegram-tt-bak/src/electron/bridge",
     "build:wai-bot-rpa": "node tools/build-wai-bot-rpa.js",
     "run:wai-bot-rpa": "/usr/bin/python3 py-wai-bot-rpa/wai-bot-rpa.py",
     "run:wai-bot-click-position": "/usr/bin/python3 py-wai-bot-rpa/wai-click-position.py",

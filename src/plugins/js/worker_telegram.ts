@@ -217,8 +217,8 @@ class TelegramWorker extends BaseWorker {
   handleEvent(action:WorkerEventActions, payload:any) {
     super.handleEvent(action, payload)
     switch (action) {
-      case WorkerEventActions.Worker_AskMsg:
-        console.log("[Worker_AskMsg]", JSON.stringify(payload));
+      case WorkerEventActions.Worker_ChatMsg:
+        console.log("[Worker_ChatMsg]", JSON.stringify(payload));
         break;
     }
   }

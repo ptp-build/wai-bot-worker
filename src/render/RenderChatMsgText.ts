@@ -5,7 +5,8 @@ import MainChatMsgStorage from '../window/MainChatMsgStorage';
 import CodingCommand from './commands/CodingCommand';
 import RenderChatMsg from './RenderChatMsg';
 import ChatGptCommand from './commands/ChatGptCommand';
-import Bridge from './Bridge';
+import RenderBridge from './RenderBridge';
+import BridgeWorkerWindow from '../bridge/BridgeWorkerWindow';
 
 export default class RenderChatMsgText extends RenderChatMsg{
 
@@ -102,10 +103,12 @@ export default class RenderChatMsgText extends RenderChatMsg{
             return {aiMsgId,msgId,sendingState:undefined}
           }
         default:
-          await Bridge.sendChatMsgToWorker(this.getChatId(),{
+
+          await new BridgeWorkerWindow(this.getChatId()).sendChatMsgToWorker({
             chatId:this.getChatId(),
             text,
           })
+
           return {msgId,sendingState:undefined}
       }
     }

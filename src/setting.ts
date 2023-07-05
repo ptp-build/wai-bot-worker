@@ -1,1 +1,1 @@
-export const UserIdFirstBot = "1000";
+export const MasterBotId = "1000";

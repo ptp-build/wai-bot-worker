@@ -1,6 +1,5 @@
-import { arrayBufferToBase64, saveFileData, sendActionToMasterWindow, sendActionToWorkerWindow } from './helper';
+import { arrayBufferToBase64} from './helper';
 import { CallbackButtonAction, MasterEventActions, NewMessage, WorkerEventActions } from '../../../types';
-import TelegramHelper from './TelegramHelper';
 import BaseKeyboardAndMouseEvents from './BaseKeyboardAndMouseEvents';
 import FileHelper from './FileHelper';
 
@@ -35,21 +34,22 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
     super(botId)
   }
   replyUpdateMessage(msgId: number, chatId: string,message:Partial<NewMessage>) {
-    sendActionToMasterWindow(chatId, MasterEventActions.UpdateMessage, {
+    return this.getBridgeMasterWindow().updateMessage({
       updateMessage: message,
-    }).catch(console.error);
+    })
   }
   updateMessage(text1: string, msgId: number, chatId: string,fromBotId?:string,taskId?:number,isDone?:boolean) {
-    void sendActionToMasterWindow(chatId, MasterEventActions.UpdateMessage, {
+    void this.getBridgeMasterWindow().updateMessage({
       updateMessage: {
         msgId,
         chatId,
         text:text1,
         entities:[]
       },
-    }).catch(console.error);
+    })
     if(fromBotId && taskId){
-      sendActionToWorkerWindow(fromBotId, WorkerEventActions.Worker_TaskAiMsg, {
+      void this.getBridgeWorkerWindow().taskAiMsg({
+        fromBotId,
         taskId,
         isDone,
         updateMessage: {
@@ -58,25 +58,25 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
           text:text1,
           entities:[]
         },
-      }).catch(console.error);
+      })
     }
   }
 
   finishReply(msgId:number,chatId:string) {
-    sendActionToMasterWindow(this.botId, MasterEventActions.FinishChatGptReply, {
+    void this.getBridgeMasterWindow().finishChatGptReply({
       msgId,
       chatId
-    }).catch(console.error);
+    })
   }
 
   updateUserInfo(userId:string,user:{photos:any[],avatarHash:string}) {
-    sendActionToMasterWindow(this.botId, MasterEventActions.UpdateUserInfo, {
+    void this.getBridgeMasterWindow().updateUserInfo({
       userId,
       user,
-    }).catch(console.error);
+    })
   }
   isLogoUpdated(){
-    return localStorage.getItem("updateSiteLogo_"+this.botId)
+    return localStorage.getItem("updateSiteLogo1_"+this.botId)
   }
 
   logoUpdated(){
@@ -224,40 +224,39 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
         type: 'callback',
       },
     ]);
-
-    return sendActionToMasterWindow(this.botId, MasterEventActions.NewContentMessage, {
+    void this.getBridgeMasterWindow().newContentMessage({
       newMessage: {
         chatId: this.botId,
         content,
         isOutgoing:false,
         inlineButtons: inlineButtons || undefined,
       },
-    }).catch(console.error);
+    })
   }
 
   replyMessage(text: string, inlineButtons?: any[], chatId?: string,isOutgoing?:boolean,senderId?:string,sendToMainChat?:boolean) {
-    return sendActionToMasterWindow(chatId ?? this.botId, MasterEventActions.NewMessage, {
+    void this.getBridgeMasterWindow().newMessage({
       sendToMainChat,
       newMessage: {
-        chatId: chatId ? chatId : this.botId,
+        chatId:chatId || this.botId,
         text,
         isOutgoing:!!isOutgoing,
         inlineButtons: inlineButtons || undefined,
       },
-    }).catch(console.error);
+    })
   }
 
   loadUrl(url:string){
-    return sendActionToWorkerWindow(this.botId, WorkerEventActions.Worker_LoadUrl, {url}).catch(console.error);
+    return this.getBridgeWorkerWindow().loadUrl({url})
   }
   askMessageByTaskWorker(text: string,taskId:number) {
-    return sendActionToMasterWindow(this.botId, MasterEventActions.NewMessageByTaskWorker, {
+    return this.getBridgeMasterWindow().newMessageByTaskWorker({
       newMessage: {
         chatId: this.botId,
         text,
       },
       taskId
-    }).catch(console.error);
+    })
   }
 
 

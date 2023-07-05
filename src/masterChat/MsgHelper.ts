@@ -1,4 +1,4 @@
-import {CallbackButtonAction, CallbackButtonActionType} from "../types";
+import { CallbackButtonAction, CallbackButtonActionType } from '../types';
 import { encodeCallBackButtonPayload } from '../utils/utils';
 
 export default class MsgHelper {

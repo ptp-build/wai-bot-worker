@@ -1,14 +1,11 @@
 import KvCache from '../worker/services/kv/KvCache';
-import { UserIdFirstBot } from '../masterChat/setting';
 import {
   BotWorkerStatusType,
   CallbackButtonAction,
   LocalWorkerAccountType,
-  MasterEventActions,
   NewMessage,
   WindowActions,
   WorkerCallbackButtonAction,
-  WorkerEventActions,
 } from '../types';
 import { currentTs } from '../utils/time';
 import { ipcRenderer } from 'electron';
@@ -19,16 +16,22 @@ import MainChatMsgStorage from '../window/MainChatMsgStorage';
 import WorkerAccount from '../window/woker/WorkerAccount';
 import RenderBotWorkerStatus from './RenderBotWorkerStatus';
 import { encodeCallBackButtonPayload } from '../utils/utils';
+import { MasterBotId } from '../setting';
+import BridgeWorkerWindow from '../bridge/BridgeWorkerWindow';
+import BridgeMasterWindow from '../bridge/BridgeMasterWindow';
+import RenderBridge from './RenderBridge';
 
 export default class RenderChatMsg {
-  private isMasterBot: boolean;
+  public isMasterBot: boolean;
   private chatId: string;
   private localMsgId?: number;
-  private msgId?:number;
   constructor(chatId:string,localMsgId?:number) {
     this.chatId = chatId
     this.localMsgId =localMsgId
-    this.isMasterBot = chatId === UserIdFirstBot
+    this.isMasterBot = chatId === MasterBotId
+  }
+  getIsMasterBot(){
+    return this.isMasterBot
   }
   getChatId(){
     return this.chatId
@@ -96,12 +99,7 @@ export default class RenderChatMsg {
         setTimeout(async ()=>await this.invokeAskChatGptMsg(text,msg,taskId),1000)
       }
     }
-
-    await ipcRenderer.invoke(
-      WindowActions.WorkerWindowAction,
-      botId,
-      WorkerEventActions.Worker_AskMsg,
-      {
+    await new BridgeWorkerWindow(botId).sendChatMsgToWorker({
         text,
         updateMessage:msg,
         fromBotId:this.getChatId(),
@@ -132,11 +130,7 @@ export default class RenderChatMsg {
   }
 
   async handleNewMessage(newMessage:NewMessage,sendToMainChat?:boolean){
-    await ipcRenderer.invoke(
-      WindowActions.MasterWindowAction,
-      this.getChatId(),
-      MasterEventActions.NewMessage,
-      {
+    await new BridgeMasterWindow(this.getChatId()).newMessage({
         sendToMainChat,
         newMessage
       })
@@ -156,13 +150,9 @@ export default class RenderChatMsg {
   }
 
   async handleUpdateMessage(msg:Partial<NewMessage>){
-    await ipcRenderer.invoke(
-      WindowActions.MasterWindowAction,
-      this.getChatId(),
-      MasterEventActions.UpdateMessage,
-      {
-        updateMessage:msg
-      })
+    await new BridgeMasterWindow(this.getChatId()).updateMessage({
+      updateMessage:msg
+    })
   }
 
   async updateMessage({msgId,text,entities}:{msgId:number,text:string,entities?:any[]}){
@@ -229,31 +219,7 @@ export default class RenderChatMsg {
     await WorkerAccount.deleteBotList(this.getChatId())
   }
   async deleteChatMessages(ids:number[]){
-    await ipcRenderer.invoke(
-      WindowActions.MasterWindowAction,
-      this.chatId,
-      MasterEventActions.DeleteMessages,
-      {ids,chatId:this.chatId}
-      )
+    await new BridgeMasterWindow(this.chatId).deleteMessages({ids,chatId:this.chatId})
     await new ChatAiMsg(this.chatId).deleteAskList(ids)
-  }
-  invokeWorkerCallBackButton(action:WorkerCallbackButtonAction,payload:any = {}){
-    return ipcRenderer.invoke(
-      WindowActions.WorkerWindowCallbackAction,
-      encodeCallBackButtonPayload(action,{
-        chatId:this.getChatId(),
-        ...payload
-      })
-    )
-  }
-
-  invokeMasterCallBackButton(action:CallbackButtonAction,payload:any = {}){
-    return ipcRenderer.invoke(
-      WindowActions.MasterWindowCallbackAction,
-      encodeCallBackButtonPayload(action,{
-        chatId:this.getChatId(),
-        ...payload
-      })
-    )
   }
 }

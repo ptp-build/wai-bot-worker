@@ -1,21 +1,5 @@
-import { GetFileDataType, MasterEventActions, SaveFileDataType, WorkerEventActions } from '../../../types';
-
-export const sendActionToMasterWindow = async (botId: string, action: MasterEventActions, payload: any) => {
-  return window.electron?.invokeMasterWindowAction(botId, action, payload);
-};
-
-export const sendKeyboardEventActionToWorkerWindow = async (botId: string, type: any, keyCode: string) => {
-  return window.electron?.invokeWorkerWindowKeyboardEventAction(botId, type, keyCode);
-};
-
-
-export const sendMouseEventActionToWorkerWindow = async (botId: string,payload: any) => {
-  return window.electron?.invokeWorkerWindowMouseEventAction(botId, payload);
-};
-
-export const sendActionToWorkerWindow = async (botId: string,action:WorkerEventActions,payload: any) => {
-  return window.electron?.invokeWorkerWindowAction(botId,action, payload);
-};
+import { GetFileDataType, SaveFileDataType } from '../../../types';
+import BridgeMasterWindow from '../../../bridge/BridgeMasterWindow';
 
 
 export async function arrayBufferToBase64(arrayBuffer:ArrayBuffer,type?:string) {
@@ -60,13 +44,12 @@ export function arrayBufferToHex(arrayBuffer:ArrayBuffer):Promise<string> {
   });
 }
 
-
 export function saveFileData(botId:string,payload:SaveFileDataType) {
-  return sendActionToMasterWindow(botId, MasterEventActions.SaveFileData, payload).catch(console.error);
+  return new BridgeMasterWindow(botId).saveFileData(payload)
 }
 
 export function getFileData(botId:string,payload:GetFileDataType) {
-  return sendActionToMasterWindow(botId, MasterEventActions.GetFileData, payload).catch(console.error);
+  return new BridgeMasterWindow(botId).getFileData(payload);
 }
 
 

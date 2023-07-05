@@ -323,7 +323,6 @@ class ChatGptBotWorker extends BaseWorker {
     }
   }
   async clearConversations() {
-    debugger
     const mainParent = $("main").parent()
     if(mainParent.children().length === 2){
       $("main").parent().children().eq(0).find("button").eq(0).click()
@@ -431,8 +430,8 @@ class ChatGptBotWorker extends BaseWorker {
   handleEvent(action:WorkerEventActions, payload:any) {
     super.handleEvent(action, payload)
     switch (action) {
-      case WorkerEventActions.Worker_AskMsg:
-        console.log("[Worker_AskMsg]", JSON.stringify(payload));
+      case WorkerEventActions.Worker_ChatMsg:
+        console.log("[Worker_ChatMsg]", JSON.stringify(payload));
         this.askMsg(payload).catch(console.error);
         break;
     }

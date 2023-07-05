@@ -23,11 +23,11 @@ export enum ElectronAction {
 
 export interface ElectronApi {
   invokeRenderBridgeAction:(botId:string,action:RenderActions,payload:any)=>Promise<any|undefined>
-  invokeWorkerWindowAction:(botId:string,action:WorkerEventActions,payload:any)=>Promise<void>
-  invokeMasterWindowAction:(botId:string,action:MasterEventActions,payload:any)=>Promise<void>
+  invokeWorkerWindowAction:(botId:string,action:WorkerEventActions,payload:any)=>Promise<any>
+  invokeMasterWindowAction:(botId:string,action:MasterEventActions,payload:any)=>Promise<any>
   invokeWindowDbAction:(actionData:WindowDbActionData)=>Promise<any>
-  invokeWorkerWindowKeyboardEventAction:(botId:string,type:string,keyCode:string)=>Promise<void>
-  invokeWorkerWindowMouseEventAction:(botId:string,paylaod:any)=>Promise<void>
+  invokeWorkerWindowKeyboardEventAction:(botId:string,type:string,keyCode:string)=>Promise<any>
+  invokeWorkerWindowMouseEventAction:(botId:string,paylaod:any)=>Promise<any>
   isFullscreen: () => Promise<boolean>;
   installUpdate: () => Promise<void>;
   handleDoubleClick: () => Promise<void>;
@@ -127,6 +127,7 @@ export type LocalWorkerAccountType = {
   replyParser?:string,
   taskWorkerUri?:string,
   customWorkerUrl?:string,
+  avatarHash?:string,
   pluginJs?:string,
   mysqlMsgStorageDsn?:string,
   projectRootDir?:string,
@@ -145,7 +146,7 @@ export enum WorkerEvents {
 
 export enum WorkerEventActions {
   Worker_TaskAiMsg = 'Worker_TaskAiMsg',
-  Worker_AskMsg = 'Worker_AskMsg',
+  Worker_ChatMsg = 'Worker_ChatMsg',
   Worker_LoadUrl = 'Worker_LoadUrl',
   Worker_Reload = 'Worker_Reload',
   Worker_ShowDevTools = 'Worker_ShowDevTools',
@@ -256,6 +257,7 @@ export enum CallbackButtonAction {
   Render_cancelMessage = 'Render_cancelMessage',
   Render_cancelRoleConfig = 'Render_cancelRoleConfig',
   Render_saveWorkerAccount = 'Render_saveWorkerAccount',
+  Render_updateWorkerAccount = 'Render_updateWorkerAccount',
   Render_resendAiMsg = 'Render_resendAiMsg',
   Render_workerStatus = 'Render_workerStatus',
   Render_setupChatGptRole = 'Render_setupChatGptRole',

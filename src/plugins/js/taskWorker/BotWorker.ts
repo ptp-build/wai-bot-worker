@@ -11,7 +11,6 @@ import {
   WorkerEvents
 } from "../../../types";
 import {JSON_HEADERS} from "../../../worker/setting";
-import {sendActionToWorkerWindow} from "../common/helper";
 import MsgHelper from "../../../masterChat/MsgHelper";
 import { generateRandomString } from '../../../utils/utils';
 
@@ -106,7 +105,7 @@ export default class BotWorker extends BaseWorker {
     for (let i = 0; i < statusBots.length; i++) {
       switch (action) {
         case BotStatusType.TaskWorkerApiError:
-          await sendActionToWorkerWindow(this.botId,WorkerEventActions.Worker_Reload, {})
+          await this.getBridgeWorkerWindow().reload()
           break
         case BotStatusType.TaskWorkerNoApi:
           this.replyTextWithCancel("Setup Task Work api",[
@@ -119,7 +118,7 @@ export default class BotWorker extends BaseWorker {
     }
     switch (path) {
       case WorkerCallbackButtonAction.Worker_locationReload:
-        await sendActionToWorkerWindow(this.botId,WorkerEventActions.Worker_Reload, {})
+        await this.getBridgeWorkerWindow().reload()
         break;
     }
   }
@@ -127,7 +126,7 @@ export default class BotWorker extends BaseWorker {
   handleEvent(action:WorkerEventActions, payload:any) {
     switch (action) {
       case WorkerEventActions.Worker_TaskAiMsg:
-        this.reportTask(payload.updateMessage.text,payload.taskId,payload.isDone)
+        void this.reportTask(payload.updateMessage.text,payload.taskId,payload.isDone)
         break;
       case WorkerEventActions.Worker_GetWorkerStatus:
         this.reportStatus(this.statusBot!,this.statusBotWorker!)

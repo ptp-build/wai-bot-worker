@@ -1,8 +1,6 @@
 import { ipcMain } from 'electron';
 import {
-  GetFileDataType,
   MasterEventActions,
-  SaveFileDataType,
   WindowActions,
   WorkerCallbackButtonAction,
   WorkerEventActions,
@@ -11,13 +9,14 @@ import {
 import MainWindowManager from '../../ui/MainWindowManager';
 import MasterWindowCallbackAction from './MasterWindowCallbackAction';
 import WindowDbAction from './WindowDbAction';
-import { parseCallBackButtonPayload, sleep } from '../../utils/utils';
+import { parseCallBackButtonPayload } from '../../utils/utils';
 import WindowEventsHandler from './WindowEventsHandler';
-import BigStorage from '../../worker/services/storage/BigStorage';
 import WorkerStatus from './WorkerStatus';
 import MsgHelper from '../../masterChat/MsgHelper';
 import WindowBotWorkerStatus from '../WindowBotWorkerStatus';
 import WorkerAccount from '../woker/WorkerAccount';
+import { MasterBotId } from '../../setting';
+import MasterActions from './MasterActions';
 
 export default class WindowActionsHandler {
   handleAction(){
@@ -25,7 +24,7 @@ export default class WindowActionsHandler {
       const {path,params} = parseCallBackButtonPayload(data)
       console.log("[WorkerWindowCallbackAction]",{path,params} )
       const {chatId} = params
-      if(chatId !== "1"){
+      if(chatId !== MasterBotId){
         if(
           MainWindowManager.getInstance(chatId) && MainWindowManager.getInstance(chatId)?.getMainWindow()
         ){
@@ -79,7 +78,7 @@ export default class WindowActionsHandler {
           await MainWindowManager.getInstance(botId).loadUrl(payload.url)
           return
         case WorkerEventActions.Worker_ActiveWindow:
-          MainWindowManager.getInstance(payload.chatId).moveTop()
+          MainWindowManager.getInstance(payload.botId).moveTop()
           return
       }
       if(MainWindowManager.getInstance(botId) && MainWindowManager.getInstance(botId).getMainWindowWebContents()){
@@ -107,80 +106,15 @@ export default class WindowActionsHandler {
         case MasterEventActions.GetWorkersStatus:
           return WindowBotWorkerStatus.getAllBotWorkersStatus();
         case MasterEventActions.RestartWorkerWindow:
-          return WindowActionsHandler.restartWorkerWindow(payload.botId)
+          return MasterActions.restartWorkerWindow(payload.botId)
         case MasterEventActions.GetFileData:
-          return await WindowActionsHandler.getFileDate(payload)
+          return await MasterActions.getFileDate(payload)
         case MasterEventActions.SaveFileData:
-          await WindowActionsHandler.saveFileDate(payload)
+          await MasterActions.saveFileDate(payload)
           return
       }
       return  await WindowEventsHandler.sendEventToMasterChat(action,payload)
     })
   }
-  static async saveFileDate({filePath,type,content}:SaveFileDataType){
-    filePath = filePath.replace(/_/g,"/")
-    console.log("[saveFileDate]",{filePath})
-    switch (type){
-      case "hex":
-        await BigStorage.getInstance().put(filePath,Buffer.from(content,"hex"))
-        break
-      case "base64":
-        await BigStorage.getInstance().put(filePath,Buffer.from(content,"base64"))
-        break
-      case "string":
-        await BigStorage.getInstance().put(filePath,content)
-        break
-    }
-  }
 
-  static async getFileDate({filePath,type}:GetFileDataType){
-    if(
-      filePath.startsWith("photo")
-      && filePath.indexOf("?size=") > -1
-      && filePath.indexOf("_") > -1
-    ){
-      //photo1_GM_DL4_XIxKH0LBjhA?size=c
-      filePath = filePath.split("?")[1].replace("photo","").replace(/_/g,"/")
-    }
-    if(
-      (filePath.startsWith("avatar") || filePath.startsWith("profile"))
-      && filePath.indexOf("?") > -1
-      && filePath.indexOf("_") > -1
-    ){
-      //avatar20006?1_GM_DL4_XIxKH0LBjhA
-      filePath = filePath.split("?")[1].replace(/_/g,"/")
-    }
-    if(
-      filePath.startsWith("msg")
-      && filePath.indexOf("-") > -1
-      && filePath.indexOf(":") > -1
-      && filePath.indexOf("_") > -1
-    ){
-      if(filePath.indexOf("?size=") === -1){
-        //msg20006-2458:20006_8n_3rw_pRA1u3IqSou
-        filePath = filePath.split(":")[1].replace(/_/g,"/")
-      }else{
-        //msg20006-2458:20006_8n_3rw_pRA1u3IqSou?size=m
-        filePath = filePath.split(":")[1].replace(/_/g,"/").split("?")[0]
-      }
-    }
-    console.log("[getFileDate]",{filePath})
-    const content = await BigStorage.getInstance().get(filePath)
-    switch (type){
-      case "buffer":
-        return Buffer.from(content)
-      case "base64":
-      case "string":
-        return Buffer.from(content).toString()
-      case "hex":
-        return Buffer.from(content).toString("hex")
-    }
-  }
-  static async restartWorkerWindow(botId:string){
-    if(MainWindowManager.getInstance(botId) && MainWindowManager.getInstance(botId).getMainWindowWebContents()){
-      MainWindowManager.getInstance(botId).getMainWindow().close()
-    }
-    await sleep(1000)
-    await new MasterWindowCallbackAction().openWorkerWindow(botId)
-  }
 }
