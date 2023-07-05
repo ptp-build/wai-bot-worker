@@ -1,5 +1,9 @@
 import path from 'path';
 
+import {
+  ProvidePlugin,
+} from 'webpack';
+
 module.exports = {
   entry: {
     main: './src/main.ts',
@@ -30,5 +34,8 @@ module.exports = {
   },
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
+    // fallback: {
+    //   buffer: require.resolve('buffer/'),
+    // },
   },
 };

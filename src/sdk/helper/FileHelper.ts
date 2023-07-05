@@ -1,7 +1,7 @@
-import { saveFileData } from './helper';
+import BridgeMasterWindow from '../bridge/BridgeMasterWindow';
 
 export default class FileHelper{
-  private botId: string;
+  private readonly botId: string;
   constructor(botId:string) {
     this.botId = botId
   }
@@ -17,7 +17,7 @@ export default class FileHelper{
   }
   async save(content:string){
     const id = this.genId(16)
-    await saveFileData(this.botId,{
+    await new BridgeMasterWindow(this.botId).saveFileData({
       filePath:id,
       content,
       type:'string'

@@ -1,5 +1,5 @@
 import MsgConnChatGptBotWorkerManager, {MsgConnChatGptBotWorkerStatus} from './MsgConnChatGptBotWorkerManager';
-import {AccountUser} from "../../types";
+import {AccountUser} from "../../sdk/types";
 
 let currentInstance:MsgConnectionManager;
 

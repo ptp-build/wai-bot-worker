@@ -1,5 +1,3 @@
-export const WAI_SERVER_PORT = 5080
-
 export const SWAGGER_DOC = {
   schema: {
     info: {
@@ -21,7 +19,3 @@ export const SWAGGER_DOC = {
     ],
   },
 };
-
-export const JSON_HEADERS = {
-  'Content-Type': 'application/json',
-}

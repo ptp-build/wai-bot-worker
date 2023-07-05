@@ -1,9 +1,9 @@
-import {ServerCallbackButtonAction, ServerEventActions} from "../../types";
+import {ServerCallbackButtonAction, ServerEventActions} from "../../sdk/types";
 import {User} from "../models/user/User";
 import BaseObject from "./BaseObject";
 import ServerSession from "./ServerSession";
 import ServerBotAccount from "./ServerBotAccount";
-import { parseCallBackButtonPayload } from '../../utils/utils';
+import { parseCallBackButtonPayload } from '../../sdk/common/string';
 
 export default class ServerCallbackButton extends BaseObject{
   private path: string;

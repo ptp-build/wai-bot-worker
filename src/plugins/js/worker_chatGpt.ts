@@ -1,5 +1,5 @@
 import BotWorkerSelector from './chatGpt/BotWorkerSelector';
-import BaseWorker from './common/BaseWorker';
+import BaseWorker from '../../sdk/botWorker/BaseWorker';
 import {
   BotStatusType,
   BotWorkerStatusType,
@@ -7,10 +7,11 @@ import {
   NewMessage,
   WorkerCallbackButtonAction,
   WorkerEventActions,
-} from '../../types';
+} from '../../sdk/types';
 import ChatGptMsg from './chatGpt/ChatGptMsg';
-import MsgHelper from './../../masterChat/MsgHelper';
-import { sleep } from '../../utils/utils';
+import MsgHelper from '../../sdk/helper/MsgHelper';
+import { sleep } from '../../sdk/common/time';
+
 const {$} = window
 
 function hook_fetch(botWorker:ChatGptBotWorker): void {
@@ -323,7 +324,6 @@ class ChatGptBotWorker extends BaseWorker {
     }
   }
   async clearConversations() {
-    debugger
     const mainParent = $("main").parent()
     if(mainParent.children().length === 2){
       $("main").parent().children().eq(0).find("button").eq(0).click()
@@ -431,8 +431,8 @@ class ChatGptBotWorker extends BaseWorker {
   handleEvent(action:WorkerEventActions, payload:any) {
     super.handleEvent(action, payload)
     switch (action) {
-      case WorkerEventActions.Worker_AskMsg:
-        console.log("[Worker_AskMsg]", JSON.stringify(payload));
+      case WorkerEventActions.Worker_ChatMsg:
+        console.log("[Worker_ChatMsg]", JSON.stringify(payload));
         this.askMsg(payload).catch(console.error);
         break;
     }

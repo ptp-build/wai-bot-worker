@@ -10,7 +10,7 @@ import {WaiRouter} from '../../worker/route';
 import {WsConnection} from './BaseConnection';
 import MsgConnectionManager from '../../worker/services/MsgConnectionManager';
 import {v4 as uuidv4} from 'uuid';
-import { getCorsHeader, getCorsOptionsHeader } from '../../utils/utils';
+import { getCorsHeader, getCorsOptionsHeader } from '../../sdk/common/http';
 
 export class WaiServer extends BaseServer {
   private httpServer?: http.Server;

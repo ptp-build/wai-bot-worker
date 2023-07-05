@@ -7,14 +7,14 @@ import {
   LocalWorkerAccountType,
   LocalWorkerType,
   MasterEventActions,
-} from "../../types";
+} from "../../sdk/types";
 import MainWindowManager from "../../ui/MainWindowManager";
-import {UserIdFirstBot} from "../../setting";
 import {User} from "../../worker/models/user/User";
-import {parseCallBackButtonPayload} from "../../utils/utils";
 import WindowEventsHandler from "./WindowEventsHandler";
 import WorkerAccount from "../woker/WorkerAccount";
 import {getCustomWorkerHtml, getTaskWorkerHtml} from "../../ui/Ui";
+import { MasterBotId } from '../../sdk/setting';
+import { parseCallBackButtonPayload } from '../../sdk/common/string';
 
 export default class MasterWindowCallbackAction {
 
@@ -79,7 +79,7 @@ export default class MasterWindowCallbackAction {
     await this.initWindow(account)
   }
   async createWorker(type:LocalWorkerType) {
-    let account = await new WorkerAccount(UserIdFirstBot).getWorkersAccount() as LocalWorkerAccountType
+    let account = await new WorkerAccount(MasterBotId).getWorkersAccount() as LocalWorkerAccountType
     const botId = await User.genUserId()
     let username = "";
     let name = "";

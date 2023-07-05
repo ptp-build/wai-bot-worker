@@ -1,4 +1,4 @@
-import {parseCmd, parseCodeBlock, parseEntities, parseMentionName, parseTag} from "./stringParse";
+import {parseCmd, parseCodeBlock, parseEntities, parseMentionName, parseTag} from "./tg-msg-text-parser";
 
 describe('parseTag', () => {
   it('should correctly parse tag', () => {

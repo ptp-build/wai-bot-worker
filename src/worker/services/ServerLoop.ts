@@ -1,7 +1,7 @@
 import ServerSession from "./ServerSession";
 import BaseObject from "./BaseObject";
 import KvCache from "./kv/KvCache";
-import {MasterEventActions} from "../../types";
+import {MasterEventActions} from "../../sdk/types";
 
 export default class ServerLoop extends BaseObject{
   constructor(session:ServerSession) {

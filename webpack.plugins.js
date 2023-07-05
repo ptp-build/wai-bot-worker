@@ -3,6 +3,10 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 
 module.exports = [
+  //
+  // new ProvidePlugin({
+  //   Buffer: ['buffer', 'Buffer'],
+  // }),
   new ForkTsCheckerWebpackPlugin(),
   new CopyWebpackPlugin({
     patterns: [

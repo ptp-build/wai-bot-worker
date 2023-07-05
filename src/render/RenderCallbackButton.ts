@@ -1,14 +1,14 @@
-import MsgHelper from '../masterChat/MsgHelper';
+import MsgHelper from '../sdk/helper/MsgHelper';
 import { ipcRenderer } from 'electron';
-import { CallbackButtonAction, WindowActions, WorkerCallbackButtonAction, WorkerEventActions } from '../types';
-import { parseCallBackButtonPayload } from '../utils/utils';
+import { CallbackButtonAction, WindowActions, WorkerCallbackButtonAction } from '../sdk/types';
 import WorkerAccount from '../window/woker/WorkerAccount';
 import RenderChatMsg from './RenderChatMsg';
 import RenderChatMsgCommand from './RenderChatMsgCommand';
 import RenderChatMsgText from './RenderChatMsgText';
-import RenderBotWorkerStatus from './RenderBotWorkerStatus';
 import ChatGptCommand from './commands/ChatGptCommand';
-import Bridge from './Bridge';
+import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
+import { encodeCallBackButtonPayload, parseCallBackButtonPayload } from '../sdk/common/string';
+import BotWorkerStatus from '../sdk/botWorkerStatus/BotWorkerStatus';
 
 export default class RenderCallbackButton extends RenderChatMsg{
   private data?: string;
@@ -16,11 +16,11 @@ export default class RenderCallbackButton extends RenderChatMsg{
   private payload?: Pick<any, string | number | symbol>;
   private path?: string;
   private messageId: any;
-  constructor(chatId:string) {
-    super(chatId)
+  constructor(chatId:string,localMsgId?:number) {
+    super(chatId,localMsgId)
   }
   async workerStatus(){
-    await this.replyNewMessage(MsgHelper.formatCodeTextMsg(JSON.stringify(RenderBotWorkerStatus.getAllBotWorkersStatus(),null,2)))
+    await this.replyNewMessage(MsgHelper.formatCodeTextMsg(JSON.stringify(BotWorkerStatus.getAllBotWorkersStatus(),null,2)))
   }
   async refreshControlPanel(){
     await new RenderChatMsgCommand(this.getChatId()).processBotCommand("/control")
@@ -55,18 +55,46 @@ export default class RenderCallbackButton extends RenderChatMsg{
       case CallbackButtonAction.Render_refreshControlPanel:
         await this.refreshControlPanel()
         break
+      case CallbackButtonAction.Render_updateWorkerAccount:
+        const account1 = new WorkerAccount(this.getChatId())
+        const workerAccount = await account1.getWorkersAccount()
+        const workerAccount1 = {
+          ...workerAccount,
+          ...this.payload!.account,
+        }
+        await account1.updateWorkersAccount(workerAccount1)
+        await new BridgeWorkerWindow(this.getChatId()).updateWorkerAccount(workerAccount1)
+        break
       case CallbackButtonAction.Render_saveWorkerAccount:
         const account = new WorkerAccount(this.getChatId())
         await account.updateWorkersAccount(this.payload!.account)
-        await Bridge.sendEventActionToWorker(this.getChatId(),WorkerEventActions.Worker_UpdateWorkerAccount, this.payload!.account)
+        await new BridgeWorkerWindow(this.getChatId()).updateWorkerAccount(this.payload!.account)
         break
     }
     console.log("[RenderCallbackButton]",path)
     if(MsgHelper.isMasterWindowCallbackButtonAction(path as CallbackButtonAction)){
-      await ipcRenderer.invoke(WindowActions.MasterWindowCallbackAction,this.data)
+      await RenderCallbackButton.invokeMasterWindowCallbackButton(this.data)
     }
     if(MsgHelper.isWorkerCallbackButtonAction(path as WorkerCallbackButtonAction)){
-      await ipcRenderer.invoke(WindowActions.WorkerWindowCallbackAction,this.data)
+      await RenderCallbackButton.invokeWorkerWindowCallbackButton(this.data)
     }
   }
+
+  static invokeMasterWindowCallbackButton(data:string,params?:any){
+    const res = parseCallBackButtonPayload(data)
+    debugger
+    return ipcRenderer.invoke(WindowActions.MasterWindowCallbackAction,encodeCallBackButtonPayload(res.path,{
+      ...(params||{}),
+      ...(res.params||{}),
+    }))
+  }
+
+  static invokeWorkerWindowCallbackButton(data:string,params?:any){
+    const res = parseCallBackButtonPayload(data)
+    return ipcRenderer.invoke(WindowActions.WorkerWindowCallbackAction,encodeCallBackButtonPayload(res.path,{
+      ...(params||{}),
+      ...(res.params||{}),
+    }))
+  }
+
 }

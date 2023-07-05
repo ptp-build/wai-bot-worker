@@ -1,5 +1,5 @@
 import WindowEventsHandler from './WindowEventsHandler';
-import { BotStatusType, BotWorkerStatusType, LocalWorkerAccountType, MasterEventActions } from '../../types';
+import { BotStatusType, BotWorkerStatusType, LocalWorkerAccountType, MasterEventActions } from '../../sdk/types';
 import WorkerAccount from '../woker/WorkerAccount';
 
 export default class WorkerStatus{

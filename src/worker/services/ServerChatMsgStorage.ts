@@ -1,9 +1,9 @@
 import MsgTable from "../models/rdms/MsgTable";
 import KvCache from "./kv/KvCache";
-import {NewMessage} from "../../types";
+import {NewMessage} from "../../sdk/types";
 import BaseObject from "./BaseObject";
 import ServerSession from "./ServerSession";
-import { currentTs } from '../../utils/time';
+import { currentTs } from '../../sdk/common/time';
 
 export default class ServerChatMsgStorage extends BaseObject{
   private tableMsg: MsgTable;

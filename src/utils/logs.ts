@@ -1,7 +1,7 @@
 import * as electronLog from 'electron-log';
 import * as path from 'path';
 import WindowEventsHandler from "../window/events/WindowEventsHandler";
-import {MasterEventActions} from "../types";
+import {MasterEventActions} from "../sdk/types";
 
 import { app } from 'electron';
 

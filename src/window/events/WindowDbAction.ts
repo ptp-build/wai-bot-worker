@@ -1,4 +1,4 @@
-import {WindowDbActionData} from "../../types";
+import {WindowDbActionData} from "../../sdk/types";
 import {HttpRequestStorage} from "../../worker/models/rdms/HttpRequestStorage";
 
 export default class WindowDbAction {

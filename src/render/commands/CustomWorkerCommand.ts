@@ -1,5 +1,5 @@
-import MsgHelper from '../../masterChat/MsgHelper';
-import { CallbackButtonAction } from '../../types';
+import MsgHelper from '../../sdk/helper/MsgHelper';
+import { CallbackButtonAction } from '../../sdk/types';
 import BaseCommand from './BaseCommand';
 
 export default class CustomWorkerCommand extends BaseCommand{

@@ -1,5 +1,5 @@
 import * as net from 'net';
-import {BaseConnection} from "../../types";
+import {BaseConnection} from "../../sdk/types";
 
 export class TcpConnection extends BaseConnection {
   constructor(id: string, private socket: net.Socket) {

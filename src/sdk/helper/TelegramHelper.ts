@@ -1,6 +1,7 @@
-import { arrayBufferToBase64, saveFileData } from './helper';
-import Html5Cache from './Html5Cache';
 import FileHelper from './FileHelper';
+import BridgeMasterWindow from '../bridge/BridgeMasterWindow';
+import Html5CacheHelper from './Html5CacheHelper';
+import { arrayBufferToBase64 } from '../common/buf';
 
 export default class TelegramHelper{
   getCurrentChatId(){
@@ -106,7 +107,7 @@ export default class TelegramHelper{
   async saveUserAvatar(userId:string){
     for (const type of ["avatar", "photo", "profile"]) {
       const avatarData = await this.getUserAvatarBase64Data(userId,type)
-      await saveFileData("1",{
+      await new BridgeMasterWindow().saveFileData({
         filePath:avatarData.url,
         content:avatarData.content,
         type:'string'
@@ -129,7 +130,7 @@ export default class TelegramHelper{
   async getMsgDocumentPhotoBase64data(chatId: string, msgId:number,fileId:string,size:"m" | 'x' = "m") {
     const url = this.getMsgDocumentPhotoUrl(chatId,msgId,fileId,size)
     const cacheName = 'tt-media'
-    const response = await new Html5Cache().init(cacheName).get("/a/"+url)
+    const response = await new Html5CacheHelper().init(cacheName).get("/a/"+url)
     return {
       content:await arrayBufferToBase64(await response!.arrayBuffer(),response!.headers.get("content-type")!) as string,
       url,
@@ -139,7 +140,7 @@ export default class TelegramHelper{
   async getMsgVoiceBase64data(chatId: string, msgId:number,fileId:string,end:number = 524287) {
     const url = this.getMsgVoiceUrl(chatId,msgId,fileId,end)
     const cacheName = 'tt-media-progressive'
-    const response = await new Html5Cache().init(cacheName).get("/a/"+url)
+    const response = await new Html5CacheHelper().init(cacheName).get("/a/"+url)
     return {
       content:await arrayBufferToBase64(await response!.arrayBuffer(),response!.headers.get("content-type")!) as string,
       url,
@@ -149,7 +150,7 @@ export default class TelegramHelper{
   async getMsgDocumentBase64data(chatId: string, msgId:number,fileId:string) {
     const url = this.getMsgDocumentUrl(chatId,msgId,fileId)
     const cacheName = 'tt-media'
-    const response = await new Html5Cache().init(cacheName).get("/a/"+url)
+    const response = await new Html5CacheHelper().init(cacheName).get("/a/"+url)
     return {
       content:response ? await arrayBufferToBase64(await response!.arrayBuffer(),response!.headers.get("content-type")!) as string : null,
       url,
@@ -183,7 +184,7 @@ export default class TelegramHelper{
         cacheName = 'tt-media'
         break
     }
-    const response = await new Html5Cache().init(cacheName).get("/a/"+url)
+    const response = await new Html5CacheHelper().init(cacheName).get("/a/"+url)
     return {
       content:await arrayBufferToBase64(await response!.arrayBuffer(),response!.headers.get("content-type")!) as string,
       url,

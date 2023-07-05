@@ -1,8 +1,8 @@
 import KvCache from '../../worker/services/kv/KvCache';
-import { LocalWorkerAccountType } from '../../types';
-import { UserIdFirstBot } from '../../masterChat/setting';
+import { LocalWorkerAccountType } from '../../sdk/types';
 import WorkerAccountTable, { WorkerAccountTableType } from '../../worker/models/rdms/WorkerAccountTable';
 import DbStorage from '../../worker/services/db/DbStorage';
+import { MasterBotId } from '../../sdk/setting';
 
 export default class WorkerAccount{
   private botId: string;
@@ -46,7 +46,7 @@ export default class WorkerAccount{
     }
   }
   static getMasterWorkerAccount(){
-    return new WorkerAccount(UserIdFirstBot).getWorkersAccount()
+    return new WorkerAccount(MasterBotId).getWorkersAccount()
   }
 
   static async addBotList(botId:string){

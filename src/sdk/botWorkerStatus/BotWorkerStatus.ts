@@ -1,8 +1,34 @@
 import { BotStatusType, BotWorkerStatusType, CallbackButtonAction } from '../types';
-import MsgHelper from '../masterChat/MsgHelper';
-import WindowBotWorkerStatus from '../window/WindowBotWorkerStatus';
+import MsgHelper from '../helper/MsgHelper';
 
-export default class RenderBotWorkerStatus extends WindowBotWorkerStatus{
+export const __StatusBotCenter:Record<string, BotStatusType> = {}
+export const __StatusBotWorkerCenter:Record<string, BotWorkerStatusType> = {}
+
+export default class BotWorkerStatus {
+  static getIsReadyByBotId(botId:string){
+    return __StatusBotWorkerCenter[botId] && __StatusBotWorkerCenter[botId] === BotWorkerStatusType.Ready
+  }
+  static updateAll(payload:any){
+    Object.assign(__StatusBotCenter,payload.statusBot)
+    Object.assign(__StatusBotWorkerCenter,payload.statusBotWorker)
+  }
+  static update(payload:{botId:string,statusBot:BotStatusType,statusBotWorker:BotWorkerStatusType}){
+    __StatusBotCenter[payload.botId] = payload.statusBot
+    __StatusBotWorkerCenter[payload.botId] = payload.statusBotWorker
+    console.log("[BotWorkerStatus]",{__StatusBotCenter,__StatusBotWorkerCenter})
+  }
+  static get(botId:string){
+    return {
+      statusBot:__StatusBotCenter[botId],
+      statusBotWorker:__StatusBotWorkerCenter[botId]
+    }
+  }
+  static getAllBotWorkersStatus(){
+    return {
+      statusBot:__StatusBotCenter,
+      statusBotWorker:__StatusBotWorkerCenter
+    }
+  }
 
   static getBeforeBotReadyReadyButtons(botId:string,__StatusBotCenter:Record<string, BotStatusType>){
     let inlineButtons:any = []
@@ -33,7 +59,7 @@ export default class RenderBotWorkerStatus extends WindowBotWorkerStatus{
       ]
     }else{
       if(__StatusBotCenter[botId] !== BotStatusType.ONLINE){
-        inlineButtons = RenderBotWorkerStatus.getBeforeBotReadyReadyButtons(botId,__StatusBotCenter)
+        inlineButtons = BotWorkerStatus.getBeforeBotReadyReadyButtons(botId,__StatusBotCenter)
         text = `【${__StatusBotCenter[botId]}】`
       }else{
         text= `【${__StatusBotWorkerCenter[botId]}】`

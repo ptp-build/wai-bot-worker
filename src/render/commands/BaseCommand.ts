@@ -1,14 +1,12 @@
+import { CallbackButtonAction, WorkerCallbackButtonAction } from '../../sdk/types';
+import MsgHelper from '../../sdk/helper/MsgHelper';
 import RenderChatMsg from '../RenderChatMsg';
-import { CallbackButtonAction, WorkerCallbackButtonAction } from '../../types';
-import MsgHelper from '../../masterChat/MsgHelper';
-import { encodeCallBackButtonPayload } from '../../utils/utils';
-import { UserIdFirstBot } from '../../masterChat/setting';
+import RenderCallbackButton from '../RenderCallbackButton';
+import { encodeCallBackButtonPayload } from '../../sdk/common/string';
 
 export default class BaseCommand extends RenderChatMsg{
-  private isMasterChat: boolean;
   constructor(chatId:string,localMsgId?:number) {
     super(chatId,localMsgId)
-    this.isMasterChat = this.getChatId() === UserIdFirstBot
   }
   async loadBotCommands(){
     const cmdList = [
@@ -58,15 +56,16 @@ export default class BaseCommand extends RenderChatMsg{
 
   async action(action?:"reloadWindow" | "openWindow"){
     const ack = this.replyAck()
+    debugger
     switch (action){
       case 'openWindow':
-        await this.invokeMasterCallBackButton(CallbackButtonAction.Master_OpenWorkerWindow)
+        await RenderCallbackButton.invokeMasterWindowCallbackButton(CallbackButtonAction.Master_OpenWorkerWindow,{chatId:this.getChatId()})
         break
       case 'reloadWindow':
-        await this.invokeWorkerCallBackButton(WorkerCallbackButtonAction.Worker_locationReload)
+        await RenderCallbackButton.invokeWorkerWindowCallbackButton(WorkerCallbackButtonAction.Worker_locationReload,{chatId:this.getChatId()})
         break
       default:
-        await this.invokeWorkerCallBackButton(WorkerCallbackButtonAction.Worker_getActions)
+        await RenderCallbackButton.invokeWorkerWindowCallbackButton(WorkerCallbackButtonAction.Worker_getActions,{chatId:this.getChatId()})
         break
     }
     return ack
@@ -74,7 +73,7 @@ export default class BaseCommand extends RenderChatMsg{
 
   async control(msgId?:number){
     const buttons = []
-    if(this.isMasterChat){
+    if(this.getIsMasterBot()){
       buttons.push(
         [MsgHelper.buildCallBackAction("✖️ User Data Dir",CallbackButtonAction.Master_openUserAppDataDir)]
       )

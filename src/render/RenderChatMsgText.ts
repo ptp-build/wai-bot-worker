@@ -1,11 +1,11 @@
-import { currentTs } from '../utils/time';
+import { currentTs } from '../sdk/common/time';
 import ChatAiMsg from '../window/ChatAiMsg';
 import ChatConfig from '../window/ChatConfig';
 import MainChatMsgStorage from '../window/MainChatMsgStorage';
 import CodingCommand from './commands/CodingCommand';
 import RenderChatMsg from './RenderChatMsg';
 import ChatGptCommand from './commands/ChatGptCommand';
-import Bridge from './Bridge';
+import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
 
 export default class RenderChatMsgText extends RenderChatMsg{
 
@@ -102,10 +102,12 @@ export default class RenderChatMsgText extends RenderChatMsg{
             return {aiMsgId,msgId,sendingState:undefined}
           }
         default:
-          await Bridge.sendChatMsgToWorker(this.getChatId(),{
+
+          await new BridgeWorkerWindow(this.getChatId()).sendChatMsgToWorker({
             chatId:this.getChatId(),
             text,
           })
+
           return {msgId,sendingState:undefined}
       }
     }

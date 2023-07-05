@@ -1,5 +1,5 @@
 import BaseTable from "./BaseTable";
-import {NewMessage} from "../../../types";
+import {NewMessage} from "../../../sdk/types";
 
 export default class MsgTable extends BaseTable{
   constructor() {

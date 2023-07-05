@@ -1,5 +1,5 @@
 import BaseTable from "./BaseTable";
-import { LocalWorkerAccountType } from '../../../types';
+import { LocalWorkerAccountType } from '../../../sdk/types';
 
 export type WorkerAccountTableType = {
   botId?:number;

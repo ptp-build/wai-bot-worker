@@ -1,5 +1,5 @@
-import {CallbackButtonAction, CallbackButtonActionType} from "../types";
-import { encodeCallBackButtonPayload } from '../utils/utils';
+import { CallbackButtonAction, CallbackButtonActionType } from '../types';
+import { encodeCallBackButtonPayload } from '../common/string';
 
 export default class MsgHelper {
   static buildCommand(command:string,description:string,botId:string){

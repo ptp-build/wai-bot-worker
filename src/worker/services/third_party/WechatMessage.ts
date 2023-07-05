@@ -1,6 +1,6 @@
 import { ENV } from '../../env';
 import KvCache from '../kv/KvCache';
-import { currentTs } from '../../../utils/time';
+import { currentTs } from '../../../sdk/common/time';
 
 interface AccessTokenResponse {
   access_token: string;

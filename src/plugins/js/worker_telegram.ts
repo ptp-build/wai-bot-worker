@@ -1,4 +1,4 @@
-import BaseWorker from './common/BaseWorker';
+import BaseWorker from '../../sdk/botWorker/BaseWorker';
 
 import {
   BotStatusType,
@@ -6,10 +6,10 @@ import {
   LocalWorkerAccountType,
   WorkerCallbackButtonAction,
   WorkerEventActions,
-} from '../../types';
-import MsgHelper from './../../masterChat/MsgHelper';
-import TelegramHelper from './common/TelegramHelper';
-import { sleep } from './common/helper';
+} from '../../sdk/types';
+import MsgHelper from '../../sdk/helper/MsgHelper';
+import TelegramHelper from '../../sdk/helper/TelegramHelper';
+import { sleep } from '../../sdk/common/time';
 
 
 export enum TgCallbackButtonAction {
@@ -217,8 +217,8 @@ class TelegramWorker extends BaseWorker {
   handleEvent(action:WorkerEventActions, payload:any) {
     super.handleEvent(action, payload)
     switch (action) {
-      case WorkerEventActions.Worker_AskMsg:
-        console.log("[Worker_AskMsg]", JSON.stringify(payload));
+      case WorkerEventActions.Worker_ChatMsg:
+        console.log("[Worker_ChatMsg]", JSON.stringify(payload));
         break;
     }
   }

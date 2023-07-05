@@ -1,7 +1,7 @@
-import MsgHelper from '../../masterChat/MsgHelper';
-import { CallbackButtonAction } from '../../types';
+import MsgHelper from '../../sdk/helper/MsgHelper';
+import { CallbackButtonAction } from '../../sdk/types';
 import BaseCommand from './BaseCommand';
-import { encodeCallBackButtonPayload } from '../../utils/utils';
+import { encodeCallBackButtonPayload } from '../../sdk/common/string';
 
 export default class MasterCommand extends BaseCommand{
 

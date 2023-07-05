@@ -1,18 +1,18 @@
 import RenderChatMsg from './RenderChatMsg';
-import MsgHelper from '../masterChat/MsgHelper';
-import { UserIdFirstBot } from '../masterChat/setting';
+import MsgHelper from '../sdk/helper/MsgHelper';
 import ChatConfig from '../window/ChatConfig';
 import ChatAiMsg from '../window/ChatAiMsg';
 import CodingCommand from './commands/CodingCommand';
 import CustomWorkerCommand from './commands/CustomWorkerCommand';
 import ChatGptCommand from './commands/ChatGptCommand';
 import MasterCommand from './commands/MasterCommand';
+import { MasterBotId } from '../sdk/setting';
 
 export default class RenderChatMsgCommand extends RenderChatMsg{
   private isMasterChat: boolean;
   constructor(chatId:string,localMsgId?:number) {
     super(chatId,localMsgId);
-    this.isMasterChat = this.getChatId() === UserIdFirstBot
+    this.isMasterChat = this.getChatId() === MasterBotId
   }
 
   async loadBotCommands(){

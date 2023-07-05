@@ -1,6 +1,6 @@
-import { sleep } from './common/helper';
-import BaseWorkerMsg from './common/BaseWorkerMsg';
-import { LocalWorkerAccountType } from '../../types';
+import BaseWorkerMsg from '../../sdk/botWorker/BaseWorkerMsg';
+import { LocalWorkerAccountType } from '../../sdk/types';
+import { sleep } from '../../sdk/common/time';
 
 class TestCase extends BaseWorkerMsg{
   constructor(botId:string) {

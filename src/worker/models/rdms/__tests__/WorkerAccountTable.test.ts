@@ -4,7 +4,7 @@ import WorkerAccountTable, { WorkerAccountTableType } from '../WorkerAccountTabl
 import KvCache from '../../../services/kv/KvCache';
 import LocalFileKv from '../../../services/kv/LocalFileKv';
 import WorkerAccount from '../../../../window/woker/WorkerAccount';
-import { LocalWorkerAccountType } from '../../../../types';
+import { LocalWorkerAccountType } from '../../../../sdk/types';
 
 describe('WorkerAccountTable', () => {
   let storage: WorkerAccountTable;

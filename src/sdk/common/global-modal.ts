@@ -9,7 +9,7 @@ export type ShowModalFromEventPayload = {
   showQrcode?:boolean
   inputType?:string
   buttonTxt?:string
-  description?:string
+  description?:string|string[]
 }
 export type ShowModalFromEventResult = {
   value?:string,

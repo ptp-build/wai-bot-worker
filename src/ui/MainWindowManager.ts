@@ -1,12 +1,12 @@
 import {BrowserWindow} from 'electron';
 import path from 'path';
-import {getProxyConfigFromProxyConfStr} from "../utils/utils";
 import Devtool from "./Devtool";
 import {getErrorHtml} from "./Ui";
 import {isProd} from "../utils/electronEnv";
 import WindowEventsHandler from "../window/events/WindowEventsHandler";
-import { BotStatusType, BotWorkerStatusType, LocalWorkerAccountType, MasterEventActions } from '../types';
+import { BotStatusType, BotWorkerStatusType, LocalWorkerAccountType, MasterEventActions } from '../sdk/types';
 import WorkerAccount from '../window/woker/WorkerAccount';
+import { getProxyConfigFromProxyConfStr } from '../sdk/common/proxy';
 
 const __managers = new Map<string, MainWindowManager>();
 

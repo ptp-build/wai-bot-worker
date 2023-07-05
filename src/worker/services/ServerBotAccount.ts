@@ -1,5 +1,5 @@
 import KvCache from "../../worker/services/kv/KvCache";
-import {ServerBotAccountType} from "../../types";
+import {ServerBotAccountType} from "../../sdk/types";
 import BaseObject from "./BaseObject";
 import ServerSession from "./ServerSession";
 

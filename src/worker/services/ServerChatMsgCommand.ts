@@ -1,10 +1,10 @@
 import ServerChatMsg from "./ServerChatMsg";
-import {UserIdFirstBot} from "../../masterChat/setting";
 import ServerSession from "./ServerSession";
 import ServerChatConfig from "./ServerChatConfig";
-import MsgHelper from "../../masterChat/MsgHelper";
-import {CallbackButtonAction, ServerCallbackButtonAction} from "../../types";
+import MsgHelper from "../../sdk/helper/MsgHelper";
+import {CallbackButtonAction, ServerCallbackButtonAction} from "../../sdk/types";
 import ServerBotAccount from "./ServerBotAccount";
+import { MasterBotId } from '../../sdk/setting';
 
 export default class ServerChatMsgCommand extends ServerChatMsg {
   constructor(session:ServerSession,chatId: string, localMsgId?: number) {
@@ -15,7 +15,7 @@ export default class ServerChatMsgCommand extends ServerChatMsg {
     const cmdList = [];
     cmdList.push({
       command: "start",
-      botId: UserIdFirstBot,
+      botId: MasterBotId,
       description: "Start a chat"
     },);
     return cmdList;
@@ -57,7 +57,7 @@ export default class ServerChatMsgCommand extends ServerChatMsg {
     if (botAccount && botAccount.type === "chatGpt") {
 
     }
-    if (this.getChatId() === UserIdFirstBot) {
+    if (this.getChatId() === MasterBotId) {
       buttons.push([
         MsgHelper.buildCallBackAction("CreateChatGptBot", ServerCallbackButtonAction.Server_CreateChatGptBot),
       ])
@@ -77,7 +77,7 @@ export default class ServerChatMsgCommand extends ServerChatMsg {
 
   async LoadBotCommands() {
     const cmdList = []
-    if(this.getChatId() === UserIdFirstBot){
+    if(this.getChatId() === MasterBotId){
       return this.masterCommands()
     }else{
       const botAccount = await new ServerBotAccount(this.getSession(),this.getChatId()).get();
@@ -92,7 +92,7 @@ export default class ServerChatMsgCommand extends ServerChatMsg {
     }
     cmdList.push({
       command: "start",
-      botId: UserIdFirstBot,
+      botId: MasterBotId,
       description: "Start a chat"
     });
     return cmdList

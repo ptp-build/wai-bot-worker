@@ -1,6 +1,6 @@
 import type { IpcRendererEvent } from 'electron';
 import { contextBridge, ipcRenderer } from 'electron';
-import Bridge from './render/Bridge';
+import RenderBridge from './render/RenderBridge';
 import {
   ElectronAction,
   ElectronApi,
@@ -11,9 +11,11 @@ import {
   WindowDbActionData,
   WorkerEventActions,
   WorkerEvents,
-} from './types';
+} from './sdk/types';
 import { setComponents } from './utils/electronCommon';
 import BotWorkerCustom from './plugins/js/customeWorker';
+import BridgeMasterWindow from './sdk/bridge/BridgeMasterWindow';
+import { MasterBotId } from './sdk/setting';
 
 const fs = require('fs');
 const path = require('path');
@@ -28,7 +30,7 @@ const appPath = argv['app-path']
 const pluginsJsPath = isProd ? path.join(appPath,"plugins","js") : path.join(appPath,'.webpack/main',"plugins","js")
 
 let botId = argv['botId']
-const isMasterChat = botId === 1
+const isMasterChat = botId === Number(MasterBotId)
 
 console.log("[Preload]",window.location.href)
 console.log("[Preload] argv: ",argv)
@@ -60,7 +62,7 @@ async function readAppendFile(name:string,code_pre = ''){
 }
 
 const electronApi: ElectronApi = {
-  invokeRenderBridgeAction:Bridge.callApi.bind(botId),
+  invokeRenderBridgeAction:RenderBridge.callApi.bind(botId),
   invokeWorkerWindowAction: (botId,action:WorkerEventActions,payload) => ipcRenderer.invoke(WindowActions.WorkerWindowAction,botId,action,payload),
   invokeMasterWindowAction: (botId,action:MasterEventActions,payload) => ipcRenderer.invoke(WindowActions.MasterWindowAction,botId,action,payload),
   invokeWorkerWindowKeyboardEventAction: (botId,type,keyCode) => ipcRenderer.invoke(WindowActions.WorkerWindowKeyboardAction,botId,type,keyCode),
@@ -86,8 +88,8 @@ contextBridge.exposeInMainWorld('electron', electronApi);
 
 window.addEventListener('DOMContentLoaded', async () => {
   window.electron = electronApi
-  const account = await Bridge.invokeMasterWindow(botId.toString(),MasterEventActions.GetWorkersAccount,{botId:botId.toString()}) as LocalWorkerAccountType
   if(!isMasterChat){
+    const account = await new BridgeMasterWindow(botId.toString()).getWorkersAccount({botId:botId.toString()}) as LocalWorkerAccountType
     let {pluginJs} = account
     if(!pluginJs){
       pluginJs = "worker_custom.js"
@@ -106,7 +108,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         await readAppendFile("testCase.js",`window.WORKER_ACCOUNT = ${JSON.stringify(account)};`)
       }
     }else{
-      window.electron = electronApi
       new BotWorkerCustom(account).addEvents()
     }
   }

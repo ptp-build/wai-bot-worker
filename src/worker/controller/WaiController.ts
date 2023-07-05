@@ -1,6 +1,6 @@
 import WaiOpenAPIRoute from '../services/WaiOpenAPIRoute';
 import {Obj, Str} from '@cloudflare/itty-router-openapi';
-import {RenderActions} from "../../types";
+import {RenderActions} from "../../sdk/types";
 import ServerChatMsg from "../services/ServerChatMsg";
 import ServerCallbackButton from "../services/ServerCallbackButton";
 import ServerChatMsgCommand from "../services/ServerChatMsgCommand";

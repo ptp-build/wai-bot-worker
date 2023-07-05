@@ -1,11 +1,11 @@
-import MsgHelper from '../../masterChat/MsgHelper';
-import { CallbackButtonAction, LocalWorkerAccountType, WorkerEventActions } from '../../types';
-import RenderBotWorkerStatus from '../RenderBotWorkerStatus';
+import MsgHelper from '../../sdk/helper/MsgHelper';
+import { CallbackButtonAction, LocalWorkerAccountType } from '../../sdk/types';
 import ChatConfig from '../../window/ChatConfig';
 import KvCache from '../../worker/services/kv/KvCache';
 import WorkerAccount from '../../window/woker/WorkerAccount';
-import Bridge from '../Bridge';
 import BaseCommand from './BaseCommand';
+import BridgeWorkerWindow from '../../sdk/bridge/BridgeWorkerWindow';
+import BotWorkerStatus from '../../sdk/botWorkerStatus/BotWorkerStatus';
 
 export default class ChatGptCommand extends BaseCommand{
 
@@ -53,7 +53,6 @@ export default class ChatGptCommand extends BaseCommand{
     const buttons = this.getSettingButtons()
 
     buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️ Worker Name",CallbackButtonAction.Local_setupWorkerName),
       MsgHelper.buildCallBackAction("🛠️️ ChatGpt Auth",CallbackButtonAction.Local_setupChatGptAuth),
       MsgHelper.buildCallBackAction("🛠️️️ Plugin Js",CallbackButtonAction.Local_setupPluginJs),
     ])
@@ -92,13 +91,13 @@ export default class ChatGptCommand extends BaseCommand{
       chatGptRole:text
     }
     await new WorkerAccount(this.getChatId()).updateWorkersAccount(newAccount)
-    await Bridge.sendEventActionToWorker(this.getChatId(),WorkerEventActions.Worker_UpdateWorkerAccount, newAccount)
+    await new BridgeWorkerWindow(this.getChatId()).updateWorkerAccount(newAccount)
   }
   async sendRoleDirectly(messageId:number){
     if(!await this.isSetupChatGptRole()){
       return
     }
-    if(!RenderBotWorkerStatus.getIsReadyByBotId(this.getChatId())){
+    if(!BotWorkerStatus.getIsReadyByBotId(this.getChatId())){
       await this.replyNewMessage("Worker is offline",[
         MsgHelper.buildLocalCancel()
       ])

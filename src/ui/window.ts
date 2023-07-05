@@ -5,7 +5,8 @@ import path from 'path';
 
 import { getMasterWindowHomeUrl, IS_MAC_OS, isProd } from '../utils/electronEnv';
 import WindowActionsHandler from '../window/events/WindowActionsHandler';
-import { ElectronAction } from '../types';
+import { ElectronAction } from '../sdk/types';
+import { MasterBotId } from '../sdk/setting';
 
 let forceQuit = false;
 let interval: NodeJS.Timer;
@@ -57,7 +58,7 @@ export function createMasterWindow(url?: string) {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: true,
-      additionalArguments:[`--botId=1`,`--isProd=${isProd}`],
+      additionalArguments:[`--botId=${MasterBotId}`,`--isProd=${isProd}`],
       preload: path.join(__dirname, 'preload.js'),
       devTools: !isProd,
     },

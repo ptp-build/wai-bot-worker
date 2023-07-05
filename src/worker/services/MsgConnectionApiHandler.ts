@@ -1,6 +1,6 @@
-import {JSON_HEADERS} from '../setting';
 import MsgConnChatGptBotWorkerManager from './MsgConnChatGptBotWorkerManager';
 import MsgConnectionManager from './MsgConnectionManager';
+import { JSON_HEADERS } from '../../sdk/common/http';
 
 export const API_HOST_INNER = "http://127.0.0.1:8080/api/server"
 

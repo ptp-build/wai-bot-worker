@@ -1,4 +1,4 @@
-export default class Html5Cache {
+export default class Html5CacheHelper {
   private cache?: Cache;
   private cacheName?:string
 

@@ -1,40 +1,34 @@
-import { sendKeyboardEventActionToWorkerWindow, sendMouseEventActionToWorkerWindow, sleep } from './helper';
+import BridgeWorkerWindow from '../bridge/BridgeWorkerWindow';
+import BridgeMasterWindow from '../bridge/BridgeMasterWindow';
+import BridgeRender from '../bridge/BridgeRender';
+import { sleep } from '../common/time';
 
-interface Icon {
-  rel: string;
-  url: string;
-  width?: number;
-  height?: number;
-}
-
-interface Meta {
-  name?: string;
-  property?: string;
-  content: string;
-}
-
-interface Logo {
-  width?: number;
-  height?: number;
-  url?: string;
-  dataUri?: string;
-}
-
-interface SiteInfo {
-  icons: Icon[];
-  meta: Meta[];
-  logo?: Logo;
-}
-
-export default class BaseKeyboardAndMouseEvents {
+export default class BaseKeyboardAndMouseEvents{
   public botId: string;
+  private readonly bridgeWorkerWindow: BridgeWorkerWindow;
+  private readonly bridgeMasterWindow: BridgeMasterWindow;
+  private readonly bridgeRender: BridgeRender;
 
   constructor(botId:string) {
     this.botId = botId
+    this.bridgeWorkerWindow = new BridgeWorkerWindow(this.botId)
+    this.bridgeMasterWindow = new BridgeMasterWindow(this.botId)
+    this.bridgeRender= new BridgeRender(this.botId)
+  }
+  getBridgeWorkerWindow(){
+    return this.bridgeWorkerWindow
+  }
+
+  getBridgeMasterWindow(){
+    return this.bridgeMasterWindow
+  }
+
+  getBridgeRenderWindow(){
+    return this.bridgeRender
   }
 
   sendKeyboardEvent(type: 'char' | 'keyUp' | 'keyDown', keyCode: string) {
-    return sendKeyboardEventActionToWorkerWindow(this.botId, type, keyCode).catch(console.error);
+    return this.bridgeWorkerWindow.invokeWorkerWindowKeyboardEventAction(type, keyCode)
   }
 
   sendCharKeyboardEvent(keyCode: string) {
@@ -49,12 +43,12 @@ export default class BaseKeyboardAndMouseEvents {
     await this.sendEnterKeyboardEvent()
   }
   sendMouseEvent(button:"left" | "right", type:"mouseDown"| "mouseUp", x:number, y:number) {
-    return sendMouseEventActionToWorkerWindow(this.botId, {
+    return this.bridgeWorkerWindow.invokeWorkerWindowMouseEventAction({
       button,
       type,
       x,
       y
-    }).catch(console.error);
+    })
   }
 
   sendEnterKeyboardEvent() {

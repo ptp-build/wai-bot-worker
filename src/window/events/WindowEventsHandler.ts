@@ -1,10 +1,9 @@
-import { MasterEventActions, MasterEvents, WorkerEventActions, WorkerEvents } from '../../types';
-import MainWindowManager from '../../ui/MainWindowManager';
+import { MasterEventActions, MasterEvents } from '../../sdk/types';
 import RenderChatMsg from '../../render/RenderChatMsg';
 import { getMasterWindow } from '../../ui/window';
 import ChatAiMsg from '../ChatAiMsg';
 import MainChatMsgStorage from '../MainChatMsgStorage';
-import WindowBotWorkerStatus from '../WindowBotWorkerStatus';
+import BotWorkerStatus from '../../sdk/botWorkerStatus/BotWorkerStatus';
 
 export default class WindowEventsHandler {
 
@@ -27,7 +26,7 @@ export default class WindowEventsHandler {
     let res;
     switch (action){
       case MasterEventActions.UpdateWorkerStatus:
-        WindowBotWorkerStatus.update(payload);
+        BotWorkerStatus.update(payload);
         break
       case MasterEventActions.FinishChatGptReply:
         void await new ChatAiMsg(payload.chatId).finishChatGptReply(payload)
@@ -65,17 +64,5 @@ export default class WindowEventsHandler {
         inlineButtons
       }
     })
-  }
-
-  static sendEventToWorker(botId:string,action:WorkerEventActions,payload?:any){
-    if(
-      MainWindowManager.getInstance(botId) &&
-      MainWindowManager.getInstance(botId).getMainWindow() &&
-      MainWindowManager.getInstance(botId).getMainWindow().webContents
-    ){
-      return MainWindowManager.getInstance(botId)
-        ?.getMainWindow().webContents
-        .send(WorkerEvents.Worker_Chat_Msg, action, payload);
-    }
   }
 }

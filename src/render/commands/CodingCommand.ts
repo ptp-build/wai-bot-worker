@@ -1,10 +1,10 @@
 import RenderChatMsg from '../RenderChatMsg';
-import MsgHelper from '../../masterChat/MsgHelper';
-import { CallbackButtonAction } from '../../types';
-import { fileExists, getFileContent } from '../../worker/utils/file';
+import MsgHelper from '../../sdk/helper/MsgHelper';
+import { CallbackButtonAction } from '../../sdk/types';
 import KvCache from '../../worker/services/kv/KvCache';
 import MainChatMsgStorage from '../../window/MainChatMsgStorage';
 import BaseCommand from './BaseCommand';
+import { fileExists, getFileContent } from '../../sdk/common/file';
 
 export default class CodingCommand extends BaseCommand{
 

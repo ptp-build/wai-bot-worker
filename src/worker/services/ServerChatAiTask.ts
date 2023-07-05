@@ -1,9 +1,9 @@
 import ServerSession from "./ServerSession";
 import BaseObject from "./BaseObject";
-import {currentTs1000} from "../../utils/time";
+import {currentTs1000} from "../../sdk/common/time";
 import ServerChatAiMsg from "./ServerChatAiMsg";
 import ServerChatMsgStorage from "./ServerChatMsgStorage";
-import {ReportChatGptAiTaskType} from "../../types";
+import {ReportChatGptAiTaskType} from "../../sdk/types";
 import TaskTable from "../models/rdms/TaskTable";
 
 export default class ServerChatAiTask extends BaseObject{

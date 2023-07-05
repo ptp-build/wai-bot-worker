@@ -1,14 +1,14 @@
-import { UserIdFirstBot } from '../../masterChat/setting';
 import BaseObject from './BaseObject';
 import ServerSession from './ServerSession';
 import ServerChatConfig from './ServerChatConfig';
 import ServerChatAiMsg from './ServerChatAiMsg';
 import ServerChatMsgStorage from './ServerChatMsgStorage';
-import { CallbackButtonAction, NewMessage } from '../../types';
-import MsgHelper from '../../masterChat/MsgHelper';
+import { CallbackButtonAction, NewMessage } from '../../sdk/types';
+import MsgHelper from '../../sdk/helper/MsgHelper';
 import UserMsgTable from '../models/rdms/UserMsgTable';
 import TaskTable from '../models/rdms/TaskTable';
-import { currentTs } from '../../utils/time';
+import { currentTs } from '../../sdk/common/time';
+import { MasterBotId } from '../../sdk/setting';
 
 export default class ServerChatMsg extends BaseObject{
   private isMasterBot: boolean;
@@ -18,7 +18,7 @@ export default class ServerChatMsg extends BaseObject{
     super(session)
     this.chatId = chatId
     this.localMsgId =localMsgId
-    this.isMasterBot = chatId === UserIdFirstBot
+    this.isMasterBot = chatId === MasterBotId
   }
   getChatId(){
     return this.chatId
