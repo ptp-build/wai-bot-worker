@@ -128,10 +128,10 @@ describe('WorkerAccountTable', () => {
       bio:"bio",
       type:"chatGpt"
     }
-    await new WorkerAccount("1").updateWorkersAccount(account1)
+    await new WorkerAccount("1").update(account1)
     // expect(id).toEqual(1)
 
-    const account = await new WorkerAccount("1").getWorkersAccount()
+    const account = await new WorkerAccount("1").get()
     console.log(account)
     expect(account1.botId).toEqual("1")
     const listBot = await WorkerAccount.getBotList()

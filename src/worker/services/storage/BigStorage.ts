@@ -29,4 +29,9 @@ export default class BigStorage {
     // @ts-ignore
     return this.handler!.get.apply(this.handler, args);
   }
+
+  getFullPath(...args: any[]) {
+    // @ts-ignore
+    return this.handler!.getFullPath.apply(this.handler, args);
+  }
 }

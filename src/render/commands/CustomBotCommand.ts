@@ -2,7 +2,7 @@ import MsgHelper from '../../sdk/helper/MsgHelper';
 import { CallbackButtonAction } from '../../sdk/types';
 import BaseCommand from './BaseCommand';
 
-export default class CustomWorkerCommand extends BaseCommand{
+export default class CustomBotCommand extends BaseCommand{
 
   constructor(chatId:string,localMsgId?:number) {
     super(chatId,localMsgId)
@@ -13,9 +13,6 @@ export default class CustomWorkerCommand extends BaseCommand{
       ["start","Start conversation."],
       ["control","Control Panel"],
       ["action","Action Panel"],
-      ["reloadWindow","Reload Window"],
-      ["activeWindow","Active Window"],
-      ["openWindow","Open Window"],
       ["setting","Setting panel"],
       ["clearHistory","Clear chat History."]
     ]
@@ -26,13 +23,15 @@ export default class CustomWorkerCommand extends BaseCommand{
   async start(){
     return await super.start()
   }
+
   async setting(){
     let helper = "Setting panel:"
-    const buttons = this.getSettingButtons()
+    const buttons = []
 
     buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️️ Home Url",CallbackButtonAction.Local_setupHomeUrl),
+      MsgHelper.buildCallBackAction("🛠️️ Worker Name",CallbackButtonAction.Local_setupWorkerName),
     ])
+
     buttons.push([
       MsgHelper.buildCallBackAction("🛠️️️ Plugin Js",CallbackButtonAction.Local_setupPluginJs),
     ])
@@ -42,8 +41,8 @@ export default class CustomWorkerCommand extends BaseCommand{
     return this.replyText(helper,buttons)
   }
 
-  async action(action?:"reloadWindow" | "openWindow"){
-    return super.action(action)
+  async action(action:any){
+    return super.action()
   }
 
   async processBotCommand(command:string){

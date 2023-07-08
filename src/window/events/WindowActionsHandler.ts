@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import {
-  MasterEventActions,
+  MasterEventActions, MasterEvents,
   WindowActions,
   WorkerCallbackButtonAction,
   WorkerEventActions,
@@ -8,7 +8,6 @@ import {
 } from '../../sdk/types';
 import MainWindowManager from '../../ui/MainWindowManager';
 import MasterWindowCallbackAction from './MasterWindowCallbackAction';
-import WindowDbAction from './WindowDbAction';
 import WindowEventsHandler from './WindowEventsHandler';
 import WorkerStatus from './WorkerStatus';
 import MsgHelper from '../../sdk/helper/MsgHelper';
@@ -17,24 +16,38 @@ import MasterActions from './MasterActions';
 import { parseCallBackButtonPayload } from '../../sdk/common/string';
 import { MasterBotId } from '../../sdk/setting';
 import BotWorkerStatus from '../../sdk/botWorkerStatus/BotWorkerStatus';
+import { getMasterWindowWebContent } from '../../ui/window';
 
 export default class WindowActionsHandler {
   handleAction(){
     ipcMain.handle(WindowActions.WorkerWindowCallbackAction, async (_,data:string) => {
       const {path,params} = parseCallBackButtonPayload(data)
-      console.log("[WorkerWindowCallbackAction]",{path,params} )
       const {chatId} = params
-      if(chatId !== MasterBotId){
-        if(
-          MainWindowManager.getInstance(chatId) && MainWindowManager.getInstance(chatId)?.getMainWindow()
-        ){
-          MainWindowManager.getInstance(chatId)?.getMainWindow()
-            .webContents.send(
-              WorkerEvents.Worker_Chat_Msg,chatId,WorkerEventActions.Worker_CallBackButton,{path,...params})
+      const botId = chatId
+      if(botId !== MasterBotId){
+        const account = await new WorkerAccount(botId).get()
+        console.debug("[WorkerWindowCallbackAction]",botId,account.type)
+        if(account.type !== "bot"){
+          const worker = MainWindowManager.getMainWindowWebContents(chatId)
+          if(worker){
+            worker.send(
+              WorkerEvents.Worker_Chat_Msg,
+              chatId,
+              WorkerEventActions.Worker_CallBackButton,
+              {path,...params}
+            )
+          }else{
+            await WindowEventsHandler.replyChatMsg("Worker is Offline,Pls send /openWindow first!",chatId,[
+              MsgHelper.buildLocalCancel()
+            ])
+          }
         }else{
-          await WindowEventsHandler.replyChatMsg("Worker is Offline,Pls send /openWindow first!",chatId,[
-            MsgHelper.buildLocalCancel()
-          ])
+          getMasterWindowWebContent()!.send(
+            WorkerEvents.Worker_Chat_Msg,
+            botId,
+            WorkerEventActions.Worker_CallBackButton,
+            {path,...params}
+          );
         }
       }
     });
@@ -42,10 +55,6 @@ export default class WindowActionsHandler {
     ipcMain.handle(WindowActions.MasterWindowCallbackAction, async (_,data:string) => {
       console.log("[MasterWindowCallbackAction]",data)
       await new MasterWindowCallbackAction().callbackButtonAction(data)
-    });
-
-    ipcMain.handle(WindowActions.WindowDbAction, async (_,actionData:any) => {
-      await new WindowDbAction().process(actionData)
     });
 
     ipcMain.handle(WindowActions.WorkerWindowKeyboardAction,
@@ -61,9 +70,6 @@ export default class WindowActionsHandler {
       })
 
     ipcMain.handle(WindowActions.WorkerWindowAction,async (_,botId:string,action:WorkerEventActions|WorkerCallbackButtonAction,payload:any)=>{
-      if(action !== WorkerEventActions.Worker_NotifyWorkerStatus){
-        console.log("[WorkerWindowAction]",botId,action,payload)
-      }
       switch (action){
         case WorkerEventActions.Worker_ShowDevTools:
           MainWindowManager.getInstance(botId).showDevTools()
@@ -77,16 +83,25 @@ export default class WindowActionsHandler {
         case WorkerEventActions.Worker_LoadUrl:
           await MainWindowManager.getInstance(botId).loadUrl(payload.url)
           return
+        case WorkerEventActions.Worker_OnOpenChat:
+          await MainWindowManager.getInstance(payload.botId).openChatBot()
+          return
         case WorkerEventActions.Worker_ActiveWindow:
-          MainWindowManager.getInstance(payload.botId).moveTop()
+          MainWindowManager.getInstance(payload.botId).activeWindow()
           return
       }
-      if(MainWindowManager.getInstance(botId) && MainWindowManager.getInstance(botId).getMainWindowWebContents()){
-        MainWindowManager.getInstance(botId).getMainWindowWebContents()!.send(WorkerEvents.Worker_Chat_Msg,botId,action,payload)
-      }else{
-        if(action === WorkerEventActions.Worker_GetWorkerStatus){
-          await new WorkerStatus(botId).sendOffline()
+      const account = await new WorkerAccount(botId).get()
+      if(account.type !== "bot"){
+        const worker = MainWindowManager.getMainWindowWebContents(botId)
+        if(worker){
+          worker.send(WorkerEvents.Worker_Chat_Msg,botId,action,payload)
+        }else{
+          if(action === WorkerEventActions.Worker_GetWorkerStatus){
+            await new WorkerStatus(botId).sendOffline()
+          }
         }
+      }else{
+        getMasterWindowWebContent()!.send(WorkerEvents.Worker_Chat_Msg,botId, action, payload);
       }
     })
 
@@ -101,8 +116,10 @@ export default class WindowActionsHandler {
         case MasterEventActions.UpdateWorkerStatus:
           BotWorkerStatus.update(payload);
           break
-        case MasterEventActions.GetWorkersAccount:
-          return new WorkerAccount(payload.botId).getWorkersAccount();
+        case MasterEventActions.GetWorkerAccount:
+          return new WorkerAccount(payload.botId).get();
+        case MasterEventActions.GetWorkerAccounts:
+          return WorkerAccount.getAccounts();
         case MasterEventActions.GetWorkersStatus:
           return BotWorkerStatus.getAllBotWorkersStatus();
         case MasterEventActions.RestartWorkerWindow:

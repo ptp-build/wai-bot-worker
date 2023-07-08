@@ -2,6 +2,9 @@ import { CallbackButtonAction, CallbackButtonActionType } from '../types';
 import { encodeCallBackButtonPayload } from '../common/string';
 
 export default class MsgHelper {
+  static isLocalMessageId(id:number){
+    return !Number.isInteger(id);
+  }
   static buildCommand(command:string,description:string,botId:string){
     return {
       command,
@@ -17,13 +20,20 @@ export default class MsgHelper {
       MsgHelper.buildCallBackAction(text || "↩️️ Cancel",CallbackButtonAction.Local_cancelMessage),
     ]
   }
-
   static buildRenderCancel(text?:string,payload?:any){
     return [
       MsgHelper.buildCallBackAction(text || "↩️️ Cancel",encodeCallBackButtonPayload(CallbackButtonAction.Render_cancelMessage,payload)),
     ]
   }
 
+
+  static buildOpenDocBtn(text?:string){
+    return [
+      MsgHelper.buildCallBackAction(text || "Open",encodeCallBackButtonPayload(CallbackButtonAction.Master_openMessageDoc,{
+        openMessageDoc:true
+      })),
+    ]
+  }
   static buildButtonAction(text:string,path:CallbackButtonActionType | string,type?:"unsupported" | "command" | "callback"){
     switch (type){
       case 'callback':
@@ -32,6 +42,25 @@ export default class MsgHelper {
         return {
           text,type
         }
+    }
+  }
+
+  static buildUnsupportedAction(text?:string){
+    return {
+      text:text||"",
+      type:"unsupported"
+    }
+  }
+
+  static buildConfirmCallBackAction(text:string,path:CallbackButtonActionType | string,confirmText:string,payload?:any){
+    return {
+      text,
+      data:`${encodeCallBackButtonPayload(path,{
+        showConfirm:true,
+        confirmText,
+        ...(payload || {})
+      })}`,
+      type:"callback"
     }
   }
   static buildCallBackAction(text:string,path:CallbackButtonActionType | string){

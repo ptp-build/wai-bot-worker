@@ -3,6 +3,7 @@ import MsgHelper from '../../sdk/helper/MsgHelper';
 import RenderChatMsg from '../RenderChatMsg';
 import RenderCallbackButton from '../RenderCallbackButton';
 import { encodeCallBackButtonPayload } from '../../sdk/common/string';
+import BridgeWorkerWindow from '../../sdk/bridge/BridgeWorkerWindow';
 
 export default class BaseCommand extends RenderChatMsg{
   constructor(chatId:string,localMsgId?:number) {
@@ -14,6 +15,7 @@ export default class BaseCommand extends RenderChatMsg{
       ["setting","Setting panel"],
       ["action","Action panel"],
       ["reloadWindow","Reload Window"],
+      ["activeWindow","Active Window"],
       ["openWindow","Open Window"],
       ["control","Control Panel"],
       ["clearHistory","Clear chat History."],
@@ -54,12 +56,14 @@ export default class BaseCommand extends RenderChatMsg{
     return this.replyText(helper,buttons)
   }
 
-  async action(action?:"reloadWindow" | "openWindow"){
+  async action(action?:"reloadWindow" | "activeWindow" | "openWindow"){
     const ack = this.replyAck()
-    debugger
     switch (action){
       case 'openWindow':
         await RenderCallbackButton.invokeMasterWindowCallbackButton(CallbackButtonAction.Master_OpenWorkerWindow,{chatId:this.getChatId()})
+        break
+      case 'activeWindow':
+        await new BridgeWorkerWindow().activeWindow(this.getChatId())
         break
       case 'reloadWindow':
         await RenderCallbackButton.invokeWorkerWindowCallbackButton(WorkerCallbackButtonAction.Worker_locationReload,{chatId:this.getChatId()})
@@ -81,25 +85,55 @@ export default class BaseCommand extends RenderChatMsg{
         [MsgHelper.buildCallBackAction("✖️ Worker Status",CallbackButtonAction.Render_workerStatus)]
       )
     }else{
-      buttons.push(...[
-        [MsgHelper.buildCallBackAction("🚀 Open Window",CallbackButtonAction.Master_OpenWorkerWindow)],
-        [MsgHelper.buildCallBackAction("✖️ Close Window",encodeCallBackButtonPayload(CallbackButtonAction.Master_closeWorkerWindow,{
-          checkOnline:true,
-          showConfirm:true,
-          confirmText:"✖️ Close Window ?",
-        }))]
-      ])
+      if((await this.getWorkerAccount()).type !== 'bot'){
+        buttons.push(...[
+          [MsgHelper.buildCallBackAction("🚀 Open Window",CallbackButtonAction.Master_OpenWorkerWindow)],
+          [MsgHelper.buildConfirmCallBackAction(
+            "✖️ Close Window",
+            CallbackButtonAction.Master_closeWorkerWindow,"✖️ Close Window ?",
+            {
+              checkOnline:true,
+            }
+          )]
+        ])
+        buttons.push(
+          [
+            MsgHelper.buildCallBackAction("🔁 Reload Window",WorkerCallbackButtonAction.Worker_locationReload),
+            MsgHelper.buildCallBackAction("◀️ GoBack Window",WorkerCallbackButtonAction.Worker_historyGoBack),
+          ],
+        )
+        buttons.push(
+          [
+            MsgHelper.buildCallBackAction("🔀 DevTool",WorkerCallbackButtonAction.Worker_openDevTools),
+            MsgHelper.buildCallBackAction("🔀 Browser UserAgent",WorkerCallbackButtonAction.Worker_browserUserAgent),
+          ]
+        )
+
+        buttons.push(
+          [
+            MsgHelper.buildUnsupportedAction(),
+          ]
+        )
+
+      }
+
       buttons.push(
         [
-          MsgHelper.buildCallBackAction("🔁 Reload Window",WorkerCallbackButtonAction.Worker_locationReload),
-          MsgHelper.buildCallBackAction("◀️ GoBack Window",WorkerCallbackButtonAction.Worker_historyGoBack),
-        ],
-      )
-      buttons.push(
-        [
-          MsgHelper.buildCallBackAction("🔀 DevTool",WorkerCallbackButtonAction.Worker_openDevTools),
-          MsgHelper.buildCallBackAction("🔀 Browser UserAgent",WorkerCallbackButtonAction.Worker_browserUserAgent),
+          MsgHelper.buildConfirmCallBackAction("Create Group",CallbackButtonAction.Local_createGroup,"Create Group?"),
         ]
+      )
+
+      buttons.push(
+        [
+          MsgHelper.buildCallBackAction("Copy Bot Worker",CallbackButtonAction.Local_copyBot),
+        ]
+      )
+
+      buttons.push(
+        [MsgHelper.buildConfirmCallBackAction(
+          "✖️ Delete Bot",
+          CallbackButtonAction.Local_deleteBot,"✖️ Delete Bot ?",
+        )]
       )
 
       buttons.push(
@@ -130,6 +164,8 @@ export default class BaseCommand extends RenderChatMsg{
         return await this.control()
       case "reloadWindow":
         return await this.action("reloadWindow")
+      case "activeWindow":
+        return await this.action("activeWindow")
       case "openWindow":
         return await this.action("openWindow")
     }

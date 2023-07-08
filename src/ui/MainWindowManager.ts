@@ -1,9 +1,9 @@
-import {BrowserWindow} from 'electron';
+import { BrowserWindow, HandlerDetails, shell } from 'electron';
 import path from 'path';
-import Devtool from "./Devtool";
-import {getErrorHtml} from "./Ui";
-import {isProd} from "../utils/electronEnv";
-import WindowEventsHandler from "../window/events/WindowEventsHandler";
+import Devtool from './Devtool';
+import { getErrorHtml1 } from './Ui';
+import { isProd } from '../utils/electronEnv';
+import WindowEventsHandler from '../window/events/WindowEventsHandler';
 import { BotStatusType, BotWorkerStatusType, LocalWorkerAccountType, MasterEventActions } from '../sdk/types';
 import WorkerAccount from '../window/woker/WorkerAccount';
 import { getProxyConfigFromProxyConfStr } from '../sdk/common/proxy';
@@ -63,15 +63,6 @@ export default class MainWindowManager {
     return i;
   }
 
-  moveTop(){
-    const t = this.getMainWindow()
-    if(t){
-      t.moveTop()
-
-      return
-    }
-  }
-
   showWindow(){
     const t = this.getMainWindow()
     if(t){
@@ -81,14 +72,29 @@ export default class MainWindowManager {
       return
     }
   }
+
+  moveTop(){
+    const t = this.getMainWindow()
+    if(t){
+      t.moveTop()
+      return
+    }
+  }
+
+  async openChatBot(){
+    const account = await new WorkerAccount(this.botId).get()
+    if(account!.activeWindowOnOpenChat){
+      this.activeWindow()
+    }
+  }
   activeWindow(){
-    console.log("[activeWindow]",this.botId,!!this.getMainWindow())
     this.showWindow();
     const t = this.getMainWindow()
     if(t){
       if(t.isFocusable() && !t.isFocused()){
         t.focus()
       }
+      this.moveTop()
       return
     }
   }
@@ -106,11 +112,15 @@ export default class MainWindowManager {
     return this.mainWindow!
   }
 
-  getMainWindowWebContents(){
-    if(!this.mainWindow){
+  static getMainWindowWebContents(botId:string){
+    if(
+      !MainWindowManager.getInstance(botId) ||
+      !MainWindowManager.getInstance(botId).getMainWindow()||
+      !MainWindowManager.getInstance(botId).getMainWindow().webContents
+    ){
       return null
     }else{
-      return this.mainWindow!.webContents
+      return MainWindowManager.getInstance(botId).getMainWindow().webContents!
     }
   }
   getOptions(){
@@ -163,7 +173,7 @@ export default class MainWindowManager {
   }
   async loadUrl (url:string){
     try{
-      const account = await new WorkerAccount(this.botId).getWorkersAccount() as LocalWorkerAccountType
+      const account = await new WorkerAccount(this.botId).get() as LocalWorkerAccountType
       let userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43'
       if(account && account.browserUserAgent){
         userAgent = account.browserUserAgent
@@ -172,9 +182,10 @@ export default class MainWindowManager {
         userAgent
       })
     }catch (e:any){
-      const {proxy} = this.getOptions()
-      const htmlContent = getErrorHtml(this.botId,e,proxy);
-      await this.mainWindow!.loadURL(`data:text/html;charset=utf-8,${encodeURI(htmlContent)}`);
+      console.error("[ERROR] load url",e)
+      // const {proxy} = this.getOptions()
+      // const htmlContent = getErrorHtml1();
+      // await this.mainWindow!.loadURL(`data:text/html;charset=utf-8,${encodeURI(htmlContent)}`);
     }
   }
   async setUpProxy(){
@@ -228,6 +239,10 @@ export default class MainWindowManager {
       }
     });
 
+    mainWindow!.webContents.setWindowOpenHandler((details: HandlerDetails) => {
+      shell.openExternal(details.url);
+      return { action: 'deny' };
+    });
     mainWindow!.on('closed', (e: any) => {
       console.log("[CLOSED] mainWindow",this.botId)
       if(__managers.has(this.botId)){

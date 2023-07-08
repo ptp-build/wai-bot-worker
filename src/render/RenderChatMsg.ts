@@ -1,5 +1,5 @@
 import KvCache from '../worker/services/kv/KvCache';
-import { BotWorkerStatusType, CallbackButtonAction, LocalWorkerAccountType, NewMessage } from '../sdk/types';
+import { BotWorkerStatusType, CallbackButtonAction, LocalWorkerAccountType, ApiChatMsg } from '../sdk/types';
 import { currentTs } from '../sdk/common/time';
 import ChatAiMsg from '../window/ChatAiMsg';
 import MsgHelper from '../sdk/helper/MsgHelper';
@@ -10,6 +10,7 @@ import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
 import BridgeMasterWindow from '../sdk/bridge/BridgeMasterWindow';
 import { MasterBotId } from '../sdk/setting';
 import BotWorkerStatus from '../sdk/botWorkerStatus/BotWorkerStatus';
+import WorkerGroup from '../window/woker/WorkerGroup';
 
 export default class RenderChatMsg {
   public isMasterBot: boolean;
@@ -30,7 +31,11 @@ export default class RenderChatMsg {
     return this.localMsgId
   }
   async getWorkerAccount():Promise<LocalWorkerAccountType>{
-    return await new WorkerAccount(this.getChatId()).getWorkersAccount() as LocalWorkerAccountType
+    return await new WorkerAccount(this.getChatId()).get() as LocalWorkerAccountType
+  }
+
+  async getGroup():Promise<any>{
+    return await new WorkerGroup(this.getChatId()).get() as any
   }
   async applyMsgId(){
     return {
@@ -58,6 +63,7 @@ export default class RenderChatMsg {
       localMsgId:this.localMsgId,
       msgId:this.localMsgId ? await this.genMsgId() : undefined,
       newMessage:{
+        senderId:this.chatId,
         msgId:await this.genMsgId(),
         text,
         chatId:this.chatId,
@@ -66,45 +72,45 @@ export default class RenderChatMsg {
     }
   }
 
-  async invokeAskChatGptMsg(text:string,msg:NewMessage,taskId?:number){
-    let botId = this.getChatId()
-    const workerAccount = await new WorkerAccount(botId).getWorkersAccount()
-    if(workerAccount && workerAccount.type !== "chatGpt"){
-      const readyBots = []
-      const workerIds = await WorkerAccount.getBotList()
-      for (let i = 0; i < workerIds.length; i++) {
-        const worker_botId = workerIds[i]
-        const workerAccount = await new WorkerAccount(worker_botId).getWorkersAccount()
-        if(workerAccount && workerAccount.type === "chatGpt"){
-          const {statusBotWorker} = BotWorkerStatus.get(workerAccount.botId)
-          if(statusBotWorker === BotWorkerStatusType.Ready){
-            readyBots.push(workerAccount.botId)
-          }
-        }
-      }
-      console.log("[readyBots]",readyBots)
-      if(readyBots.length > 0){
-        botId = readyBots[Math.floor(Math.random() * readyBots.length)];
-      }else{
-        setTimeout(async ()=>await this.invokeAskChatGptMsg(text,msg,taskId),1000)
-      }
-    }
+  async invokeAskChatGptMsg(text:string,msg:ApiChatMsg,taskId?:number,botId?:string){
+    botId = botId || this.getChatId()
+    // const workerAccount = await new WorkerAccount(botId).get()
+    // if(workerAccount && workerAccount.type !== "chatGpt"){
+    //   const readyBots = []
+    //   const workerIds = await WorkerAccount.getBotList()
+    //   for (let i = 0; i < workerIds.length; i++) {
+    //     const worker_botId = workerIds[i]
+    //     const workerAccount = await new WorkerAccount(worker_botId).get()
+    //     if(workerAccount && workerAccount.type === "chatGpt"){
+    //       const {statusBotWorker} = BotWorkerStatus.get(workerAccount.botId)
+    //       if(statusBotWorker === BotWorkerStatusType.Ready){
+    //         readyBots.push(workerAccount.botId)
+    //       }
+    //     }
+    //   }
+    //   console.log("[readyBots]",readyBots)
+    //   if(readyBots.length > 0){
+    //     botId = readyBots[Math.floor(Math.random() * readyBots.length)];
+    //   }else{
+    //     setTimeout(async ()=>await this.invokeAskChatGptMsg(text,msg,taskId),1000)
+    //   }
+    // }
     await new BridgeWorkerWindow(botId).sendChatMsgToWorker({
         text,
         updateMessage:msg,
-        fromBotId:this.getChatId(),
+        fromBotId:botId,
         taskId
       })
     return this
   }
 
-  async askChatGptMessage(text:string,taskId?:number,msgId?:number){
+  async askChatGptMessage(text:string,taskId?:number,msgId?:number,chatId?:string){
     if(!msgId){
       msgId = await this.genMsgId()
     }
-
+    chatId = chatId || this.getChatId()
     const msg = {
-      chatId:this.getChatId(),
+      chatId,
       msgId,
       text:"...",
       entities:[],
@@ -115,11 +121,11 @@ export default class RenderChatMsg {
     }
     await this.handleNewMessage(msg)
     console.log("askChatGptMessage",text)
-    await this.invokeAskChatGptMsg(text,msg,taskId)
+    await this.invokeAskChatGptMsg(text,msg,taskId,chatId)
     return msgId
   }
 
-  async handleNewMessage(newMessage:NewMessage,sendToMainChat?:boolean){
+  async handleNewMessage(newMessage:ApiChatMsg,sendToMainChat?:boolean){
     await new BridgeMasterWindow(this.getChatId()).newMessage({
         sendToMainChat,
         newMessage
@@ -139,7 +145,7 @@ export default class RenderChatMsg {
     return newMessage.msgId
   }
 
-  async handleUpdateMessage(msg:Partial<NewMessage>){
+  async handleUpdateMessage(msg:Partial<ApiChatMsg>){
     await new BridgeMasterWindow(this.getChatId()).updateMessage({
       updateMessage:msg
     })
@@ -207,6 +213,9 @@ export default class RenderChatMsg {
   }
   async deleteChat(){
     await WorkerAccount.deleteBotList(this.getChatId())
+  }
+  async deleteChannel(){
+    await WorkerGroup.deleteBotList(this.getChatId())
   }
   async deleteChatMessages(ids:number[]){
     await new BridgeMasterWindow(this.chatId).deleteMessages({ids,chatId:this.chatId})

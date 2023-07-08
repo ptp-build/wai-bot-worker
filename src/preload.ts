@@ -8,12 +8,11 @@ import {
   MasterEventActions,
   MasterEvents,
   WindowActions,
-  WindowDbActionData,
   WorkerEventActions,
   WorkerEvents,
 } from './sdk/types';
 import { setComponents } from './utils/electronCommon';
-import BotWorkerCustom from './plugins/js/customeWorker';
+import BotWorkerCustom from './plugins/js/customWorker';
 import BridgeMasterWindow from './sdk/bridge/BridgeMasterWindow';
 import { MasterBotId } from './sdk/setting';
 
@@ -68,8 +67,6 @@ const electronApi: ElectronApi = {
   invokeWorkerWindowKeyboardEventAction: (botId,type,keyCode) => ipcRenderer.invoke(WindowActions.WorkerWindowKeyboardAction,botId,type,keyCode),
   invokeWorkerWindowMouseEventAction: (botId,payload:any) => ipcRenderer.invoke(WindowActions.WorkerWindowMouseAction,botId,payload),
 
-  invokeWindowDbAction: (actionData:WindowDbActionData) => ipcRenderer.invoke(WindowActions.WindowDbAction,actionData),
-
   isFullscreen: () => ipcRenderer.invoke(ElectronAction.GET_IS_FULLSCREEN),
   installUpdate: () => ipcRenderer.invoke(ElectronAction.INSTALL_UPDATE),
   handleDoubleClick: () => ipcRenderer.invoke(ElectronAction.HANDLE_DOUBLE_CLICK),
@@ -85,11 +82,11 @@ const electronApi: ElectronApi = {
 };
 
 contextBridge.exposeInMainWorld('electron', electronApi);
+window.electron = electronApi
 
 window.addEventListener('DOMContentLoaded', async () => {
-  window.electron = electronApi
   if(!isMasterChat){
-    const account = await new BridgeMasterWindow(botId.toString()).getWorkersAccount({botId:botId.toString()}) as LocalWorkerAccountType
+    const account = await new BridgeMasterWindow(botId.toString()).getWorkerAccount({botId:botId.toString()}) as LocalWorkerAccountType
     let {pluginJs} = account
     if(!pluginJs){
       pluginJs = "worker_custom.js"
@@ -109,6 +106,18 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     }else{
       new BotWorkerCustom(account).addEvents()
+    }
+  } else {
+    const accounts = await new BridgeMasterWindow().getWorkerAccounts() as LocalWorkerAccountType[]
+    for (let i = 0; i < accounts.length; i++) {
+      const account = accounts[i]
+      if(account.type === 'bot'){
+        let {pluginJs} = account
+        if(!pluginJs){
+          pluginJs = "bot_custom.js"
+        }
+        await readAppendFile(pluginJs, `window.WORKER_ACCOUNT = ${JSON.stringify(account)};`)
+      }
     }
   }
 });

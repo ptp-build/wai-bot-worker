@@ -69,6 +69,22 @@ export const getErrorHtml = (
 `
 }
 
+
+export const getErrorHtml1 = ()=>{
+  return `<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <title>Error</title>
+</head>
+<body>
+<div id="message" style='width: 100%;height:100vh;display: flex; flex-direction:column;align-items: center;justify-content: center'>
+  <h2 style='word-break:break-word'>Error</h2>
+</div>
+</body>
+</html>
+`
+}
 export const getTaskWorkerHtml = ()=>{
   return `<!DOCTYPE html>
 <html lang='en'>

@@ -5,7 +5,7 @@ import path from 'path';
 
 import { getMasterWindowHomeUrl, IS_MAC_OS, isProd } from '../utils/electronEnv';
 import WindowActionsHandler from '../window/events/WindowActionsHandler';
-import { ElectronAction } from '../sdk/types';
+import { ElectronAction, MasterEvents } from '../sdk/types';
 import { MasterBotId } from '../sdk/setting';
 
 let forceQuit = false;
@@ -61,6 +61,7 @@ export function createMasterWindow(url?: string) {
       additionalArguments:[`--botId=${MasterBotId}`,`--isProd=${isProd}`],
       preload: path.join(__dirname, 'preload.js'),
       devTools: !isProd,
+      partition:"default"
     },
   });
   window.on('page-title-updated', (event: Event) => {
@@ -92,14 +93,14 @@ export function createMasterWindow(url?: string) {
     }
   });
 
+  new WindowActionsHandler().handleAction()
   window.webContents.loadURL(url!)
-  if(!isProd){
-    window.webContents.openDevTools();
-  }
 
   window.webContents.once('dom-ready', () => {
     window.show();
-    new WindowActionsHandler().handleAction()
+    if(!isProd){
+      window.webContents.openDevTools();
+    }
     if (process.env.APP_ENV === 'production') {
       setupAutoUpdates(window);
     }
@@ -178,3 +179,11 @@ export function setupCloseHandlers() {
 export function getMasterWindow(){
   return __masterWindow
 }
+export function getMasterWindowWebContent(){
+  if(getMasterWindow() && getMasterWindow()!.webContents){
+    return  getMasterWindow()?.webContents!
+  }else{
+    return null
+  }
+}
+

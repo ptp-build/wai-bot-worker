@@ -2,7 +2,7 @@ export type ShowModalFromEventPayload = {
   title?:string,
   type?:'singleInput'|'multipleInput',
   placeholder?:string,
-  initVal?:string
+  initVal?:string | number
   max?:number
   min?:number
   step?:number

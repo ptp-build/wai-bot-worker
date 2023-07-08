@@ -1,4 +1,3 @@
-import RenderChatMsg from '../RenderChatMsg';
 import MsgHelper from '../../sdk/helper/MsgHelper';
 import { CallbackButtonAction } from '../../sdk/types';
 import KvCache from '../../worker/services/kv/KvCache';

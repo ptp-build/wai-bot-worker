@@ -194,6 +194,10 @@ export default class TelegramHelper{
     const global = this.getGlobal()
     return global.users.byId[userId]
   }
+  selectChatFillInfo(chatId:string){
+    const global = this.getGlobal()
+    return global.chats.fullInfoById[chatId]
+  }
   selectUserFullInfo(userId:string) {
     const global = this.getGlobal()
     return global.users.fullInfoById[userId]
@@ -201,6 +205,14 @@ export default class TelegramHelper{
   selectChat(chatId:string) {
     const global = this.getGlobal()
     return global.chats.byId[chatId]
+  }
+  selectChatLastMessage(chatId:string) {
+    const global = this.getGlobal()
+    return global.chats.byId[chatId].lastMessage
+  }
+  selectChatMessageListIds(chatId:string) {
+    const messages = this.selectChatMessages(chatId)
+    return messages.threadsById["-1"].listedIds
   }
   selectChatPhones(chatId:string) {
     const chat = this.selectChat(chatId)

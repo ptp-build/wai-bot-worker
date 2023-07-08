@@ -4,7 +4,7 @@ import {
   BotStatusType,
   BotWorkerStatusType,
   LocalWorkerAccountType,
-  NewMessage,
+  ApiChatMsg,
   WorkerCallbackButtonAction,
   WorkerEventActions,
 } from '../../sdk/types';
@@ -199,7 +199,7 @@ class ChatGptBotWorker extends BaseWorker {
     }
   }
 
-  async askMsg({ text,updateMessage,fromBotId,taskId }:{text:string,updateMessage:NewMessage,fromBotId?:string,taskId?:number}) {
+  async askMsg({ text,updateMessage,fromBotId,taskId }:{text:string,updateMessage:ApiChatMsg,fromBotId?:string,taskId?:number}) {
     if (
       this.chatGptMsg ||
       this.statusBotWorker !== BotWorkerStatusType.Ready ||
@@ -209,13 +209,11 @@ class ChatGptBotWorker extends BaseWorker {
       console.log("[askMsg] stopped", this.statusBot, this.statusBotWorker);
       return;
     }
-
     const { msgId, chatId } = updateMessage;
-
-    let conversation_id = window.localStorage.getItem(`CHAT_Conversation_${chatId}`)
+    let conversation_id = window.localStorage.getItem(`CHAT_Conversation3_${chatId}`)
     if( window.localStorage.getItem(`Conversation_DELETE_${conversation_id}`)){
       conversation_id = null
-      window.localStorage.removeItem(`CHAT_Conversation_${chatId}`)
+      window.localStorage.removeItem(`CHAT_Conversation3_${chatId}`)
       window.localStorage.removeItem(`Conversation_DELETE_${conversation_id}`)
     }
     if(conversation_id){
@@ -228,18 +226,25 @@ class ChatGptBotWorker extends BaseWorker {
         window.location.href = `${origin}/c/${conversation_id}`
         return
       }
+    }else{
+      await this.newConversations()
+      await sleep(2000)
     }
     this.chatGptMsg = new ChatGptMsg(msgId, chatId,fromBotId,taskId);
     await this.sendPromptTextareaMouseClick()
+    await sleep(100)
     this.inputPrompts(text);
+    await sleep(100)
     await this.sendSpaceKeyboardEvent();
     await sleep(100)
     this.performClickSendPromptButton();
   }
   async newAiMsg(text:string){
-    await this.replyMessage(text,[],this.botId,true,"1",true)
-    const msgId = await this.replyMessage("...",[],this.botId)
-    this.chatGptMsg = new ChatGptMsg(msgId!, this.botId);
+    const conversation_id = window.localStorage.getItem(`Conversation_Current`)
+    const chatId = window.localStorage.getItem(`Conversation_CHAT_${conversation_id}`)
+    await this.replyMessage(text,[],chatId || this.botId,true,"1",true)
+    const msgId = await this.replyMessage('...', [], chatId || this.botId)
+    this.chatGptMsg = new ChatGptMsg(msgId!, chatId || this.botId);
   }
   handleResult(result:string){
     const {replyParser} = this.getWorkerAccount()
@@ -286,7 +291,8 @@ class ChatGptBotWorker extends BaseWorker {
         this.statusBotWorker = BotWorkerStatusType.Ready
         this.reportStatus()
         if(this.chatGptMsg && conversation_id && !window.location.href.includes(conversation_id)){
-          window.localStorage.setItem(`CHAT_Conversation_${this.chatGptMsg.chatId}`,conversation_id)
+          window.localStorage.setItem(`CHAT_Conversation3_${this.chatGptMsg.chatId}`,conversation_id)
+          window.localStorage.setItem(`Conversation_CHAT_${conversation_id}`,this.chatGptMsg.chatId)
           window.localStorage.setItem(`Conversation_Current`,conversation_id)
           const uri = new URL(window.location.href)
           window.location.href = `${uri.origin}/c/${conversation_id}`
@@ -340,7 +346,6 @@ class ChatGptBotWorker extends BaseWorker {
     if($("nav[role=none]").children().eq(0).text() === 'Confirm clear conversations'){
       $("nav[role=none]").children().eq(0).click()
     }
-
   }
 
   async newConversations() {
@@ -351,6 +356,7 @@ class ChatGptBotWorker extends BaseWorker {
       $("main").parent().children().eq(0).find("button").eq(0).click()
       await sleep(300)
       $("."+ "mb-1 flex flex-row gap-2".split(" ").join(".")).find("a").click();
+      await sleep(300)
       await this.sendEscKeyboardEvent()
     }
   }
@@ -447,15 +453,16 @@ class ChatGptBotWorker extends BaseWorker {
         return
       }
     }
-
     const WAITING_Msg = window.localStorage.getItem(`WAITING_Msg`)
+
+    this.statusBot = BotStatusType.ONLINE
+    this.statusBotWorker = BotWorkerStatusType.Ready
+    this.reportStatus()
     if(WAITING_Msg){
       window.localStorage.removeItem(`WAITING_Msg`)
+      await sleep(4000)
+      this.chatGptMsg = undefined
       await this.askMsg(JSON.parse(WAITING_Msg))
-    }else{
-      this.statusBot = BotStatusType.ONLINE
-      this.statusBotWorker = BotWorkerStatusType.Ready
-      this.reportStatus()
     }
   }
 }

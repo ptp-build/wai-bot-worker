@@ -1,40 +1,41 @@
 import KvCache from '../../worker/services/kv/KvCache';
-import { LocalWorkerAccountType } from '../../sdk/types';
+import { LocalWorkerAccountType, LocalWorkerType } from '../../sdk/types';
 import WorkerAccountTable, { WorkerAccountTableType } from '../../worker/models/rdms/WorkerAccountTable';
 import DbStorage from '../../worker/services/db/DbStorage';
 import { MasterBotId } from '../../sdk/setting';
 
+const cacheAccounts =  new Map<string, LocalWorkerAccountType | Record<string, any>>();
+
 export default class WorkerAccount{
-  private botId: string;
+  private readonly botId: string;
   constructor(botId:string) {
     this.botId = botId;
   }
 
-  async getProxy(){
-    const account = await this.getWorkersAccount()
-    return account ? account.proxy : ""
-  }
-
-  async getChatGptAuth(){
-    const account = await this.getWorkersAccount()
-    return account ? account.chatGptAuth : ""
-  }
-
-  async getWorkersAccount():Promise<LocalWorkerAccountType | Record<string, any>> {
-    if (!DbStorage.getInstance().getHandler()) {
-      return await KvCache.getInstance()
-        .get("worker_account_" + this.botId) || {}
+  async get():Promise<LocalWorkerAccountType | Record<string, any>> {
+    let account;
+    if(cacheAccounts.has(this.botId)){
+      account = cacheAccounts.get(this.botId)!
     }else{
-      const row =  await new WorkerAccountTable().getRow(Number(this.botId))
-      if(row && row.data){
-        return row.data
-      }else {
-        return {}
+      if (!DbStorage.getInstance().getHandler()) {
+        account = await KvCache.getInstance()
+          .get("worker_account_" + this.botId) || {}
+        cacheAccounts.set(this.botId,account)
+        return account
+      }else{
+        const row =  await new WorkerAccountTable().getRow(Number(this.botId))
+        if(row && row.data){
+          account = row.data
+          cacheAccounts.set(this.botId,account)
+        }else {
+          account = {}
+          cacheAccounts.set(this.botId,account)
+        }
       }
     }
+    return account
   }
-  async updateWorkersAccount(account:LocalWorkerAccountType){
-    console.log("[updateWorkersAccount]",account)
+  async update(account:LocalWorkerAccountType){
     if (!DbStorage.getInstance().getHandler()) {
       await KvCache.getInstance()
         .put("worker_account_" + this.botId,account)
@@ -44,9 +45,10 @@ export default class WorkerAccount{
         data:account
       })
     }
+    cacheAccounts.set(this.botId,account)
   }
   static getMasterWorkerAccount(){
-    return new WorkerAccount(MasterBotId).getWorkersAccount()
+    return new WorkerAccount(MasterBotId).get()
   }
 
   static async addBotList(botId:string){
@@ -70,6 +72,14 @@ export default class WorkerAccount{
     }
   }
 
+  static async getAccounts():Promise<LocalWorkerAccountType[]>{
+    const botList = await WorkerAccount.getBotList()
+    const accounts:LocalWorkerAccountType[] = []
+    for (let i = 0; i < botList.length; i++) {
+      accounts.push(await new WorkerAccount(botList[i]).get() as LocalWorkerAccountType)
+    }
+    return accounts
+  }
   static async getBotList(){
     if (!DbStorage.getInstance().getHandler()) {
       return await KvCache.getInstance().get("worker_accounts_list") || []
@@ -78,6 +88,34 @@ export default class WorkerAccount{
       return rows.map(({botId}:WorkerAccountTableType)=>{
         return botId!.toString()
       })
+    }
+  }
+  static getDefaultName(botId:string,type:LocalWorkerType){
+    let username = "";
+    let name = "";
+    switch (type){
+      case 'coding':
+        username = `Coding_${botId}_bot`;
+        name = `Coding #${botId}`
+        break
+      case 'chatGpt':
+        username = `ChatGpt_${botId}_bot`;
+        name = `ChatGpt #${botId}`
+        break
+      case 'taskWorker':
+        username = `TaskWorker_${botId}_bot`;
+        name = `TaskWorker #${botId}`
+        break
+      case 'custom':
+        username = `CustomWorker_${botId}_bot`;
+        name = `CustomWorker #${botId}`
+        break
+      default:
+        username = `bot_${botId}_bot`;
+        name = `Bot #${botId}`
+    }
+    return {
+      name,username
     }
   }
 }

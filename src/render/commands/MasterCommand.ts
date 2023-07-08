@@ -44,14 +44,19 @@ export default class MasterCommand extends BaseCommand{
   }
 
   async createWorker(){
-    return this.replyText("Choose worker type below:",[
+    return this.replyText("Choose type below:",[
       [MsgHelper.buildCallBackAction("ChatGpt Worker",encodeCallBackButtonPayload(CallbackButtonAction.Master_createChatGptBotWorker,{
         showConfirm:true,
         confirmText:"Create a ChatGpt Worker ?",
       }))],
       [MsgHelper.buildCallBackAction("Custom Worker",encodeCallBackButtonPayload(CallbackButtonAction.Master_createCustomWorker,{
         showConfirm:true,
-        confirmText:"Create a Custom Worker ?",
+        confirmText:"Custom Worker is a worker with window\n Are you sure to create?",
+      }))],
+
+      [MsgHelper.buildCallBackAction("Bot",encodeCallBackButtonPayload(CallbackButtonAction.Master_createCommonBot,{
+        showConfirm:true,
+        confirmText:"Bot is a bot without window\n Are you sure to create?",
       }))],
 
       // [MsgHelper.buildCallBackAction("Task Worker",CallbackButtonAction.Master_createTaskWorker)],

@@ -27,7 +27,7 @@ export default class FileStorage extends BaseStorage {
     return f.split("/").slice(f.split("/").length - 2).join("/")
   }
   async put(filePath: string, data: Buffer) {
-    const fullFilePath = path.join(this.getStoragePath(), filePath);
+    const fullFilePath = this.getFullPath(filePath);
     console.debug("[PUT]",this.formatFilePath(filePath))
     // 注意：我们直接将 Buffer 对象传递给 writeFile 函数
     try {
@@ -46,16 +46,18 @@ export default class FileStorage extends BaseStorage {
   }
 
   async get(filePath: string) {
-    const fullFilePath = path.join(this.getStoragePath(), filePath);
+    const fullFilePath = this.getFullPath(filePath);
     try {
       return await readFile(fullFilePath);
     } catch (error) {
       return null;
     }
   }
-
+  getFullPath(filePath:string){
+    return path.join(this.getStoragePath(), filePath);
+  }
   async delete(filePath: string) {
-    const fullFilePath = path.join(this.getStoragePath(), filePath);
+    const fullFilePath = this.getFullPath(filePath);
     try {
       await unlink(fullFilePath);
       return true;

@@ -7,6 +7,7 @@ import CustomWorkerCommand from './commands/CustomWorkerCommand';
 import ChatGptCommand from './commands/ChatGptCommand';
 import MasterCommand from './commands/MasterCommand';
 import { MasterBotId } from '../sdk/setting';
+import CustomBotCommand from './commands/CustomBotCommand';
 
 export default class RenderChatMsgCommand extends RenderChatMsg{
   private isMasterChat: boolean;
@@ -26,6 +27,8 @@ export default class RenderChatMsgCommand extends RenderChatMsg{
     if(workerAccount){
       const {type} = workerAccount
       switch (type){
+        case "bot":
+          return new CustomBotCommand(this.getChatId(),this.getLocalMsgId()).loadBotCommands()
         case "chatGpt":
           return new ChatGptCommand(this.getChatId(),this.getLocalMsgId()).loadBotCommands()
         case "custom":
@@ -67,6 +70,9 @@ export default class RenderChatMsgCommand extends RenderChatMsg{
       }
       if(workerAccount.type === "custom"){
         return new CustomWorkerCommand(this.getChatId(),this.getLocalMsgId()).processBotCommand(command)
+      }
+      if(workerAccount.type === "bot"){
+        return new CustomBotCommand(this.getChatId(),this.getLocalMsgId()).processBotCommand(command)
       }
       if(workerAccount.type === "chatGpt"){
         return new ChatGptCommand(this.getChatId(),this.getLocalMsgId()).processBotCommand(command)

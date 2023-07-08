@@ -25,7 +25,6 @@ export interface ElectronApi {
   invokeRenderBridgeAction:(botId:string,action:RenderActions,payload:any)=>Promise<any|undefined>
   invokeWorkerWindowAction:(botId:string,action:WorkerEventActions,payload:any)=>Promise<any>
   invokeMasterWindowAction:(botId:string,action:MasterEventActions,payload:any)=>Promise<any>
-  invokeWindowDbAction:(actionData:WindowDbActionData)=>Promise<any>
   invokeWorkerWindowKeyboardEventAction:(botId:string,type:string,keyCode:string)=>Promise<any>
   invokeWorkerWindowMouseEventAction:(botId:string,paylaod:any)=>Promise<any>
   isFullscreen: () => Promise<boolean>;
@@ -58,16 +57,16 @@ export type SendBotCommandRequest = {
 }
 
 
-export type NewMessage = {
+export type ApiChatMsg = {
   chatId:string,
   msgId:number,
   text?:string,
-  content?:object,
   isOutgoing?:boolean,
   senderId?:string,
   msgDate?:number,
   inlineButtons?:object[][],
-  entities?:object[]
+  entities?:object[],
+  content?:object,
 }
 
 export type SendMessageAck = {
@@ -78,7 +77,7 @@ export type SendMessageAck = {
 
 export type SendMessageResponse = {
   ack:SendMessageAck
-  newMessage?:NewMessage
+  newMessage?:ApiChatMsg
 }
 
 
@@ -88,8 +87,6 @@ export type MessageUpdate = {
   senderId:string;
   text:string
 }
-
-
 
 export type AuthSessionType = {
   authUserId: string;
@@ -107,7 +104,7 @@ export interface AccountUser {
 }
 
 
-export type LocalWorkerType="chatGpt" | 'taskWorker'| 'custom' | 'coding'  | 'sql'
+export type LocalWorkerType="chatGpt" | 'taskWorker'| 'custom' | 'coding'  | 'sql' | "bot"
 
 export type LocalWorkerAccountType = {
   botId:string,
@@ -120,6 +117,7 @@ export type LocalWorkerAccountType = {
   appPosX:number,
   appPosY:number
   proxy?:string,
+  activeWindowOnOpenChat?:boolean,
   chatGptAuth?:string,
   browserUserAgent?:string,
   chatGptRole?:string,
@@ -152,6 +150,7 @@ export enum WorkerEventActions {
   Worker_ShowDevTools = 'Worker_ShowDevTools',
   Worker_GoBack = 'Worker_GoBack',
   Worker_ActiveWindow = 'Worker_ActiveWindow',
+  Worker_OnOpenChat = 'Worker_OnOpenChat',
 
   Worker_GetWorkerStatus = 'Worker_GetWorkerStatus',
   Worker_UpdateWorkerAccount = 'Worker_UpdateWorkerAccount',
@@ -176,18 +175,17 @@ export enum MasterEventActions {
   FinishChatGptReply = 'FinishChatGptReply',
   DeleteMessages = 'DeleteMessages',
   DebugLogMessage = 'DebugLogMessage',
-  MessageListScrollDownEnd = 'MessageListScrollDownEnd',
   UpdateWorkerStatus = 'UpdateWorkerStatus',
   GetWorkersStatus = 'GetWorkersStatus',
   RestartWorkerWindow = 'RestartWorkerWindow',
-  GetWorkersAccount = 'GetWorkersAccount',
+  GetWorkerAccount = 'GetWorkerAccount',
+  GetWorkerAccounts = 'GetWorkerAccounts',
   UpdateUserInfo = 'UpdateUserInfo',
 }
 
 export enum ServerEventActions {
   Local_CreateChatGptBot = 'Local_CreateChatGptBot',
 }
-
 
 export enum RenderActions {
   InitWaiApp="InitWaiApp",
@@ -201,10 +199,8 @@ export enum RenderActions {
   SendMultipleQuestion="SendMultipleQuestion",
   LoadBotCommands="loadBotCommands",
   GetWorkerAccount="getWorkerAccount",
-  GetWorkerAccountChatGptAuth="getWorkerAccountChatGptAuth",
-  GetWorkerAccountProxy="getWorkerAccountProxy",
   DeleteChat="DeleteChat",
-  DeleteChatMessages="deleteChatMessages",
+  DeleteChannel="DeleteChannel",
   GetWorkerStatus="getWorkerStatus",
 
   ApplyMsgId="applyMsgId",
@@ -219,7 +215,6 @@ export enum WindowActions {
   MasterWindowAction="MasterWindowAction",
   WorkerWindowKeyboardAction="WorkerWindowKeyboardAction",
   WorkerWindowMouseAction="WorkerWindowMouseAction",
-  WindowDbAction="WindowDbAction",
   MasterWindowCallbackAction = "MasterWindowCallbackAction",
   WorkerWindowCallbackAction = "WorkerWindowCallbackAction",
 }
@@ -227,6 +222,7 @@ export enum WindowActions {
 export enum CallbackButtonAction {
   Master_createTaskWorker = 'Master_createTaskWorker',
   Master_createCustomWorker = 'Master_createCustomWorker',
+  Master_createCommonBot = 'Master_createCommonBot',
   Master_createCodingWorker = 'Master_createCodingWorker',
   Master_createChatGptBotWorker = 'Master_createChatGptBotWorker',
   Master_OpenWorkerWindow = 'Master_OpenWorkerWindow',
@@ -235,6 +231,7 @@ export enum CallbackButtonAction {
   Master_closeAllWindow = "Master_closeAllWindow",
   Master_closeWorkerWindow = "Master_closeWorkerWindow",
   Master_appInfo = "Master_appInfo",
+  Master_openMessageDoc= "Master_openMessageDoc",
 
   Local_setupProxy = 'Local_setupProxy',
   Local_setupChatGptAuth = 'Local_setupChatGptAuth',
@@ -250,6 +247,9 @@ export enum CallbackButtonAction {
   Local_setupPromptFormat = 'Local_setupPromptFormat',
   Local_setupReplyParser = 'Local_setupReplyParser',
   Local_resend = 'Local_resend',
+  Local_deleteBot = 'Local_deleteBot',
+  Local_copyBot = 'Local_copyBot',
+  Local_createGroup = 'Local_createGroup',
 
   Local_cancelInlineButtons = 'Local_cancelInlineButtons',
 
@@ -257,17 +257,19 @@ export enum CallbackButtonAction {
   Render_cancelMessage = 'Render_cancelMessage',
   Render_cancelRoleConfig = 'Render_cancelRoleConfig',
   Render_saveWorkerAccount = 'Render_saveWorkerAccount',
+  Render_addWorkerAccount = "Render_addWorkerAccount",
   Render_updateWorkerAccount = 'Render_updateWorkerAccount',
+  Render_updateWorkerGroup = 'Render_updateWorkerGroup',
+  Render_createWorkerGroup = 'Render_createWorkerGroup',
   Render_resendAiMsg = 'Render_resendAiMsg',
   Render_workerStatus = 'Render_workerStatus',
   Render_setupChatGptRole = 'Render_setupChatGptRole',
   Render_sendRoleDirectly = 'Render_sendRoleDirectly',
-
-
 }
 
 export enum WorkerCallbackButtonAction {
   Worker_fetchSiteInfo = 'Worker_fetchSiteInfo',
+  Worker_debug = 'Worker_debug',
   Worker_clickLoginButton = 'Worker_clickLoginButton',
   Worker_inputPrompts = 'Worker_inputPrompts',
   Worker_getActions = 'Worker_getActions',

@@ -1,11 +1,11 @@
 import BaseTable from "./BaseTable";
-import {NewMessage} from "../../../sdk/types";
+import {ApiChatMsg} from "../../../sdk/types";
 
 export default class MsgTable extends BaseTable{
   constructor() {
     super("wai_msg");
   }
-  async save(row:NewMessage){
+  async save(row:ApiChatMsg){
     const sql = `INSERT INTO ${this.getTable()} (chatId,msgId,text,inlineButtons,entities,content,msgDate,senderId,isOutgoing)
     VALUES (?, ?, ?, ?, ?, ?, ?,?,?)
     ON DUPLICATE KEY UPDATE
@@ -27,14 +27,14 @@ export default class MsgTable extends BaseTable{
       return null;
     }
   }
-  async saveRows(rows:NewMessage[]){
+  async saveRows(rows:ApiChatMsg[]){
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
       await this.save(row)
     }
   }
 
-  async update(row: Partial<NewMessage>) {
+  async update(row: Partial<ApiChatMsg>) {
     const { msgId, chatId, ...updatedFields } = row;
     const setValues = Object.entries(updatedFields)
       .map(([key, value]) => `${key} = ?`)
@@ -56,7 +56,7 @@ export default class MsgTable extends BaseTable{
     }
   }
 
-  async getRow(chatId: string, msgId: number): Promise<NewMessage | null> {
+  async getRow(chatId: string, msgId: number): Promise<ApiChatMsg | null> {
     const sql = `
     SELECT *
     FROM ${this.getTable()}
@@ -67,7 +67,7 @@ export default class MsgTable extends BaseTable{
     try {
       const result = await this.getDb().query(sql, [chatId, msgId]);
       if (result.length > 0) {
-        return result[0] as NewMessage;
+        return result[0] as ApiChatMsg;
       } else {
         return null; // No matching row found
       }

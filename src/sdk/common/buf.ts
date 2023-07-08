@@ -51,6 +51,15 @@ function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   });
 }
 
+function blobToDateUri(blob: Blob): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+  });
+}
+
 export async function blobToBuffer(blob:Blob) {
   const ab = await blobToArrayBuffer(blob);
   return Buffer.from(ab)
@@ -67,6 +76,19 @@ export async function fileToArrayBuffer(file:File) {
       reject(reader.error);
     };
     reader.readAsArrayBuffer(file);
+  });
+}
+
+export async function fileToBase64(file:File) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(reader.result);
+    };
+    reader.onerror = () => {
+      reject(reader.error);
+    };
+    reader.readAsDataURL(file);
   });
 }
 

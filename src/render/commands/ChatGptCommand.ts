@@ -23,9 +23,10 @@ export default class ChatGptCommand extends BaseCommand{
         ["setting","Setting panel"],
         ["action","Action panel"],
         ["reloadWindow","Reload Window"],
+        ["activeWindow","Active Window"],
         ["openWindow","Open Window"],
-        ["disableMultipleQuestions","Disable multiple lines of questioning."],
-        ["sendQuestions","Send the above questions to AI"],
+        // ["disableMultipleQuestions","Disable multiple lines of questioning."],
+        // ["sendQuestions","Send the above questions to AI"],
         ["clearHistory","Clear chat History."],
       ]
     }else{
@@ -34,9 +35,10 @@ export default class ChatGptCommand extends BaseCommand{
         ["setting","Setting panel"],
         ["action","Action panel"],
         ["reloadWindow","Reload Window"],
+        ["activeWindow","Active Window"],
         ["openWindow","Open Window"],
         ["control","Control Panel"],
-        ["multipleQuestions","Enable Multiple lines of questioning"],
+        // ["multipleQuestions","Enable Multiple lines of questioning"],
         ["clearHistory","Clear chat History."],
       ]
     }
@@ -90,7 +92,7 @@ export default class ChatGptCommand extends BaseCommand{
       ...account as LocalWorkerAccountType,
       chatGptRole:text
     }
-    await new WorkerAccount(this.getChatId()).updateWorkersAccount(newAccount)
+    await new WorkerAccount(this.getChatId()).update(newAccount)
     await new BridgeWorkerWindow(this.getChatId()).updateWorkerAccount(newAccount)
   }
   async sendRoleDirectly(messageId:number){

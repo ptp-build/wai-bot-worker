@@ -15,12 +15,20 @@ import WorkerAccount from "../woker/WorkerAccount";
 import {getCustomWorkerHtml, getTaskWorkerHtml} from "../../ui/Ui";
 import { MasterBotId } from '../../sdk/setting';
 import { parseCallBackButtonPayload } from '../../sdk/common/string';
+import MasterActions from './MasterActions';
+import BigStorage from '../../worker/services/storage/BigStorage';
 
 export default class MasterWindowCallbackAction {
 
   async callbackButtonAction(data:string){
     const {path,params} = parseCallBackButtonPayload(data)
-    switch (path){
+    switch (path as CallbackButtonAction){
+      case CallbackButtonAction.Master_openMessageDoc:
+        await this.openMessageDoc(params)
+        break
+      case CallbackButtonAction.Master_createCommonBot:
+        await this.createWorker("bot")
+        break
       case CallbackButtonAction.Master_createCustomWorker:
         await this.createWorker("custom")
         break
@@ -64,7 +72,7 @@ export default class MasterWindowCallbackAction {
   }
 
   async openWorkerWindow(chatId:string) {
-    let account = await new WorkerAccount(chatId).getWorkersAccount() as LocalWorkerAccountType
+    let account = await new WorkerAccount(chatId).get() as LocalWorkerAccountType
     if(MainWindowManager.checkInstance(account!.botId)){
       console.log("MainWindowManager exists",account!.botId)
       if(MainWindowManager.getInstance(account!.botId).getMainWindow()){
@@ -79,30 +87,17 @@ export default class MasterWindowCallbackAction {
     await this.initWindow(account)
   }
   async createWorker(type:LocalWorkerType) {
-    let account = await new WorkerAccount(MasterBotId).getWorkersAccount() as LocalWorkerAccountType
+    let account = await new WorkerAccount(MasterBotId).get() as LocalWorkerAccountType
     const botId = await User.genUserId()
-    let username = "";
-    let name = "";
+    const {username,name} = WorkerAccount.getDefaultName(botId,type)
     let pluginJs = "worker_custom.js";
 
     switch (type){
-      case 'coding':
-        username = `Coding_${botId}_bot`;
-        name = `Coding #${botId}`
-        pluginJs = "worker_coding.js"
+      case 'bot':
+        pluginJs = "bot_custom.js"
         break
       case 'chatGpt':
-        username = `ChatGpt_${botId}_bot`;
-        name = `ChatGpt #${botId}`
         pluginJs = "worker_chatGpt.js"
-        break
-      case 'taskWorker':
-        username = `TaskWorker_${botId}_bot`;
-        name = `TaskWorker #${botId}`
-        break
-      case 'custom':
-        username = `CustomWorker_${botId}_bot`;
-        name = `CustomWorker #${botId}`
         break
     }
     account = {
@@ -115,19 +110,19 @@ export default class MasterWindowCallbackAction {
       appHeight:600,
       appPosX: 0,
       appPosY: 0,
-      chatGptAuth:account?.chatGptAuth || "",
+      chatGptAuth:type === "chatGpt" ? (account?.chatGptAuth || "") : "",
       taskWorkerUri:account?.taskWorkerUri || "",
       customWorkerUrl:account?.customWorkerUrl || "",
       pluginJs,
       proxy:account?.proxy || "",
     }
-    await new WorkerAccount(botId).updateWorkersAccount(account)
+    await new WorkerAccount(botId).update(account)
     await WorkerAccount.addBotList(botId)
     await WindowEventsHandler.sendEventToMasterChat(MasterEventActions.CreateWorker,{
       account
     })
     switch (type){
-      case 'coding':
+      case 'bot':
         break
       default:
         await this.initWindow(account)
@@ -146,7 +141,6 @@ export default class MasterWindowCallbackAction {
       case 'custom':
         homeUrl = account.customWorkerUrl ? account.customWorkerUrl : `data:text/html;charset=utf-8,${encodeURI(getCustomWorkerHtml())}`
         break
-
     }
     await MainWindowManager.getInstance(account!.botId).setWinOptions({
       homeUrl,
@@ -156,6 +150,7 @@ export default class MasterWindowCallbackAction {
       appPosY:account!.appPosY,
       proxy:account!.proxy,
     }).init()
+    MainWindowManager.getInstance(account!.botId).moveTop()
   }
   async appInfo(params:CallbackButtonRequest){
     const electron_env = getElectronEnv()
@@ -180,5 +175,18 @@ export default class MasterWindowCallbackAction {
     shell.openPath(pluginDir).catch((error) => {
       console.error(`Failed to open directory: ${error}`);
     });
+  }
+
+  async openMessageDoc({docId}:{docId:string}){
+    // console.log(docId)
+    if(docId){
+      const filePath = MasterActions.getFilePath(docId)
+      console.log(filePath)
+      const fullPath = BigStorage.getInstance().getFullPath(filePath)
+      console.log(fullPath)
+      shell.openPath(fullPath).catch((error) => {
+        console.error(`Failed to open directory: ${error}`);
+      });
+    }
   }
 }

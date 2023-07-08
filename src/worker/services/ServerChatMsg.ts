@@ -3,7 +3,7 @@ import ServerSession from './ServerSession';
 import ServerChatConfig from './ServerChatConfig';
 import ServerChatAiMsg from './ServerChatAiMsg';
 import ServerChatMsgStorage from './ServerChatMsgStorage';
-import { CallbackButtonAction, NewMessage } from '../../sdk/types';
+import { CallbackButtonAction, ApiChatMsg } from '../../sdk/types';
 import MsgHelper from '../../sdk/helper/MsgHelper';
 import UserMsgTable from '../models/rdms/UserMsgTable';
 import TaskTable from '../models/rdms/TaskTable';
@@ -80,10 +80,10 @@ export default class ServerChatMsg extends BaseObject{
       })
     }
   }
-  async handleNewMessage(newMessage:NewMessage){
+  async handleNewMessage(newMessage:ApiChatMsg){
     await new ServerChatMsgStorage(this.getSession(),this.getChatId()).addNewMessage(newMessage)
   }
-  formatNewMessage(msg:Partial<NewMessage>){
+  formatNewMessage(msg:Partial<ApiChatMsg>){
     return {
       chatId:this.getChatId(),
       entities:[],
@@ -92,7 +92,7 @@ export default class ServerChatMsg extends BaseObject{
       senderId:"1",
       msgDate:currentTs(),
       ...msg
-    } as NewMessage
+    } as ApiChatMsg
   }
   async sendMessage(payload: {localMsgId:number,chatId:string,text:string}) {
     const aiChatMsg = new ServerChatAiMsg(this.getSession(),this.getChatId())

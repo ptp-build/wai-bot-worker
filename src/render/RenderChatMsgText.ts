@@ -6,6 +6,7 @@ import CodingCommand from './commands/CodingCommand';
 import RenderChatMsg from './RenderChatMsg';
 import ChatGptCommand from './commands/ChatGptCommand';
 import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
+import RenderGroupChatMsg from './RenderGroupChatMsg';
 
 export default class RenderChatMsgText extends RenderChatMsg{
 
@@ -60,6 +61,10 @@ export default class RenderChatMsgText extends RenderChatMsg{
     }
   }
   async processMessage({text,entities,taskId}:{text:string,entities?:any[],taskId?:number}){
+    const group = await this.getGroup()
+    if(group){
+      return new RenderGroupChatMsg(this.getChatId(),this.getLocalMsgId()).handleGroupMsg({text,entities,taskId})
+    }
     const workerAccount = await this.getWorkerAccount()
     const msgId = await this.genMsgId()
     await this.handleNewMessage({
@@ -99,10 +104,9 @@ export default class RenderChatMsgText extends RenderChatMsg{
           }else{
             const aiMsgId = await this.askChatGptMessage(text,taskId)
             await new ChatAiMsg(this.getChatId()).save(msgId,aiMsgId)
-            return {aiMsgId,msgId,sendingState:undefined}
+            return {msgId,sendingState:undefined}
           }
         default:
-
           await new BridgeWorkerWindow(this.getChatId()).sendChatMsgToWorker({
             chatId:this.getChatId(),
             text,

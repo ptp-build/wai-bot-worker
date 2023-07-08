@@ -40,18 +40,18 @@ jobs:
       - uses: actions/setup-node@master
         with:
           node-version: 20
-      - name: install dependencies
-        run: npm install
-      - name: Package Py
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-          cache: 'pip' # caching pip dependencies
-      - run: |
-          cd py-wai-bot-rpa
-          pip install -r requirements.txt
-          cd ..
-          npm run build:wai-bot-rpa
+#      - name: install dependencies
+#        run: npm install
+#      - name: Package Py
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: '3.9'
+#          cache: 'pip' # caching pip dependencies
+#      - run: |
+#          cd py-wai-bot-rpa
+#          pip install -r requirements.txt
+#          cd ..
+#          npm run build:wai-bot-rpa
       - name: publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

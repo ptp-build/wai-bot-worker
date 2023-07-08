@@ -43,7 +43,11 @@ export default class BridgeMasterWindow extends Bridge{
     return this.invokeMasterWindowAction(MasterEventActions.DeleteMessages, payload);
   }
 
-  getWorkersAccount(payload:any){
-    return this.invokeMasterWindowAction(MasterEventActions.GetWorkersAccount, payload);
+  getWorkerAccount(payload:any){
+    return this.invokeMasterWindowAction(MasterEventActions.GetWorkerAccount, payload);
+  }
+
+  getWorkerAccounts(payload?:any){
+    return this.invokeMasterWindowAction(MasterEventActions.GetWorkerAccounts, payload);
   }
 }

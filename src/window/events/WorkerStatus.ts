@@ -8,7 +8,7 @@ export default class WorkerStatus{
     this.botId = botId
   }
   async sendOffline(){
-    const workerAccount = await new WorkerAccount(this.botId).getWorkersAccount() as LocalWorkerAccountType
+    const workerAccount = await new WorkerAccount(this.botId).get() as LocalWorkerAccountType
     if(workerAccount && ["chatGpt", 'taskWorker', 'custom' ].includes(workerAccount.type)){
       return await WindowEventsHandler.sendEventToMasterChat(MasterEventActions.UpdateWorkerStatus, {
         statusBot: BotStatusType.OFFLINE,

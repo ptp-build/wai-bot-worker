@@ -1,6 +1,6 @@
 import { ElectronApi, MasterEventActions, RenderActions, WorkerEventActions } from '../types';
+import { MasterBotId } from '../setting';
 
-const MasterBotId = "1000";
 
 export default class Bridge{
   private bridge: ElectronApi;

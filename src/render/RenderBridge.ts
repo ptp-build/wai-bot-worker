@@ -8,28 +8,14 @@ import BridgeMasterWindow from '../sdk/bridge/BridgeMasterWindow';
 import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
 import { MasterBotId } from '../sdk/setting';
 import BotWorkerStatus from '../sdk/botWorkerStatus/BotWorkerStatus';
+import WorkerGroup from '../window/woker/WorkerGroup';
 
 export default class RenderBridge {
-  static async initWaiApp(){
-    const botIds = await WorkerAccount.getBotList()
-    const botAccounts = []
-    for (let i = 0; i < botIds.length; i++) {
-      botAccounts.push(await new WorkerAccount(botIds[i]).getWorkersAccount())
-    }
-    const botWorkersStatus = await new BridgeMasterWindow().getWorkersStatus()
-    BotWorkerStatus.updateAll(botWorkersStatus)
-    return {
-      botAccounts,
-      botWorkersStatus
-    }
-  }
   static async callApi(botId:string,action:RenderActions,payload:any){
-    if(
-      action !== RenderActions.UpdateWorkerStatus
-    ){
+    if(action !== RenderActions.UpdateWorkerStatus){
       console.debug("[callApi]",action,payload)
     }
-    if(botId === MasterBotId){ //master render
+    if(botId === MasterBotId){
       switch (action){
         case RenderActions.InitWaiApp:
           return await RenderBridge.initWaiApp()
@@ -44,7 +30,9 @@ export default class RenderBridge {
           return await new RenderChatMsg(chatId,localMsgId).updateMessage({msgId,text,entities})
         case RenderActions.DeleteChat:
           return await new RenderChatMsg(payload.chatId).deleteChat()
-        case RenderActions.DeleteChatMessages:
+        case RenderActions.DeleteChannel:
+          return await new RenderChatMsg(payload.chatId).deleteChannel()
+        case RenderActions.DeleteMessages:
           return await new RenderChatMsg(payload.chatId).deleteChatMessages(payload.ids)
         case RenderActions.SendMultipleQuestion:
           return await new RenderChatMsg(payload.chatId).sendMultipleQuestion()
@@ -56,15 +44,31 @@ export default class RenderBridge {
           return await new RenderChatMsgCommand(payload.botId).loadBotCommands()
         case RenderActions.AnswerCallbackButton:
           return await new RenderCallbackButton(payload.chatId).process(payload.data,payload.token)
-        case RenderActions.GetWorkerAccountProxy:
-          return await new WorkerAccount(payload.chatId).getProxy()
         case RenderActions.GetWorkerAccount:
-          return await new WorkerAccount(payload.chatId).getWorkersAccount()
-        case RenderActions.GetWorkerAccountChatGptAuth:
-          return await new WorkerAccount(payload.chatId).getChatGptAuth()
+          return await new WorkerAccount(payload.botId).get()
         case RenderActions.UpdateWorkerStatus:
           return BotWorkerStatus.update(payload)
       }
+    }
+  }
+
+  static async initWaiApp(){
+    const botIds = await WorkerAccount.getBotList()
+    const groupIds = await WorkerGroup.getBotList()
+    const botAccounts = []
+    const botGroups = []
+    for (let i = 0; i < botIds.length; i++) {
+      botAccounts.push(await new WorkerAccount(botIds[i]).get())
+    }
+    for (let i = 0; i < groupIds.length; i++) {
+      botGroups.push(await new WorkerGroup(groupIds[i]).get())
+    }
+    const botWorkersStatus = await new BridgeMasterWindow().getWorkersStatus()
+    BotWorkerStatus.updateAll(botWorkersStatus)
+    return {
+      botGroups,
+      botAccounts,
+      botWorkersStatus
     }
   }
   static async getWorkerStatus(botId:string){

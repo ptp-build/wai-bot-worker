@@ -1,6 +1,6 @@
 import { MasterEventActions, MasterEvents } from '../../sdk/types';
 import RenderChatMsg from '../../render/RenderChatMsg';
-import { getMasterWindow } from '../../ui/window';
+import { getMasterWindowWebContent } from '../../ui/window';
 import ChatAiMsg from '../ChatAiMsg';
 import MainChatMsgStorage from '../MainChatMsgStorage';
 import BotWorkerStatus from '../../sdk/botWorkerStatus/BotWorkerStatus';
@@ -46,10 +46,8 @@ export default class WindowEventsHandler {
         break
     }
 
-    if(getMasterWindow() && getMasterWindow()?.webContents){
-      getMasterWindow()
-        ?.webContents
-        .send(MasterEvents.Master_Chat_Msg, action, payload);
+    if(getMasterWindowWebContent()){
+      getMasterWindowWebContent()!.send(MasterEvents.Master_Chat_Msg, action, payload);
     }
     return res
   }

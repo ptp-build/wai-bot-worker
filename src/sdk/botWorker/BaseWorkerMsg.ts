@@ -1,4 +1,4 @@
-import { CallbackButtonAction, NewMessage } from '../types';
+import { CallbackButtonAction, ApiChatMsg } from '../types';
 import BaseKeyboardAndMouseEvents from './BaseKeyboardAndMouseEvents';
 import FileHelper from '../helper/FileHelper';
 import { arrayBufferToBase64 } from '../common/buf';
@@ -33,7 +33,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
   constructor(botId: string) {
     super(botId)
   }
-  replyUpdateMessage(msgId: number, chatId: string,message:Partial<NewMessage>) {
+  replyUpdateMessage(msgId: number, chatId: string,message:Partial<ApiChatMsg>) {
     return this.getBridgeMasterWindow().updateMessage({
       updateMessage: message,
     })
@@ -76,11 +76,11 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
     })
   }
   isLogoUpdated(){
-    return localStorage.getItem("updateSiteLogo1_"+this.botId)
+    return localStorage.getItem("updateSiteLogo2_"+this.botId)
   }
 
   logoUpdated(){
-    return localStorage.setItem("updateSiteLogo_"+this.botId,"1")
+    return localStorage.setItem("updateSiteLogo2_"+this.botId,"1")
   }
   async updateSiteLogo(botId:string,logoUrl:string){
     if(this.isLogoUpdated()){
@@ -224,7 +224,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
         type: 'callback',
       },
     ]);
-    void this.getBridgeMasterWindow().newContentMessage({
+    return this.getBridgeMasterWindow().newContentMessage({
       newMessage: {
         chatId: this.botId,
         content,
@@ -235,7 +235,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
   }
 
   replyMessage(text: string, inlineButtons?: any[], chatId?: string,isOutgoing?:boolean,senderId?:string,sendToMainChat?:boolean) {
-    void this.getBridgeMasterWindow().newMessage({
+    return this.getBridgeMasterWindow().newMessage({
       sendToMainChat,
       newMessage: {
         chatId:chatId || this.botId,
@@ -279,5 +279,4 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
       checkElement();
     });
   }
-
 }

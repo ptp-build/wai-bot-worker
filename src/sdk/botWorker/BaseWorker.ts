@@ -26,8 +26,71 @@ export default class BaseWorker extends BaseWorkerMsg{
     this.statusBotWorker = BotWorkerStatusType.WaitToReady
     this.workerAccount = workerAccount
     this.botId = workerAccount.botId;
-    this.handleSiteInfo()
+    if(this.workerAccount.type !== "bot"){
+      this.handleSiteInfo()
+    }
   }
+
+  async replyJsonFile(name:string,json:any){
+    const fileData = JSON.stringify(json,null,2)
+    await this.replyMessageTextDoc(
+      this.botId,name,fileData,fileData.length,"application/json",
+      "plainData\r\n",
+      [
+        MsgHelper.buildOpenDocBtn()
+      ]
+    )
+  }
+  async replyMessageTextDoc(chatId:string,fileName:string,fileData:string,size:number,mimeType:string,type:"plainData\r\n"|"base64" = "base64",inlineButtons?:any[][]){
+    if(type === 'base64'){
+      await this.replyMessageDoc(chatId,fileName,"data:"+mimeType+";"+type+","+btoa(unescape(encodeURIComponent(fileData))),size,mimeType,inlineButtons)
+    }else{
+      await this.replyMessageDoc(chatId,fileName,"data:"+mimeType+";"+type+fileData,size,mimeType,inlineButtons)
+    }
+  }
+  async replyMessageDoc(chatId:string,fileName:string,fileData:string,size:number,mimeType:string,inlineButtons?:any[][]){
+    const id = await new FileHelper(chatId).save(fileData)
+    return this.replyMessageWithCancel({
+      document:{
+        id,
+        fileName,
+        size:fileData.length,
+        mimeType,
+        timestamp:currentTs()
+      }
+    },inlineButtons)
+  }
+  async handleSiteLogo(siteInfo:SiteInfo){
+    if(this.workerAccount.avatarHash){
+      return
+    }
+    if(!this.isLogoUpdated()){
+      let hasLogo = false
+      if(siteInfo.logo) {
+        try {
+          if (siteInfo.logo.url) {
+            await this.updateSiteLogo(this.botId, siteInfo.logo.url)
+            hasLogo = true
+          }
+          if (siteInfo.logo.dataUri) {
+            await this.updateSiteLogo(this.botId, siteInfo.logo.dataUri)
+            hasLogo = true
+          }
+        } catch (e) {
+          console.error(e)
+        }
+      }
+      if(!hasLogo){
+        console.warn("no site logo found!",siteInfo)
+      }
+    }
+  }
+  handleSiteInfo() {
+    const siteInfo = this.getSiteInfo();
+    this.handleSiteLogo(siteInfo).catch(console.error)
+    return siteInfo
+  }
+
   getWorkerAccount(){
     return this.workerAccount
   }
@@ -82,32 +145,45 @@ export default class BaseWorker extends BaseWorkerMsg{
     }
   }
   addEvents() {
-    console.log("addEvents from BaseWorker")
+    console.log("addEvents",this.botId)
     window.electron?.on(WorkerEvents.Worker_Chat_Msg, async (botId:string, action:WorkerEventActions, payload:any) => {
-      await this.handleEvent(action, payload);
+      if(botId === this.botId){
+        await this.handleEvent(action, payload);
+      }
     });
-
-    window.addEventListener("keypress",(e)=>{
-      console.debug("[keypress]",e.key,e.code)
-    })
-
-    window.addEventListener("mousedown",(e)=>{
-      console.debug("[mousedown]",e.button,e.x,e.y)
-    })
+    if(this.workerAccount.type !== 'bot'){
+      window.addEventListener("keypress",(e)=>{
+        console.debug("[keypress]",e.key,e.code)
+      })
+      window.addEventListener("mousedown",(e)=>{
+        console.debug("[mousedown]",e.button,e.x,e.y)
+      })
+    }
     return this;
   }
 
   actions(){
-    return [
-      [
-        MsgHelper.buildCallBackAction("SiteInfo",WorkerCallbackButtonAction.Worker_fetchSiteInfo)
+    if(this.workerAccount.type !== 'bot'){
+      return [
+        [
+          MsgHelper.buildCallBackAction("SiteInfo",WorkerCallbackButtonAction.Worker_fetchSiteInfo)
+        ]
       ]
-    ]
+    }else{
+      return [
+        [
+          MsgHelper.buildCallBackAction("Debug",WorkerCallbackButtonAction.Worker_debug)
+        ]
+      ]
+    }
   }
   async handleCallBackButton({ path }:{path:string}) {
     switch (path) {
       case WorkerCallbackButtonAction.Worker_getActions:
         await this.replyTextWithCancel("Actions", this.actions());
+        break;
+      case WorkerCallbackButtonAction.Worker_debug:
+        await this.replyTextWithCancel("Debug");
         break;
       case WorkerCallbackButtonAction.Worker_browserUserAgent:
         await this.replyTextWithCancel(window.navigator.userAgent)
@@ -123,54 +199,7 @@ export default class BaseWorker extends BaseWorkerMsg{
         break;
       case WorkerCallbackButtonAction.Worker_fetchSiteInfo:
         const siteInfo = this.handleSiteInfo()
-        const fileData = JSON.stringify(siteInfo)
-        await this.replyMessageTextDoc(this.botId,"siteInfo.json",fileData,fileData.length,"text/txt")
+        await this.replyJsonFile("SiteInfo.json",siteInfo)
     }
-  }
-
-  async replyMessageTextDoc(chatId:string,fileName:string,fileData:string,size:number,mimeType:string){
-    await this.replyMessageDoc(chatId,fileName,"data:"+mimeType+";base64,"+btoa(unescape(encodeURIComponent(fileData))),size,mimeType)
-  }
-  async replyMessageDoc(chatId:string,fileName:string,fileData:string,size:number,mimeType:string){
-    const id = await new FileHelper(chatId).save(fileData)
-    return await this.replyMessageWithCancel({
-      document:{
-        id,
-        fileName,
-        size:fileData.length,
-        mimeType,
-        timestamp:currentTs()
-      }
-    })
-  }
-  async handleSiteLogo(siteInfo:SiteInfo){
-    if(this.workerAccount.avatarHash){
-      return
-    }
-    if(!this.isLogoUpdated()){
-      let hasLogo = false
-      if(siteInfo.logo) {
-        try {
-          if (siteInfo.logo.url) {
-            await this.updateSiteLogo(this.botId, siteInfo.logo.url)
-            hasLogo = true
-          }
-          if (siteInfo.logo.dataUri) {
-            await this.updateSiteLogo(this.botId, siteInfo.logo.dataUri)
-            hasLogo = true
-          }
-        } catch (e) {
-          console.error(e)
-        }
-      }
-      if(!hasLogo){
-        console.warn("no site logo found!",siteInfo)
-      }
-    }
-  }
-  handleSiteInfo() {
-    const siteInfo = this.getSiteInfo();
-    this.handleSiteLogo(siteInfo).catch(console.error)
-    return siteInfo
   }
 }

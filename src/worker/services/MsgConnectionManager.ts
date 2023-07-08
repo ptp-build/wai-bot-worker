@@ -3,7 +3,6 @@ import {AccountUser} from "../../sdk/types";
 
 let currentInstance:MsgConnectionManager;
 
-
 export default class MsgConnectionManager {
   private accountUsers: Map<string, AccountUser>;
   private addressAccountMap: Map<string, string[]>;

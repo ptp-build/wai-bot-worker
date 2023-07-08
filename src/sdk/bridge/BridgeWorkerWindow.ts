@@ -8,7 +8,9 @@ export default class BridgeWorkerWindow extends Bridge{
   activeWindow(botId:string){
     return this.invokeWorkerWindowAction(WorkerEventActions.Worker_ActiveWindow,{botId})
   }
-
+  onOpenChat(botId:string){
+    return this.invokeWorkerWindowAction(WorkerEventActions.Worker_OnOpenChat,{botId})
+  }
   notifyWorkerStatus(botId:string,statusBot:any,statusBotWorker:any){
     return this.invokeWorkerWindowAction(WorkerEventActions.Worker_NotifyWorkerStatus,{
       botId,

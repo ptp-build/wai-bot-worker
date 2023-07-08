@@ -1,7 +1,7 @@
 import DbStorage from "../../../services/db/DbStorage";
 import {MysqlClient} from "../../../services/db/MysqlClient";
 import MsgTable from "../MsgTable";
-import {NewMessage} from "../../../../sdk/types";
+import {ApiChatMsg} from "../../../../sdk/types";
 import { currentTs } from '../../../../sdk/common/time';
 
 describe('MsgTable', () => {
@@ -39,8 +39,8 @@ describe('MsgTable', () => {
 
   describe("save", () => {
     it("should save a new message row and update it in the table", async () => {
-      // Create a sample NewMessage object for testing
-      const newMessage: NewMessage = {
+      // Create a sample ApiChatMsg object for testing
+      const newMessage: ApiChatMsg = {
         chatId: "chat456",
         msgId: 1,
         text: "Test message",
@@ -57,7 +57,7 @@ describe('MsgTable', () => {
 
       // Assert that the result is not null and insertion was successful
       expect(result1).not.toBeNull();
-      const updatedMessage: Partial<NewMessage> = {
+      const updatedMessage: Partial<ApiChatMsg> = {
         msgId: 1,
         chatId: "chat456",
         text: "Updated message",
@@ -81,8 +81,8 @@ describe('MsgTable', () => {
 
   describe("getRow", () => {
     it("should retrieve the specified row from the table", async () => {
-      // Create a sample NewMessage object and insert it into the table
-      const newMessage: NewMessage = {
+      // Create a sample ApiChatMsg object and insert it into the table
+      const newMessage: ApiChatMsg = {
         msgId: 2,
         text: "Test message",
         isOutgoing: true,

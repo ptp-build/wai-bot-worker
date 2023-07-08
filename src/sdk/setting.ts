@@ -1,26 +1,13 @@
 export const MasterBotId = "1000";
 
 export const TEXT_AI_THINKING = "..."
-export const NameFirstBot = "Wai";
-export const DEFAULT_WAI_USER_BIO = 'I am a assistant'
-export const BOT_FOLDER_TITLE = 'Wai'
-export const BOT_FOLDER_ID = 1
-
-
-export const DEFAULT_BOT_NO_AI_COMMANDS = [
-  {
-    "command": "start",
-    "description": "Start a chat"
-  },
-]
-
-export const DEFAULT_BOT_AI_COMMANDS = []
+export const NameFirstBot = "Bot Father";
 
 
 export const CurrentUserInfo = {
   "id": "1",
   "accessHash": "",
-  "firstName": "Me",
+  "firstName": "MasterChat",
   "lastName": "",
   "canBeInvitedToGroup": false,
   "hasVideoAvatar": false,
@@ -34,7 +21,7 @@ export const CurrentUserInfo = {
   },
   "usernames": [
     {
-      "username": "me",
+      "username": "MasterChat",
       "isActive": true,
       "isEditable": true
     }
@@ -50,16 +37,14 @@ export const WaiUserInfo = {
   "fullInfo": {
     "isBlocked": false,
     "noVoiceMessages": false,
-    "bio": DEFAULT_WAI_USER_BIO,
+    "bio": 'I am a assistant',
     "botInfo": {
       "botId": MasterBotId,
-      "description": DEFAULT_WAI_USER_BIO,
+      "description": 'I am a assistant',
       "menuButton": {
         "type": "commands"
       },
-      "commands": DEFAULT_BOT_AI_COMMANDS.map((cmd:any)=>{
-        return {...cmd,botId:MasterBotId}
-      })
+      "commands": []
     }
   },
   "accessHash": "",
@@ -128,6 +113,9 @@ export const WaiChatInfo = {
   "isJoinRequest": true,
   "isForum": false,
   "isListed": true,
+  "adminRights": {
+    "changeInfo": true,
+  },
   "settings": {
     "isAutoArchived": false,
     "canReportSpam": false,
@@ -140,9 +128,9 @@ export const WaiChatInfo = {
 }
 
 export const ChatFolders = {
-  [BOT_FOLDER_ID]:{
-    "id": BOT_FOLDER_ID,
-    "title": BOT_FOLDER_TITLE,
+  [1]:{
+    "id": 1,
+    "title": "Groups",
     "includedChatIds": [
       MasterBotId
     ],
@@ -172,9 +160,19 @@ export const ChatFolders = {
   },
   4:{
     "id": 4,
-    "title": "Platform",
+    "title": "Workers",
     "includedChatIds": [
       "20006","20007","20008","20009","20011"
+    ],
+    "channels": false,
+    "pinnedChatIds": [],
+    "excludedChatIds": []
+  },
+  5:{
+    "id": 5,
+    "title": "Notify",
+    "includedChatIds": [
+
     ],
     "channels": false,
     "pinnedChatIds": [],
@@ -183,9 +181,101 @@ export const ChatFolders = {
 }
 export const FolderIds = [
   0,
-  BOT_FOLDER_ID,
-  2,
-  3,
-  4
+  ...Object.keys(ChatFolders).map(Number)
 ]
-
+export const DefaultAdminMembersById = {
+  "userId": "",
+  "isAdmin": true,
+  "adminRights": {
+    "other": true,
+    "changeInfo": true,
+    "banUsers": true,
+    "addAdmins": true,
+    "anonymous": false,
+    "manageCall": true,
+    "inviteUsers": true,
+    "pinMessages": true,
+    "editMessages": true,
+    "manageTopics": true,
+    "postMessages": true,
+    "deleteMessages": true
+  }
+}
+export const DefaultGroupInfo = {
+  "chatInfo": {
+    "id": "",
+    "type": "chatTypeSuperGroup",
+    "isMin": false,
+    "title": "",
+    "photos": [],
+    "isForum": false,
+    "isMuted": false,
+    "isListed": true,
+    "joinDate": 1688572362,
+    "settings": {
+      "canAddContact": false,
+      "canReportSpam": false,
+      "isAutoArchived": false,
+      "canBlockContact": false
+    },
+    "isCreator": true,
+    "accessHash": "",
+    "avatarHash": "",
+    "isVerified": false,
+    "adminRights": {
+      "changeInfo": true,
+      // "other": true,
+      // "banUsers": true,
+      // "addAdmins": true,
+      // "anonymous": false,
+      // "manageCall": true,
+      // "inviteUsers": true,
+      // "pinMessages": true,
+      // "editMessages": true,
+      // "manageTopics": true,
+      // "postMessages": true,
+      // "deleteMessages": true
+    },
+    "isNotJoined": false,
+    "isProtected": false,
+    "unreadCount": 0,
+    "isCallActive": false,
+    "isJoinToSend": false,
+    "membersCount": 0,
+    "isJoinRequest": false,
+    "sendAsPeerIds": [],
+    "hasPrivateLink": false,
+    "hasVideoAvatar": false,
+    "isCallNotEmpty": false,
+    "isSignaturesShown": false,
+    "defaultBannedRights": defaultBannedRights,
+    "unreadMentionsCount": 0,
+    "lastReadInboxMessageId": 0,
+    "lastReadOutboxMessageId": 0
+  },
+  "chatInfoFull": {
+    adminMembersById:{
+      "1":DefaultAdminMembersById
+    },
+    "about": "",
+    "members": [
+      {
+        isAdmin:true,
+        userId:"",
+        joinedDate:0
+      }
+    ],
+    "inviteLink": "",
+    "botCommands": [],
+    "kickedMembers": [],
+    "canViewMembers": true,
+    "statisticsDcId": 5,
+    "enabledReactions": {
+      "type": "all",
+      "areCustomAllowed": true
+    },
+    "canViewStatistics": false,
+    "isPreHistoryHidden": true,
+    "areParticipantsHidden": false
+  }
+}

@@ -1,6 +1,6 @@
 import MsgTable from "../models/rdms/MsgTable";
 import KvCache from "./kv/KvCache";
-import {NewMessage} from "../../sdk/types";
+import {ApiChatMsg} from "../../sdk/types";
 import BaseObject from "./BaseObject";
 import ServerSession from "./ServerSession";
 import { currentTs } from '../../sdk/common/time';
@@ -28,7 +28,7 @@ export default class ServerChatMsgStorage extends BaseObject{
       }
     }
   }
-  async addNewMessage(msg:NewMessage){
+  async addNewMessage(msg:ApiChatMsg){
     if(!msg.msgDate){
       msg.msgDate = currentTs();
     }
@@ -52,7 +52,7 @@ export default class ServerChatMsgStorage extends BaseObject{
       await this.kvMsg.put(`${this.keyPrefix}_${msg.msgId}`,msg)
     }
   }
-  async updateMessage(msg:Partial<NewMessage>){
+  async updateMessage(msg:Partial<ApiChatMsg>){
     if(this.enableMysql){
       await this.tableMsg.update(msg)
     }else{
