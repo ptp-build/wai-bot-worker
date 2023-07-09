@@ -2,8 +2,7 @@ const fs = require('fs');
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 /**
-export REPLACE_HOST=
-export VERSION=1.0.1
+export VERSION=v2.0.12
 node tools/wai-change-release-version.js
 
  */
@@ -106,9 +105,9 @@ async function replaceApi(orgHost,replaceHost){
 (async () => {
   if (version) {
     try {
-      if(process.env.REPLACE_HOST){
-        await replaceApi(orgHost,process.env.REPLACE_HOST)
-      }
+      // if(process.env.REPLACE_HOST){
+      //   await replaceApi(orgHost,process.env.REPLACE_HOST)
+      // }
       await replaceFileVersion(packageJsonPath, version);
 
       setTimeout(async () => {

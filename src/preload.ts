@@ -112,7 +112,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     let appendChild = true
     if(account && account.customWorkerUrl){
       const {customWorkerUrl} = account
-      if(customWorkerUrl!.includes("twitter") || customWorkerUrl!.includes("discord")){
+      if(
+        customWorkerUrl!.includes("twitter")
+        || customWorkerUrl!.includes("discord")
+        || customWorkerUrl!.includes("github")
+      ){
         appendChild = false
       }
     }
