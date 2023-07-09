@@ -2,7 +2,7 @@ const fs = require('fs');
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 /**
-export VERSION=v2.0.12
+export VERSION=2.0.13
 node tools/wai-change-release-version.js
 
  */
