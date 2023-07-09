@@ -70,7 +70,11 @@ export const getErrorHtml = (
 }
 
 
-export const getErrorHtml1 = ()=>{
+export const getErrorHtmlPage = (error:{
+  errorCode:string,
+  errorMsg:string,
+  url:string
+})=>{
   return `<!DOCTYPE html>
 <html lang='en'>
 <head>
@@ -78,8 +82,11 @@ export const getErrorHtml1 = ()=>{
   <title>Error</title>
 </head>
 <body>
-<div id="message" style='width: 100%;height:100vh;display: flex; flex-direction:column;align-items: center;justify-content: center'>
-  <h2 style='word-break:break-word'>Error</h2>
+<div id="message" style='width: 100%;height:100vh;display: flex; flex-direction:column;align-items: flex-start;justify-content: center'>
+  <h2 style='word-break:break-word'>${error.errorCode}</h2>
+  <p>
+    ${error.errorMsg}
+  </p>
 </div>
 </body>
 </html>

@@ -31,36 +31,52 @@ export function parseCodeBlock(text:string,entities?:any[]) {
   };
 }
 
-export function parseMentionName(text:string,userNames:Record<string, string> ={}) {
+export function parseMentionName(text:string,userNames:Record<string, string> ={},ignoreEntities:any[] = []) {
   const regex = /@\w+/g;
   let match;
   let result = [];
   while ((match = regex.exec(text)) !== null) {
     if(userNames[match[0]]){
-      result.push({
-        type:"MessageEntityMentionName",
-        userId:userNames[match[0]],
+      const entity = {
+        type: 'MessageEntityMentionName',
+        userId: userNames[match[0]],
         offset: match.index,
         length: match[0].length
-      });
+      };
+      const shouldIgnore = ignoreEntities.some(ignoreEntity =>
+        entity.offset >= ignoreEntity.offset && entity.offset <= ignoreEntity.offset + ignoreEntity.length
+      );
+
+      if (!shouldIgnore) {
+        result.push(entity);
+      }
     }
   }
-  return result
+  return result.concat(ignoreEntities)
 }
 
-export function parseCmd(text: string, commands: string[]) {
+export function parseCmd(text: string, commands: string[],ignoreEntities:any[] = []) {
   if (commands.length === 0) return [];
   const regex = new RegExp(`(?<=\\/)(${commands.join('|')})\\b`, 'g');
   const matches = [];
   let match;
   while ((match = regex.exec(text)) !== null) {
-    matches.push({
+    const entity = {
       type: 'MessageEntityBotCommand',
-      offset: match.index-1,
-      length: match[0].length+1
-    });
+      offset: match.index - 1,
+      length: match[0].length + 1
+    };
+
+    // Check if entity should be ignored
+    const shouldIgnore = ignoreEntities.some(ignoreEntity =>
+      entity.offset >= ignoreEntity.offset && entity.offset <= ignoreEntity.offset + ignoreEntity.length
+    );
+
+    if (!shouldIgnore) {
+      matches.push(entity);
+    }
   }
-  return matches;
+  return matches.concat(ignoreEntities);
 }
 
 interface Entity {
@@ -90,13 +106,12 @@ export function parseTag(text:string, tagDelimiter:string, entityType:'MessageEn
 export function parseEntities(text:string,commands:string[],userNames:Record<string, string> ={}){
   const codeParseRes = parseCodeBlock(text)
   text = codeParseRes.text;
+  let entities = codeParseRes.entities || []
+  //parseTag(text,"`","MessageEntityBold"),
+  entities = parseCmd(text,commands,entities)
+  entities = parseMentionName(text,userNames,entities)
   return {
     text,
-    entities:[
-      ...codeParseRes.entities,
-      // ...parseTag(text,"`","MessageEntityBold"),
-      ...parseCmd(text,commands),
-      ...parseMentionName(text,userNames),
-    ]
+    entities
   }
 }

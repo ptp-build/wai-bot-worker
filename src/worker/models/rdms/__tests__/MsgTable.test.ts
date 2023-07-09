@@ -10,32 +10,8 @@ describe('MsgTable', () => {
   beforeAll(async () => {
     // @ts-ignore
     DbStorage.getInstance().setHandler(new MysqlClient().setConfig( global['DBInstanceConfig']));
-
     storage = new MsgTable().setTable("wai_msg");
-    await storage.execute("CREATE TABLE IF NOT EXISTS `wai_msg` (\n" +
-      "  `id` int unsigned NOT NULL AUTO_INCREMENT,\n" +
-      "  `chatId` varchar(20) DEFAULT NULL,\n" +
-      "  `msgId` bigint DEFAULT NULL,\n" +
-      "  `text` longtext,\n" +
-      "  `inlineButtons` json DEFAULT NULL,\n" +
-      "  `entities` json DEFAULT NULL,\n" +
-      "  `content` json DEFAULT NULL,\n" +
-      "  `msgDate` int DEFAULT NULL,\n" +
-      "  `senderId` varchar(20) DEFAULT NULL,\n" +
-      "  `isOutgoing` tinyint(1) DEFAULT NULL,\n" +
-      "  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,\n" +
-      "  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" +
-      "  PRIMARY KEY (`id`),\n" +
-      "  UNIQUE KEY `chatId` (`chatId`,`msgId`)\n" +
-      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;");
   });
-
-
-  afterAll(async () => {
-    await storage.execute("DROP TABLE IF EXISTS wai_msg;");
-  });
-
-
 
   describe("save", () => {
     it("should save a new message row and update it in the table", async () => {
@@ -72,7 +48,7 @@ describe('MsgTable', () => {
 
       // Assert that the result is true, indicating successful update
       expect(result).toBe(true);
-
+      await storage.getDb().execute("drop table if exists wai_msg_chat456")
       // You can also assert other conditions, such as checking if the specified fields are updated
       // or retrieving the updated row from the table and comparing it with the updatedMessage object
     });
@@ -100,7 +76,7 @@ describe('MsgTable', () => {
       console.log(retrievedRow)
       // Assert that the retrievedRow is not null
       expect(retrievedRow).not.toBeNull();
-
+      await storage.getDb().execute("drop table if exists wai_msg_chat456")
     });
 
     it("should return null if the specified row does not exist", async () => {
@@ -108,8 +84,7 @@ describe('MsgTable', () => {
       const retrievedRow = await storage.getRow("nonexistent", 1);
       // Assert that the retrievedRow is null
       expect(retrievedRow).toBeNull();
+      await storage.getDb().execute("drop table if exists wai_msg_nonexistent")
     });
   });
-
-
 });

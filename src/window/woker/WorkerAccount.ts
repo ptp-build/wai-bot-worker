@@ -3,6 +3,7 @@ import { LocalWorkerAccountType, LocalWorkerType } from '../../sdk/types';
 import WorkerAccountTable, { WorkerAccountTableType } from '../../worker/models/rdms/WorkerAccountTable';
 import DbStorage from '../../worker/services/db/DbStorage';
 import { MasterBotId } from '../../sdk/setting';
+import MsgTable from '../../worker/models/rdms/MsgTable';
 
 const cacheAccounts =  new Map<string, LocalWorkerAccountType | Record<string, any>>();
 
@@ -58,6 +59,8 @@ export default class WorkerAccount{
         botList.push(botId)
         await KvCache.getInstance().put("worker_accounts_list",botList)
       }
+    }else{
+      await new MsgTable().createTable(botId)
     }
   }
 
@@ -102,16 +105,12 @@ export default class WorkerAccount{
         username = `ChatGpt_${botId}_bot`;
         name = `ChatGpt #${botId}`
         break
-      case 'taskWorker':
-        username = `TaskWorker_${botId}_bot`;
-        name = `TaskWorker #${botId}`
-        break
       case 'custom':
-        username = `CustomWorker_${botId}_bot`;
+        username = `worker_${botId}_bot`;
         name = `CustomWorker #${botId}`
         break
       default:
-        username = `bot_${botId}_bot`;
+        username = `${botId}_bot`;
         name = `Bot #${botId}`
     }
     return {

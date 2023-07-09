@@ -1,16 +1,13 @@
-import BaseWorker from "../../../sdk/botWorker/BaseWorker";
+import BaseWorker from '../../../sdk/botWorker/BaseWorker';
 import {
   BotStatusType,
-  BotWorkerStatusType,
-  CallbackButtonAction,
   ChatGptAiTaskType,
   LocalWorkerAccountType,
   RenderActions,
   WorkerCallbackButtonAction,
   WorkerEventActions,
-  WorkerEvents
-} from "../../../sdk/types";
-import MsgHelper from "../../../sdk/helper/MsgHelper";
+  WorkerEvents,
+} from '../../../sdk/types';
 import { generateRandomString } from '../../../sdk/common/string';
 import { JSON_HEADERS } from '../../../sdk/common/http';
 
@@ -26,18 +23,15 @@ export default class BotWorker extends BaseWorker {
   }
   init() {
     console.log("[BotWorker INIT]",this.botId)
-    this.statusBot = BotStatusType.STARTED;
-    this.statusBotWorker = BotWorkerStatusType.WaitToReady
 
     if(!this.getWorkerAccount().taskWorkerUri){
-      this.statusBot = BotStatusType.TaskWorkerNoApi;
-      this.reportStatus(this.statusBot,this.statusBotWorker)
+      this.reportStatus()
     }else{
       this.fetchTask().catch(console.error)
     }
   }
   async fetchTask(){
-    this.reportStatus(this.statusBot!,this.statusBotWorker!)
+    this.reportStatus(this.statusBot)
     this.getWorkersStatus()
     try {
       // @ts-ignore
@@ -51,11 +45,9 @@ export default class BotWorker extends BaseWorker {
           // await this.askMessageByTaskWorker(task.text,task.taskId);
         }
       }
-      this.statusBot = BotStatusType.ONLINE;
-      this.statusBotWorker = BotWorkerStatusType.Ready
+      this.reportStatus(BotStatusType.ONLINE)
     }catch (e){
-      this.statusBot = BotStatusType.TaskWorkerApiError;
-      this.statusBotWorker = BotWorkerStatusType.WaitToReady
+      this.reportStatus(BotStatusType.InvokeApiError)
       console.error(e)
     }
     setTimeout(async () => await this.fetchTask(), 5000);
@@ -93,29 +85,29 @@ export default class BotWorker extends BaseWorker {
   }
 
   async loop(){
-    this.reportStatus(this.statusBot!,this.statusBotWorker!)
+    this.reportStatus()
     this.getWorkersStatus()
   }
   async handleCallBackButton({ path }:{path:string}) {
-    const statusBots = [
-      BotStatusType.TaskWorkerNoApi,
-      BotStatusType.TaskWorkerApiError,
-    ]
-    const action = path.replace("Worker_","")
-    for (let i = 0; i < statusBots.length; i++) {
-      switch (action) {
-        case BotStatusType.TaskWorkerApiError:
-          await this.getBridgeWorkerWindow().reload()
-          break
-        case BotStatusType.TaskWorkerNoApi:
-          this.replyTextWithCancel("Setup Task Work api",[
-            [
-              MsgHelper.buildCallBackAction("Click Me!",CallbackButtonAction.Local_setupTaskUri)
-            ]
-          ])
-          return
-      }
-    }
+    // const statusBots = [
+    //   BotStatusType.TaskWorkerNoApi,
+    //   BotStatusType.TaskWorkerApiError,
+    // ]
+    // const action = path.replace("Worker_","")
+    // for (let i = 0; i < statusBots.length; i++) {
+    //   switch (action) {
+    //     case BotStatusType.TaskWorkerApiError:
+    //       await this.getBridgeWorkerWindow().reload()
+    //       break
+    //     case BotStatusType.TaskWorkerNoApi:
+    //       this.replyTextWithCancel("Setup Task Work api",[
+    //         [
+    //           MsgHelper.buildCallBackAction("Click Me!",CallbackButtonAction.Local_setupTaskUri)
+    //         ]
+    //       ])
+    //       return
+    //   }
+    // }
     switch (path) {
       case WorkerCallbackButtonAction.Worker_locationReload:
         await this.getBridgeWorkerWindow().reload()
@@ -129,7 +121,7 @@ export default class BotWorker extends BaseWorker {
         void this.reportTask(payload.updateMessage.text,payload.taskId,payload.isDone)
         break;
       case WorkerEventActions.Worker_GetWorkerStatus:
-        this.reportStatus(this.statusBot!,this.statusBotWorker!)
+        this.reportStatus()
         break;
       case WorkerEventActions.Worker_NotifyWorkerStatus:
         // console.log("[Worker_NotifyWorkerStatus]", JSON.stringify(payload));

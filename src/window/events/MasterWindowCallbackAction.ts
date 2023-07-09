@@ -41,11 +41,14 @@ export default class MasterWindowCallbackAction {
       case CallbackButtonAction.Master_createChatGptBotWorker:
         await this.createWorker("chatGpt")
         break
+      case CallbackButtonAction.Master_restartWorker:
+        await this.restartWorker(params.botId || params.chatId )
+        break
       case CallbackButtonAction.Master_OpenWorkerWindow:
-        await this.openWorkerWindow(params.chatId)
+        await this.openWorkerWindow(params.botId || params.chatId )
         break
       case CallbackButtonAction.Master_closeWorkerWindow:
-        await this.closeWorkerWindow(params.chatId)
+        await this.closeWorkerWindow(params.botId || params.chatId)
         break
       case CallbackButtonAction.Master_openUserAppDataDir:
         await this.openUserAppDataDir(params)
@@ -71,6 +74,9 @@ export default class MasterWindowCallbackAction {
     MainWindowManager.closeWindow(chatId)
   }
 
+  async restartWorker(botId:string) {
+    return MasterActions.restartWorkerWindow(botId)
+  }
   async openWorkerWindow(chatId:string) {
     let account = await new WorkerAccount(chatId).get() as LocalWorkerAccountType
     if(MainWindowManager.checkInstance(account!.botId)){

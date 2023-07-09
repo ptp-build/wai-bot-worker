@@ -1,8 +1,8 @@
 import BaseWorker from '../../sdk/botWorker/BaseWorker';
 
 import {
+  ApiChatMsg,
   BotStatusType,
-  BotWorkerStatusType,
   LocalWorkerAccountType,
   WorkerCallbackButtonAction,
   WorkerEventActions,
@@ -30,16 +30,16 @@ class TelegramWorker extends BaseWorker {
   }
   init() {
     console.log("[BotWorker INIT]",this.botId)
-    this.statusBot = BotStatusType.ONLINE
+    this.reportStatus(BotStatusType.ONLINE)
     this.loop().catch(console.error)
   }
 
   async loop(){
     const global = this.tgHelper.getGlobal();
     if(global){
-      this.statusBotWorker = BotWorkerStatusType.Ready
+      this.statusBot = BotStatusType.ONLINE
     }
-    this.reportStatus()
+    this.reportStatus(this.statusBot)
     await this.events.checkMessages()
     setTimeout(async ()=>{
       await this.loop()
@@ -49,25 +49,26 @@ class TelegramWorker extends BaseWorker {
     return [
       ...super.actions(),
       [
-        MsgHelper.buildCallBackAction("All Chats",WorkerCallbackButtonAction.Worker_Tg_Chats)
+        this.buildCallBackAction("All Chats",WorkerCallbackButtonAction.Worker_Tg_Chats)
       ],
       [
-        MsgHelper.buildCallBackAction("CurrentChatId",TgCallbackButtonAction.Worker_Tg_CurrentChatId)
+        this.buildCallBackAction("CurrentChatId",TgCallbackButtonAction.Worker_Tg_CurrentChatId)
       ],
       [
-        MsgHelper.buildCallBackAction("ChatInfo",TgCallbackButtonAction.Worker_Tg_ChatInfo)
+        this.buildCallBackAction("ChatInfo",TgCallbackButtonAction.Worker_Tg_ChatInfo)
       ],
       [
-        MsgHelper.buildCallBackAction("GetLastMessage",TgCallbackButtonAction.Worker_Tg_GetLastMessage)
+        this.buildCallBackAction("GetLastMessage",TgCallbackButtonAction.Worker_Tg_GetLastMessage)
       ],
       [
-        MsgHelper.buildCallBackAction("Debug",TgCallbackButtonAction.Worker_Tg_Debug)
+        this.buildCallBackAction("Debug",TgCallbackButtonAction.Worker_Tg_Debug)
       ],
     ]
   }
 
-  async handleCallBackButton({ path,messageId }:{path:string,messageId:number}) {
-    await super.handleCallBackButton({path})
+  async handleCallBackButton(payload:{path:string,chatId:string,messageId:number}) {
+    const {path,messageId} = payload
+    await super.handleCallBackButton(payload)
     if(path.startsWith(WorkerCallbackButtonAction.Worker_Tg_Open_Chat+"/")){
       await this.events.openChat(path.replace(WorkerCallbackButtonAction.Worker_Tg_Open_Chat+"/",""))
     }
@@ -87,11 +88,16 @@ class TelegramWorker extends BaseWorker {
         return await this.events.debug()
     }
   }
+
+  async onMessage({text,chatId,updateMessage}:{text:string,chatId:string,updateMessage:ApiChatMsg}){
+    await this.updateMessage("recv msg: "+ text,updateMessage.msgId,updateMessage.chatId)
+  }
   handleEvent(action:WorkerEventActions, payload:any) {
     super.handleEvent(action, payload)
     switch (action) {
       case WorkerEventActions.Worker_ChatMsg:
         console.log("[Worker_ChatMsg]", JSON.stringify(payload));
+        void this.onMessage(payload)
         break;
     }
   }

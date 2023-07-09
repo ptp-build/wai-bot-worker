@@ -4,7 +4,8 @@ import RenderBridge from './render/RenderBridge';
 import {
   ElectronAction,
   ElectronApi,
-  ElectronEvent, LocalWorkerAccountType,
+  ElectronEvent,
+  LocalWorkerAccountType,
   MasterEventActions,
   MasterEvents,
   WindowActions,
@@ -41,9 +42,12 @@ console.log("[Preload] pluginsJsPath: ",pluginsJsPath)
 
 setComponents(isProd,userDataPath)
 
+async function getCode(name:string) {
+  const filePath = (name === "lib_zepto.js") ? path.join(pluginsJsPath, "..", "..", "lib", name) : path.join(pluginsJsPath, name);
+  return await fs.promises.readFile(filePath, 'utf8')
+}
 async function readAppendFile(name:string,code_pre = ''){
-  const filePath = (name === "lib_zepto.js") ? path.join(pluginsJsPath,"..","..","lib", name) : path.join(pluginsJsPath, name);
-  let code = await fs.promises.readFile(filePath, 'utf8');
+  let code = await getCode(name)
   code = ` 
     window['__dirname'] = "./"
 
@@ -84,6 +88,21 @@ const electronApi: ElectronApi = {
 contextBridge.exposeInMainWorld('electron', electronApi);
 window.electron = electronApi
 
+async function initCustomBot(account:LocalWorkerAccountType){
+  if(account.type === 'bot'){
+    let {pluginJs} = account
+    if(!pluginJs){
+      pluginJs = "bot_custom.js"
+    }
+    await readAppendFile(pluginJs, `window.WORKER_ACCOUNT = ${JSON.stringify(account)};`)
+  }
+}
+
+window.electron.on(MasterEvents.Master_Chat_Msg,async (action:MasterEventActions,payload:any)=>{
+  if(action === MasterEventActions.CreateWorker && payload.account.type === 'bot'){
+    await initCustomBot(payload.account)
+  }
+})
 window.addEventListener('DOMContentLoaded', async () => {
   if(!isMasterChat){
     const account = await new BridgeMasterWindow(botId.toString()).getWorkerAccount({botId:botId.toString()}) as LocalWorkerAccountType
@@ -111,13 +130,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const accounts = await new BridgeMasterWindow().getWorkerAccounts() as LocalWorkerAccountType[]
     for (let i = 0; i < accounts.length; i++) {
       const account = accounts[i]
-      if(account.type === 'bot'){
-        let {pluginJs} = account
-        if(!pluginJs){
-          pluginJs = "bot_custom.js"
-        }
-        await readAppendFile(pluginJs, `window.WORKER_ACCOUNT = ${JSON.stringify(account)};`)
-      }
+      await initCustomBot(account)
     }
   }
 });

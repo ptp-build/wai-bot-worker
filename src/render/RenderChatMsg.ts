@@ -1,5 +1,13 @@
 import KvCache from '../worker/services/kv/KvCache';
-import { BotWorkerStatusType, CallbackButtonAction, LocalWorkerAccountType, ApiChatMsg } from '../sdk/types';
+import {
+  ApiChatMsg,
+  BotStatusType,
+  CallbackButtonAction,
+  ChatMsgRenderResponse,
+  LocalWorkerAccountType,
+  WindowActions,
+  WorkerCallbackButtonAction,
+} from '../sdk/types';
 import { currentTs } from '../sdk/common/time';
 import ChatAiMsg from '../window/ChatAiMsg';
 import MsgHelper from '../sdk/helper/MsgHelper';
@@ -9,20 +17,27 @@ import WorkerAccount from '../window/woker/WorkerAccount';
 import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
 import BridgeMasterWindow from '../sdk/bridge/BridgeMasterWindow';
 import { MasterBotId } from '../sdk/setting';
-import BotWorkerStatus from '../sdk/botWorkerStatus/BotWorkerStatus';
 import WorkerGroup from '../window/woker/WorkerGroup';
+import BotWorkerStatus from '../sdk/botWorkerStatus/BotWorkerStatus';
+import { ipcRenderer } from 'electron';
+import { encodeCallBackButtonPayload } from '../sdk/common/string';
 
 export default class RenderChatMsg {
   public isMasterBot: boolean;
   private chatId: string;
   private localMsgId?: number;
-  constructor(chatId:string,localMsgId?:number) {
+  private botId: string;
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
     this.chatId = chatId
     this.localMsgId =localMsgId
+    this.botId = botId ? botId : this.chatId
     this.isMasterBot = chatId === MasterBotId
   }
   getIsMasterBot(){
     return this.isMasterBot
+  }
+  getBotId(){
+    return this.botId || this.chatId
   }
   getChatId(){
     return this.chatId
@@ -31,7 +46,7 @@ export default class RenderChatMsg {
     return this.localMsgId
   }
   async getWorkerAccount():Promise<LocalWorkerAccountType>{
-    return await new WorkerAccount(this.getChatId()).get() as LocalWorkerAccountType
+    return await new WorkerAccount(this.getBotId()).get() as LocalWorkerAccountType
   }
 
   async getGroup():Promise<any>{
@@ -44,6 +59,10 @@ export default class RenderChatMsg {
   }
 
   async genMsgId(){
+    return await RenderChatMsg.genMessageId()
+  }
+
+  static async genMessageId(){
     const msgIdStr = await KvCache.getInstance().get(`MsgIncrId`)
     let msgId = msgIdStr ? parseInt(msgIdStr) : 0
     msgId = msgId + 1
@@ -72,57 +91,16 @@ export default class RenderChatMsg {
     }
   }
 
-  async invokeAskChatGptMsg(text:string,msg:ApiChatMsg,taskId?:number,botId?:string){
-    botId = botId || this.getChatId()
-    // const workerAccount = await new WorkerAccount(botId).get()
-    // if(workerAccount && workerAccount.type !== "chatGpt"){
-    //   const readyBots = []
-    //   const workerIds = await WorkerAccount.getBotList()
-    //   for (let i = 0; i < workerIds.length; i++) {
-    //     const worker_botId = workerIds[i]
-    //     const workerAccount = await new WorkerAccount(worker_botId).get()
-    //     if(workerAccount && workerAccount.type === "chatGpt"){
-    //       const {statusBotWorker} = BotWorkerStatus.get(workerAccount.botId)
-    //       if(statusBotWorker === BotWorkerStatusType.Ready){
-    //         readyBots.push(workerAccount.botId)
-    //       }
-    //     }
-    //   }
-    //   console.log("[readyBots]",readyBots)
-    //   if(readyBots.length > 0){
-    //     botId = readyBots[Math.floor(Math.random() * readyBots.length)];
-    //   }else{
-    //     setTimeout(async ()=>await this.invokeAskChatGptMsg(text,msg,taskId),1000)
-    //   }
-    // }
-    await new BridgeWorkerWindow(botId).sendChatMsgToWorker({
+  async invokeAskChatGptMsg(text:string){
+    await new BridgeWorkerWindow(this.getBotId()).sendChatMsgToWorker({
         text,
-        updateMessage:msg,
-        fromBotId:botId,
-        taskId
+        chatId:this.getChatId(),
       })
     return this
   }
 
-  async askChatGptMessage(text:string,taskId?:number,msgId?:number,chatId?:string){
-    if(!msgId){
-      msgId = await this.genMsgId()
-    }
-    chatId = chatId || this.getChatId()
-    const msg = {
-      chatId,
-      msgId,
-      text:"...",
-      entities:[],
-      inlineButtons:[],
-      isOutgoing:false,
-      senderId:this.getChatId(),
-      msgDate:currentTs(),
-    }
-    await this.handleNewMessage(msg)
-    console.log("askChatGptMessage",text)
-    await this.invokeAskChatGptMsg(text,msg,taskId,chatId)
-    return msgId
+  async askChatGptMessage(text:string){
+    await this.invokeAskChatGptMsg(text)
   }
 
   async handleNewMessage(newMessage:ApiChatMsg,sendToMainChat?:boolean){
@@ -174,42 +152,42 @@ export default class RenderChatMsg {
 
 
   async sendMultipleQuestion(){
-    const {chatId} = this
-    const enabled = await ChatConfig.isEnableMultipleQuestion(chatId)
-    if(!enabled){
-      const msgId = await new RenderChatMsg(chatId).genMsgId()
-      return {
-        msgId,text:"Sorry,please send /multipleQuestions enable multiple questioning first"
-      }
-    }else{
-      const msgIds = []
-      const msgList = await new ChatAiMsg(chatId).getAskList()
-      console.log({msgList})
-      let text = ""
-      for (let i = 0; i < msgList.length; i++) {
-        const id = msgList[i]
-        msgIds.push(id)
-        const m = await new MainChatMsgStorage().getRow(chatId,id)
-        if(m){
-          text += m.text+"\n"
-        }
-      }
-      console.log({msgIds})
-      if(msgIds.length > 0){
-        const aiMsgId = await new RenderChatMsg(chatId).askChatGptMessage(text);
-        for (let i = 0; i < msgList.length; i++) {
-          await new ChatAiMsg(chatId).save(msgList[i],aiMsgId)
-        }
-        return {
-          msgIds
-        }
-      }else{
-        const msgId = await new RenderChatMsg(chatId).genMsgId()
-        return {
-          msgId,text:"Please type message"
-        }
-      }
-    }
+    // const {chatId} = this
+    // const enabled = await ChatConfig.isEnableMultipleQuestion(chatId)
+    // if(!enabled){
+    //   const msgId = await new RenderChatMsg(chatId).genMsgId()
+    //   return {
+    //     msgId,text:"Sorry,please send /multipleQuestions enable multiple questioning first"
+    //   }
+    // }else{
+    //   const msgIds = []
+    //   const msgList = await new ChatAiMsg(chatId).getAskList()
+    //   console.log({msgList})
+    //   let text = ""
+    //   for (let i = 0; i < msgList.length; i++) {
+    //     const id = msgList[i]
+    //     msgIds.push(id)
+    //     const m = await new MainChatMsgStorage().getRow(chatId,id)
+    //     if(m){
+    //       text += m.text+"\n"
+    //     }
+    //   }
+    //   console.log({msgIds})
+    //   if(msgIds.length > 0){
+    //     const aiMsgId = await new RenderChatMsg(chatId).askChatGptMessage(text);
+    //     for (let i = 0; i < msgList.length; i++) {
+    //       await new ChatAiMsg(chatId).save(msgList[i],aiMsgId)
+    //     }
+    //     return {
+    //       msgIds
+    //     }
+    //   }else{
+    //     const msgId = await new RenderChatMsg(chatId).genMsgId()
+    //     return {
+    //       msgId,text:"Please type message"
+    //     }
+    //   }
+    // }
   }
   async deleteChat(){
     await WorkerAccount.deleteBotList(this.getChatId())
@@ -220,5 +198,61 @@ export default class RenderChatMsg {
   async deleteChatMessages(ids:number[]){
     await new BridgeMasterWindow(this.chatId).deleteMessages({ids,chatId:this.chatId})
     await new ChatAiMsg(this.chatId).deleteAskList(ids)
+  }
+
+  waitForBotStatus(botId:string,status:BotStatusType, timeout = 30000) {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      const checkStatus = () => {
+        const {statusBot} = BotWorkerStatus.get(botId)
+        if(statusBot === status){
+          resolve(status);
+        }else{
+          const elapsedTime = Date.now() - startTime;
+          if(elapsedTime  >= timeout){
+            reject(new Error(`Timeout exceeded (${timeout}ms) while waiting for status: ${status}`));
+          }else{
+            setTimeout(checkStatus, 500);
+          }
+        }
+      };
+      checkStatus();
+    });
+  }
+  async checkWorkerIsOffline(botId:string):Promise<ChatMsgRenderResponse|undefined>{
+    let {statusBot} = BotWorkerStatus.get(botId)
+    if(!statusBot){
+      statusBot = BotStatusType.OFFLINE
+    }
+    switch (statusBot){
+      case BotStatusType.ONLINE:
+        break
+      case BotStatusType.OFFLINE:
+        try{
+          await ipcRenderer.invoke(WindowActions.MasterWindowCallbackAction,encodeCallBackButtonPayload(CallbackButtonAction.Master_OpenWorkerWindow,{
+            botId
+          }))
+          await this.waitForBotStatus(botId,BotStatusType.ONLINE)
+        }catch (e){
+          console.error("[sendMessageToWorker] error",e)
+          return {
+            msgId:await this.genMsgId(),sendingState:"messageSendingStateFailed",
+            inlineButtons:[
+              [MsgHelper.buildCallBackAction("ReSend",CallbackButtonAction.Local_resend)],
+              [MsgHelper.buildCallBackAction("Restart Window",CallbackButtonAction.Master_restartWorker,{botId})],
+            ]
+          }
+        }
+        break
+      default:
+        return {
+          msgId:await this.genMsgId(),sendingState:"messageSendingStateFailed",
+          inlineButtons:[
+            [MsgHelper.buildUnsupportedAction(`Worker is ${statusBot}!`)],
+            [MsgHelper.buildCallBackAction("ReSend",CallbackButtonAction.Local_resend)],
+            [MsgHelper.buildCallBackAction("Reload Window",WorkerCallbackButtonAction.Worker_locationReload,{botId})],
+          ]}
+    }
+    return undefined
   }
 }

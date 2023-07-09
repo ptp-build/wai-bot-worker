@@ -1,12 +1,14 @@
 import { BrowserWindow, HandlerDetails, shell } from 'electron';
 import path from 'path';
 import Devtool from './Devtool';
-import { getErrorHtml1 } from './Ui';
 import { isProd } from '../utils/electronEnv';
 import WindowEventsHandler from '../window/events/WindowEventsHandler';
-import { BotStatusType, BotWorkerStatusType, LocalWorkerAccountType, MasterEventActions } from '../sdk/types';
+import { BotStatusType, LocalWorkerAccountType, MasterEventActions, WindowActions } from '../sdk/types';
 import WorkerAccount from '../window/woker/WorkerAccount';
 import { getProxyConfigFromProxyConfStr } from '../sdk/common/proxy';
+import { getErrorHtmlPage } from './Ui';
+import { getMasterWindowWebContent } from './window';
+import MsgHelper from '../sdk/helper/MsgHelper';
 
 const __managers = new Map<string, MainWindowManager>();
 
@@ -183,9 +185,19 @@ export default class MainWindowManager {
       })
     }catch (e:any){
       console.error("[ERROR] load url",e)
-      // const {proxy} = this.getOptions()
-      // const htmlContent = getErrorHtml1();
-      // await this.mainWindow!.loadURL(`data:text/html;charset=utf-8,${encodeURI(htmlContent)}`);
+      await WindowEventsHandler.replyChatMsg(e.message,this.botId,[
+        MsgHelper.buildLocalCancel()
+      ])
+      switch (e.code){
+        case "ERR_INTERNET_DISCONNECTED":
+          const htmlContent = getErrorHtmlPage({
+            errorCode:e.code,
+            errorMsg:e.message,
+            url:e.url,
+          });
+          await this.mainWindow!.loadURL(`data:text/html;charset=utf-8,${encodeURI(htmlContent)}`);
+          return
+      }
     }
   }
   async setUpProxy(){
@@ -248,7 +260,6 @@ export default class MainWindowManager {
       if(__managers.has(this.botId)){
         void WindowEventsHandler.sendEventToMasterChat(MasterEventActions.UpdateWorkerStatus, {
           statusBot: BotStatusType.OFFLINE,
-          statusBotWorker: BotWorkerStatusType.WaitToReady,
           botId:this.botId
         })
         const manager = __managers.get(this.botId);

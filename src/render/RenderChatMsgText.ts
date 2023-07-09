@@ -19,51 +19,55 @@ export default class RenderChatMsgText extends RenderChatMsg{
   async resendAiMsg(msgId:number){
     const chatId = this.getChatId()
     const chatAiMsg = new ChatAiMsg(chatId)
-    const mainChatMsgStorage = new MainChatMsgStorage()
-    const aiMsgId = await chatAiMsg.get(msgId);
-    const msgListTmp = await chatAiMsg.getAskList();
-    console.debug("resendAiMsg",{msgId,aiMsgId,msgListTmp})
-    if(aiMsgId && !msgListTmp.includes(msgId)){
-      const msg = await mainChatMsgStorage.getRow(chatId,msgId)
-      const aiMsg = await mainChatMsgStorage.getRow(chatId,aiMsgId)
-      if(aiMsg && msg && msg.text){
-        let text = "";
-        const enableMultipleQuestion = await ChatConfig.isEnableMultipleQuestion(chatId)
-        if(enableMultipleQuestion){
-          const preAiMsgList = await chatAiMsg.getAskListFinished(aiMsg.msgId)
-          if(preAiMsgList.length > 0){
-            for (let i = 0; i < preAiMsgList.length; i++) {
-              const aiMsg1 = await mainChatMsgStorage.getRow(chatId,preAiMsgList[i])
-              if(aiMsg1 && aiMsg1.text){
-                text += aiMsg1.text + "\n"
-              }
-            }
-            text = text.trim()
-          }
-        }else{
-          const aiMsg1 = await mainChatMsgStorage.getRow(chatId,msgId)
-          if(aiMsg1 && aiMsg1.text){
-            text += aiMsg1.text
-          }
-        }
-        if(text){
-          await this.invokeAskChatGptMsg(text,aiMsg)
-          await this.handleUpdateMessage({
-            ...aiMsg,
-            text:"..."
-          })
-          await this.handleUpdateMessage({
-            ...msg,
-            inlineButtons:[]
-          })
-        }
-      }
-    }
+    // const mainChatMsgStorage = new MainChatMsgStorage()
+    // const aiMsgId = await chatAiMsg.get(msgId);
+    // const msgListTmp = await chatAiMsg.getAskList();
+    // console.debug("resendAiMsg",{msgId,aiMsgId,msgListTmp})
+    // if(aiMsgId && !msgListTmp.includes(msgId)){
+    //   const msg = await mainChatMsgStorage.getRow(chatId,msgId)
+    //   const aiMsg = await mainChatMsgStorage.getRow(chatId,aiMsgId)
+    //   if(aiMsg && msg && msg.text){
+    //     let text = "";
+    //     const enableMultipleQuestion = await ChatConfig.isEnableMultipleQuestion(chatId)
+    //     if(enableMultipleQuestion){
+    //       const preAiMsgList = await chatAiMsg.getAskListFinished(aiMsg.msgId)
+    //       if(preAiMsgList.length > 0){
+    //         for (let i = 0; i < preAiMsgList.length; i++) {
+    //           const aiMsg1 = await mainChatMsgStorage.getRow(chatId,preAiMsgList[i])
+    //           if(aiMsg1 && aiMsg1.text){
+    //             text += aiMsg1.text + "\n"
+    //           }
+    //         }
+    //         text = text.trim()
+    //       }
+    //     }else{
+    //       const aiMsg1 = await mainChatMsgStorage.getRow(chatId,msgId)
+    //       if(aiMsg1 && aiMsg1.text){
+    //         text += aiMsg1.text
+    //       }
+    //     }
+    //     if(text){
+    //       await this.invokeAskChatGptMsg(text,aiMsg)
+    //       await this.handleUpdateMessage({
+    //         ...aiMsg,
+    //         text:"..."
+    //       })
+    //       await this.handleUpdateMessage({
+    //         ...msg,
+    //         inlineButtons:[]
+    //       })
+    //     }
+    //   }
+    // }
   }
   async processMessage({text,entities,taskId}:{text:string,entities?:any[],taskId?:number}){
     const group = await this.getGroup()
     if(group){
       return new RenderGroupChatMsg(this.getChatId(),this.getLocalMsgId()).handleGroupMsg({text,entities,taskId})
+    }
+    const offline = await this.checkWorkerIsOffline(this.getBotId())
+    if(offline){
+      return offline
     }
     const workerAccount = await this.getWorkerAccount()
     const msgId = await this.genMsgId()
@@ -79,8 +83,6 @@ export default class RenderChatMsgText extends RenderChatMsg{
     })
     if(workerAccount){
       switch (workerAccount.type){
-        case "coding":
-          return await new CodingCommand(this.getChatId(),this.getLocalMsgId()).handleMessageText(text)
         case "chatGpt":
           if(await new ChatGptCommand(this.getChatId()).isSetupChatGptRole()){
             await new ChatGptCommand(this.getChatId()).setupChatGptRoleText(text)
@@ -96,22 +98,13 @@ export default class RenderChatMsgText extends RenderChatMsg{
               return {msgId,sendingState:undefined}
             }
           }
-
-          const enableMultipleQuestion = await ChatConfig.isEnableMultipleQuestion(this.getChatId())
-          if(enableMultipleQuestion){
-            await this.chatAiMsg.addAskList(msgId)
-            return {msgId,sendingState:"messageSendingStatePending"}
-          }else{
-            const aiMsgId = await this.askChatGptMessage(text,taskId)
-            await new ChatAiMsg(this.getChatId()).save(msgId,aiMsgId)
-            return {msgId,sendingState:undefined}
-          }
+          await this.askChatGptMessage(text)
+          return {msgId,sendingState:undefined}
         default:
           await new BridgeWorkerWindow(this.getChatId()).sendChatMsgToWorker({
             chatId:this.getChatId(),
             text,
           })
-
           return {msgId,sendingState:undefined}
       }
     }

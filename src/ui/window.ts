@@ -61,7 +61,7 @@ export function createMasterWindow(url?: string) {
       additionalArguments:[`--botId=${MasterBotId}`,`--isProd=${isProd}`],
       preload: path.join(__dirname, 'preload.js'),
       devTools: !isProd,
-      partition:"default"
+      // partition:"default"
     },
   });
   window.on('page-title-updated', (event: Event) => {

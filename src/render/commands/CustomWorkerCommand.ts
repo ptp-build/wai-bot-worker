@@ -4,8 +4,8 @@ import BaseCommand from './BaseCommand';
 
 export default class CustomWorkerCommand extends BaseCommand{
 
-  constructor(chatId:string,localMsgId?:number) {
-    super(chatId,localMsgId)
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
+    super(chatId,localMsgId,botId)
   }
 
   async loadBotCommands(){

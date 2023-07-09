@@ -2,14 +2,12 @@ import BotWorkerSelector from './chatGpt/BotWorkerSelector';
 import BaseWorker from '../../sdk/botWorker/BaseWorker';
 import {
   BotStatusType,
-  BotWorkerStatusType,
   LocalWorkerAccountType,
   ApiChatMsg,
   WorkerCallbackButtonAction,
   WorkerEventActions,
 } from '../../sdk/types';
 import ChatGptMsg from './chatGpt/ChatGptMsg';
-import MsgHelper from '../../sdk/helper/MsgHelper';
 import { sleep } from '../../sdk/common/time';
 
 const {$} = window
@@ -83,10 +81,10 @@ function hook_fetch(botWorker:ChatGptBotWorker): void {
   };
 }
 
-
 export enum ChatGptCallbackButtonAction {
   Worker_clearConversations = "Worker_clearConversations",
-  Worker_newConversations = "Worker_newConversations"
+  Worker_newConversations = "Worker_newConversations",
+
 }
 
 class ChatGptBotWorker extends BaseWorker {
@@ -97,8 +95,6 @@ class ChatGptBotWorker extends BaseWorker {
   constructor(workerAccount:LocalWorkerAccountType) {
     super(workerAccount);
     this.setChatGptAuth(workerAccount.chatGptAuth)
-    this.statusBot = BotStatusType.STARTED;
-    this.statusBotWorker = BotWorkerStatusType.WaitToReady
     this.init();
   }
 
@@ -124,29 +120,29 @@ class ChatGptBotWorker extends BaseWorker {
   loop() {
     document.title = ("# "+this.getWorkerAccount().botId + " ChatGpt")
     if (this.selector.regenerateResponseButton.length > 0) {
-      this.statusBot = BotStatusType.RegenerateResponseNeed;
+      // this.statusBot = ChatGptCallbackButtonAction.RegenerateResponseNeed;
     }
     if (this.selector.loginButton.length > 0) {
-      this.statusBot = BotStatusType.LoginButtonClickNeed
+      // this.statusBot = ChatGptCallbackButtonAction.LoginButtonClickNeed
     }
     if (
       this.selector.promptTextArea.length > 0 &&
       this.selector.startPopUpModal.length === 0
     ) {
-      if (this.statusBot !== BotStatusType.ONLINE) {
+      if (this.statusBot === BotStatusType.OFFLINE) {
         void this.onReady()
       }
     }
 
     if (this.selector.loginPage.length > 0) {
-      this.statusBot = BotStatusType.LoginInputUsernameNeed
+      // this.statusBot = BotStatusType.LoginInputUsernameNeed
     }
 
     if (this.selector.loginPasswordPage.length > 0) {
-      this.statusBot = BotStatusType.LoginInputPasswordNeed
+      // this.statusBot = BotStatusType.LoginInputPasswordNeed
     }
     if (this.selector.challengeForm.length > 0) {
-      this.statusBot = BotStatusType.ChallengeFormShow
+      // this.statusBot = BotStatusType.ChallengeFormShow
     }
     // console.log("[Loop]", this.statusBot, this.statusBotWorker);
     this.reportStatus()
@@ -194,22 +190,23 @@ class ChatGptBotWorker extends BaseWorker {
 
   clickRegenerateResponseButton() {
     if (this.selector.regenerateResponseButton.length > 0) {
-      this.statusBotWorker = BotWorkerStatusType.InvokeApiError;
+      this.reportStatus(BotStatusType.InvokeApiError)
       this.selector.regenerateResponseButton.click();
     }
   }
 
-  async askMsg({ text,updateMessage,fromBotId,taskId }:{text:string,updateMessage:ApiChatMsg,fromBotId?:string,taskId?:number}) {
+  async askMsg({ text,chatId,msgId }:{text:string,chatId:string,msgId?:number}) {
     if (
       this.chatGptMsg ||
-      this.statusBotWorker !== BotWorkerStatusType.Ready ||
       this.statusBot !== BotStatusType.ONLINE
     ) {
       this.reportStatus()
-      console.log("[askMsg] stopped", this.statusBot, this.statusBotWorker);
+      console.log("[askMsg] stopped", this.statusBot);
       return;
     }
-    const { msgId, chatId } = updateMessage;
+    if(!msgId){
+      msgId = await this.applyMsgId(chatId)
+    }
     let conversation_id = window.localStorage.getItem(`CHAT_Conversation3_${chatId}`)
     if( window.localStorage.getItem(`Conversation_DELETE_${conversation_id}`)){
       conversation_id = null
@@ -220,9 +217,8 @@ class ChatGptBotWorker extends BaseWorker {
       const {pathname,origin} = new URL(window.location.href)
       if(!pathname.includes(conversation_id)){
         window.localStorage.setItem(`Conversation_Current`,conversation_id)
-        window.localStorage.setItem(`WAITING_Msg`,JSON.stringify({text, updateMessage,fromBotId,taskId}))
-        this.statusBotWorker = BotWorkerStatusType.Busy
-        await this.reportStatus()
+        window.localStorage.setItem(`WAITING_Msg`,JSON.stringify({text, msgId,chatId}))
+        await this.reportStatus(BotStatusType.Busy)
         window.location.href = `${origin}/c/${conversation_id}`
         return
       }
@@ -230,9 +226,16 @@ class ChatGptBotWorker extends BaseWorker {
       await this.newConversations()
       await sleep(2000)
     }
-    this.chatGptMsg = new ChatGptMsg(msgId, chatId,fromBotId,taskId);
+    this.chatGptMsg = new ChatGptMsg(msgId!, chatId);
+    await this.replyMsg({
+      chatId:this.chatGptMsg?.chatId!,
+      msgId:this.chatGptMsg?.msgId!,
+      text:"...",
+      senderId:this.botId
+    })
     await this.sendPromptTextareaMouseClick()
     await sleep(100)
+
     this.inputPrompts(text);
     await sleep(100)
     await this.sendSpaceKeyboardEvent();
@@ -269,12 +272,19 @@ class ChatGptBotWorker extends BaseWorker {
   onSteamMsgRecv({ state, text, index }:{state:"REQUEST"|"START"|"ERROR"|"IN_PROCESS",text:string,index:number}) {
     console.log("[onSteamMsgRecv]",state,index)
     if (state === "ERROR") {
-      this.statusBotWorker = BotWorkerStatusType.InvokeApiError;
+      this.reportStatus(BotStatusType.InvokeApiError)
     }
     if (state === "REQUEST") {
       if(!this.chatGptMsg){
         this.newAiMsg(text).catch(console.error)
       }
+
+      void this.replyMsg({
+        chatId:this.chatGptMsg?.chatId!,
+        msgId:this.chatGptMsg?.msgId!,
+        text:"...",
+        senderId:this.botId
+      })
       return
     }
     if (state === "IN_PROCESS" && this.chatGptMsg) {
@@ -285,11 +295,14 @@ class ChatGptBotWorker extends BaseWorker {
         console.log("[DONE]", this.chatGptMsg.chatId, this.chatGptMsg.msgId, res.text);
         if(this.chatGptMsg.msgId){
           const result = this.handleResult(res.text)
-          this.updateMessage(result, this.chatGptMsg.msgId, this.chatGptMsg.chatId,this.chatGptMsg.fromBotId,this.chatGptMsg.taskId,true);
+          void this.updateMsg({
+            chatId:this.chatGptMsg.chatId,
+            msgId:this.chatGptMsg.msgId,
+            text:result
+          })
           this.finishReply(this.chatGptMsg.msgId, this.chatGptMsg.chatId);
         }
-        this.statusBotWorker = BotWorkerStatusType.Ready
-        this.reportStatus()
+        this.reportStatus(BotStatusType.ONLINE)
         if(this.chatGptMsg && conversation_id && !window.location.href.includes(conversation_id)){
           window.localStorage.setItem(`CHAT_Conversation3_${this.chatGptMsg.chatId}`,conversation_id)
           window.localStorage.setItem(`Conversation_CHAT_${conversation_id}`,this.chatGptMsg.chatId)
@@ -299,16 +312,19 @@ class ChatGptBotWorker extends BaseWorker {
         }
         this.chatGptMsg = undefined;
       } else if (index % 2 === 0) {
-
-        this.updateMessage(res.text, this.chatGptMsg.msgId, this.chatGptMsg.chatId,this.chatGptMsg.fromBotId,this.chatGptMsg.taskId);
+        void this.updateMsg({
+          chatId:this.chatGptMsg.chatId,
+          msgId:this.chatGptMsg.msgId,
+          text:res.text
+        })
         this.reportStatus()
       }
     }
   }
 
   inputPrompts(text:string) {
-    this.statusBotWorker = BotWorkerStatusType.Busy
-    this.reportStatus()
+    this.reportStatus(BotStatusType.Busy)
+
     this.selector.promptTextArea.val(text);
   }
 
@@ -360,45 +376,46 @@ class ChatGptBotWorker extends BaseWorker {
       await this.sendEscKeyboardEvent()
     }
   }
-  actions(){
+  actions(chatId?:string){
     return [
-      ...super.actions(),
+      ...super.actions(chatId),
       [
-        MsgHelper.buildCallBackAction("clickLoginButton","Worker_LoginButtonClickNeed")
+        this.buildCallBackAction("clickLoginButton","Worker_LoginButtonClickNeed")
       ],
       [
-        MsgHelper.buildCallBackAction("loginInputUsernameNeed","Worker_LoginInputUsernameNeed")
+        this.buildCallBackAction("loginInputUsernameNeed","Worker_LoginInputUsernameNeed")
       ],
       [
-        MsgHelper.buildCallBackAction("loginInputPasswordNeed","Worker_LoginInputPasswordNeed")
+        this.buildCallBackAction("loginInputPasswordNeed","Worker_LoginInputPasswordNeed")
       ],
       [
-        MsgHelper.buildCallBackAction("regenerateResponseNeed","Worker_RegenerateResponseNeed")
+        this.buildCallBackAction("regenerateResponseNeed","Worker_RegenerateResponseNeed")
       ],
       [
-        MsgHelper.buildCallBackAction("sendPromptTextareaMouseClick",WorkerCallbackButtonAction.Worker_sendPromptTextareaMouseClick)
+        this.buildCallBackAction("sendPromptTextareaMouseClick",WorkerCallbackButtonAction.Worker_sendPromptTextareaMouseClick)
       ],
       [
-        MsgHelper.buildCallBackAction("inputPrompts",WorkerCallbackButtonAction.Worker_inputPrompts)
+        this.buildCallBackAction("inputPrompts",WorkerCallbackButtonAction.Worker_inputPrompts)
       ],
       [
-        MsgHelper.buildCallBackAction("sendInputSpaceEvent",WorkerCallbackButtonAction.Worker_sendInputSpaceEvent)
+        this.buildCallBackAction("sendInputSpaceEvent",WorkerCallbackButtonAction.Worker_sendInputSpaceEvent)
       ],
       [
-        MsgHelper.buildCallBackAction("performClickSendPromptButton",WorkerCallbackButtonAction.Worker_performClickSendPromptButton)
+        this.buildCallBackAction("performClickSendPromptButton",WorkerCallbackButtonAction.Worker_performClickSendPromptButton)
       ],
 
       [
-        MsgHelper.buildCallBackAction("Clear conversations",ChatGptCallbackButtonAction.Worker_clearConversations)
+        this.buildCallBackAction("Clear conversations",ChatGptCallbackButtonAction.Worker_clearConversations)
       ],
       [
-        MsgHelper.buildCallBackAction("New conversations",ChatGptCallbackButtonAction.Worker_newConversations)
+        this.buildCallBackAction("New conversations",ChatGptCallbackButtonAction.Worker_newConversations)
       ],
     ]
   }
 
-  async handleCallBackButton({ path,messageId }:{path:string,messageId:number}) {
-    await super.handleCallBackButton({path})
+  async handleCallBackButton(payload:{path:string,messageId:number,chatId:string}) {
+    const { path,messageId,chatId } = payload
+    await super.handleCallBackButton(payload)
     switch (path) {
       case "Worker_LoginButtonClickNeed":
         this.clickLoginButton();
@@ -455,9 +472,7 @@ class ChatGptBotWorker extends BaseWorker {
     }
     const WAITING_Msg = window.localStorage.getItem(`WAITING_Msg`)
 
-    this.statusBot = BotStatusType.ONLINE
-    this.statusBotWorker = BotWorkerStatusType.Ready
-    this.reportStatus()
+    this.reportStatus(BotStatusType.ONLINE)
     if(WAITING_Msg){
       window.localStorage.removeItem(`WAITING_Msg`)
       await sleep(4000)

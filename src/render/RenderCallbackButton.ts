@@ -13,6 +13,7 @@ import WorkerGroup from '../window/woker/WorkerGroup';
 import { User } from '../worker/models/user/User';
 import { DefaultAdminMembersById, DefaultGroupInfo } from '../sdk/setting';
 import { currentTs } from '../sdk/common/time';
+import BridgeMasterWindow from '../sdk/bridge/BridgeMasterWindow';
 
 export default class RenderCallbackButton extends RenderChatMsg{
   private data?: string;
@@ -89,6 +90,8 @@ export default class RenderCallbackButton extends RenderChatMsg{
           username,name
         }
         await account2.update(newAccount)
+        await new BridgeMasterWindow(this.getChatId()).createWorker({account:newAccount})
+
         return newAccount
       case CallbackButtonAction.Render_createWorkerGroup:
         const botId1 = "-" + await User.genUserId()
@@ -97,6 +100,8 @@ export default class RenderCallbackButton extends RenderChatMsg{
         groupInfo.chatInfo.id = botId1
         groupInfo.chatInfo.membersCount = 1
         groupInfo.chatInfo.title = `Group_${botId1.substring(1)}`
+        // @ts-ignore
+        groupInfo.chatInfoFull.adminMembersById = {}
         // @ts-ignore
         groupInfo.chatInfoFull.adminMembersById[adminBotId] = {
           ...DefaultAdminMembersById,

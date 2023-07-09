@@ -5,8 +5,8 @@ import { encodeCallBackButtonPayload } from '../../sdk/common/string';
 
 export default class MasterCommand extends BaseCommand{
 
-  constructor(chatId:string,localMsgId?:number) {
-    super(chatId,localMsgId)
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
+    super(chatId,localMsgId,botId)
   }
 
   async loadBotCommands(){
@@ -54,9 +54,9 @@ export default class MasterCommand extends BaseCommand{
         confirmText:"Custom Worker is a worker with window\n Are you sure to create?",
       }))],
 
-      [MsgHelper.buildCallBackAction("Bot",encodeCallBackButtonPayload(CallbackButtonAction.Master_createCommonBot,{
+      [MsgHelper.buildCallBackAction("Custom Bot",encodeCallBackButtonPayload(CallbackButtonAction.Master_createCommonBot,{
         showConfirm:true,
-        confirmText:"Bot is a bot without window\n Are you sure to create?",
+        confirmText:"Custom Bot is a bot without window\n Are you sure to create?",
       }))],
 
       // [MsgHelper.buildCallBackAction("Task Worker",CallbackButtonAction.Master_createTaskWorker)],

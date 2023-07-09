@@ -1,5 +1,5 @@
 import WindowEventsHandler from './WindowEventsHandler';
-import { BotStatusType, BotWorkerStatusType, LocalWorkerAccountType, MasterEventActions } from '../../sdk/types';
+import { BotStatusType, LocalWorkerAccountType, MasterEventActions } from '../../sdk/types';
 import WorkerAccount from '../woker/WorkerAccount';
 
 export default class WorkerStatus{
@@ -12,7 +12,6 @@ export default class WorkerStatus{
     if(workerAccount && ["chatGpt", 'taskWorker', 'custom' ].includes(workerAccount.type)){
       return await WindowEventsHandler.sendEventToMasterChat(MasterEventActions.UpdateWorkerStatus, {
         statusBot: BotStatusType.OFFLINE,
-        statusBotWorker: BotWorkerStatusType.WaitToReady,
         botId:this.botId
       })
     }

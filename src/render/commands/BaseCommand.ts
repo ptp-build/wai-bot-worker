@@ -2,12 +2,11 @@ import { CallbackButtonAction, WorkerCallbackButtonAction } from '../../sdk/type
 import MsgHelper from '../../sdk/helper/MsgHelper';
 import RenderChatMsg from '../RenderChatMsg';
 import RenderCallbackButton from '../RenderCallbackButton';
-import { encodeCallBackButtonPayload } from '../../sdk/common/string';
 import BridgeWorkerWindow from '../../sdk/bridge/BridgeWorkerWindow';
 
 export default class BaseCommand extends RenderChatMsg{
-  constructor(chatId:string,localMsgId?:number) {
-    super(chatId,localMsgId)
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
+    super(chatId,localMsgId,botId)
   }
   async loadBotCommands(){
     const cmdList = [
@@ -35,15 +34,14 @@ export default class BaseCommand extends RenderChatMsg{
     const buttons = []
     buttons.push([
       MsgHelper.buildCallBackAction("🛠️️ Worker Name",CallbackButtonAction.Local_setupWorkerName),
+      MsgHelper.buildCallBackAction("🛠️️ UserName",CallbackButtonAction.Local_setupWorkerUserName),
     ])
 
     buttons.push([
       MsgHelper.buildCallBackAction("🛠️️ Browser UserAgent",CallbackButtonAction.Local_setupBrowserUserAgent),
-    ])
-
-    buttons.push([
       MsgHelper.buildCallBackAction("🛠️️ Proxy",CallbackButtonAction.Local_setupProxy),
     ])
+
     return buttons
   }
 
@@ -57,19 +55,19 @@ export default class BaseCommand extends RenderChatMsg{
   }
 
   async action(action?:"reloadWindow" | "activeWindow" | "openWindow"){
-    const ack = this.replyAck()
+    const ack = await this.replyAck()
     switch (action){
       case 'openWindow':
-        await RenderCallbackButton.invokeMasterWindowCallbackButton(CallbackButtonAction.Master_OpenWorkerWindow,{chatId:this.getChatId()})
+        await RenderCallbackButton.invokeMasterWindowCallbackButton(CallbackButtonAction.Master_OpenWorkerWindow,{botId:this.getBotId(),chatId:this.getChatId()})
         break
       case 'activeWindow':
         await new BridgeWorkerWindow().activeWindow(this.getChatId())
         break
       case 'reloadWindow':
-        await RenderCallbackButton.invokeWorkerWindowCallbackButton(WorkerCallbackButtonAction.Worker_locationReload,{chatId:this.getChatId()})
+        await RenderCallbackButton.invokeWorkerWindowCallbackButton(WorkerCallbackButtonAction.Worker_locationReload,{botId:this.getBotId(),chatId:this.getChatId()})
         break
       default:
-        await RenderCallbackButton.invokeWorkerWindowCallbackButton(WorkerCallbackButtonAction.Worker_getActions,{chatId:this.getChatId()})
+        await RenderCallbackButton.invokeWorkerWindowCallbackButton(WorkerCallbackButtonAction.Worker_getActions,{botId:this.getBotId(),chatId:this.getChatId()})
         break
     }
     return ack
@@ -152,7 +150,7 @@ export default class BaseCommand extends RenderChatMsg{
     }
   }
   async processBotCommand(command:string){
-    const ack = this.replyAck()
+    const ack = await this.replyAck()
     switch (command) {
       case "start":
         return await this.start()

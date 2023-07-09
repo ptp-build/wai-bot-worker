@@ -72,7 +72,6 @@ export default class MainChatMsgStorage{
     if(msg.text === undefined) {
       msg.text = ""
     }
-
     if(await this.isEnableMysql()){
       await this.tableMsg.save(msg)
     }else{

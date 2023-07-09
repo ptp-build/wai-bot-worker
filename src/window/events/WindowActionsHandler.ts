@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import {
-  MasterEventActions, MasterEvents,
+  CallbackButtonAction,
+  MasterEventActions,
   WindowActions,
   WorkerCallbackButtonAction,
   WorkerEventActions,
@@ -17,27 +18,29 @@ import { parseCallBackButtonPayload } from '../../sdk/common/string';
 import { MasterBotId } from '../../sdk/setting';
 import BotWorkerStatus from '../../sdk/botWorkerStatus/BotWorkerStatus';
 import { getMasterWindowWebContent } from '../../ui/window';
+import RenderChatMsg from '../../render/RenderChatMsg';
 
 export default class WindowActionsHandler {
   handleAction(){
     ipcMain.handle(WindowActions.WorkerWindowCallbackAction, async (_,data:string) => {
       const {path,params} = parseCallBackButtonPayload(data)
-      const {chatId} = params
-      const botId = chatId
+      let {chatId,botId} = params
+      botId = botId || chatId
       if(botId !== MasterBotId){
         const account = await new WorkerAccount(botId).get()
         console.debug("[WorkerWindowCallbackAction]",botId,account.type)
         if(account.type !== "bot"){
-          const worker = MainWindowManager.getMainWindowWebContents(chatId)
+          const worker = MainWindowManager.getMainWindowWebContents(botId)
           if(worker){
             worker.send(
               WorkerEvents.Worker_Chat_Msg,
-              chatId,
+              botId,
               WorkerEventActions.Worker_CallBackButton,
               {path,...params}
             )
           }else{
-            await WindowEventsHandler.replyChatMsg("Worker is Offline,Pls send /openWindow first!",chatId,[
+            await WindowEventsHandler.replyChatMsg("Worker is Offline",chatId,[
+              [MsgHelper.buildCallBackAction("Ope Window",CallbackButtonAction.Master_OpenWorkerWindow,{botId})],
               MsgHelper.buildLocalCancel()
             ])
           }
@@ -106,12 +109,8 @@ export default class WindowActionsHandler {
     })
 
     ipcMain.handle(WindowActions.MasterWindowAction,async (_,botId:string,action:MasterEventActions,payload:any)=>{
-      if (
-        action !== MasterEventActions.UpdateWorkerStatus &&
-        action !== MasterEventActions.GetWorkersStatus
-      ){
-        console.log("[MasterWindowAction]",botId,action,payload)
-      }
+
+      console.log("[MasterWindowAction]",botId,action,payload)
       switch (action) {
         case MasterEventActions.UpdateWorkerStatus:
           BotWorkerStatus.update(payload);
@@ -124,6 +123,8 @@ export default class WindowActionsHandler {
           return BotWorkerStatus.getAllBotWorkersStatus();
         case MasterEventActions.RestartWorkerWindow:
           return MasterActions.restartWorkerWindow(payload.botId)
+        case MasterEventActions.ApplyMsgId:
+          return {msgId:await RenderChatMsg.genMessageId()}
         case MasterEventActions.GetFileData:
           return await MasterActions.getFileDate(payload)
         case MasterEventActions.SaveFileData:

@@ -7,8 +7,9 @@ import { fileExists, getFileContent } from '../../sdk/common/file';
 
 export default class CodingCommand extends BaseCommand{
 
-  constructor(chatId:string,localMsgId?:number) {
-    super(chatId,localMsgId);}
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
+    super(chatId,localMsgId,botId);
+  }
 
   async loadBotCommands(){
     const cmdList = [

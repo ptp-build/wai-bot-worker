@@ -1,7 +1,6 @@
 import Bridge from "./Bridge";
 import {
   BotStatusType,
-  BotWorkerStatusType,
   CallbackButtonActionType,
   RenderActions,
 } from '../types';
@@ -63,9 +62,9 @@ export default class BridgeRender extends Bridge{
       }),
     })
   }
-  updateWorkerStatus(botId:String,statusBot:BotStatusType,statusBotWorker:BotWorkerStatusType){
+  updateWorkerStatus(botId:String,statusBot:BotStatusType){
     return this.invokeRenderBridgeAction(RenderActions.UpdateWorkerStatus,{
-      statusBot,statusBotWorker,botId
+      statusBot,botId
     })
   }
 }

@@ -178,6 +178,7 @@ export enum MasterEventActions {
   UpdateWorkerStatus = 'UpdateWorkerStatus',
   GetWorkersStatus = 'GetWorkersStatus',
   RestartWorkerWindow = 'RestartWorkerWindow',
+  ApplyMsgId = 'ApplyMsgId',
   GetWorkerAccount = 'GetWorkerAccount',
   GetWorkerAccounts = 'GetWorkerAccounts',
   UpdateUserInfo = 'UpdateUserInfo',
@@ -226,6 +227,7 @@ export enum CallbackButtonAction {
   Master_createCodingWorker = 'Master_createCodingWorker',
   Master_createChatGptBotWorker = 'Master_createChatGptBotWorker',
   Master_OpenWorkerWindow = 'Master_OpenWorkerWindow',
+  Master_restartWorker = 'Master_restartWorker',
   Master_openUserAppDataDir = 'Master_openUserAppDataDir',
   Master_openPluginDir = "Master_openPluginDir",
   Master_closeAllWindow = "Master_closeAllWindow",
@@ -236,6 +238,7 @@ export enum CallbackButtonAction {
   Local_setupProxy = 'Local_setupProxy',
   Local_setupChatGptAuth = 'Local_setupChatGptAuth',
   Local_setupWorkerName = 'Local_setupWorkerName',
+  Local_setupWorkerUserName = 'Local_setupWorkerUserName',
   Local_setupBrowserUserAgent = 'Local_setupBrowserUserAgent',
   Local_setupTaskUri = 'Local_setupTaskUri',
   Local_setupHomeUrl = 'Local_setupHomeUrl',
@@ -270,6 +273,7 @@ export enum CallbackButtonAction {
 export enum WorkerCallbackButtonAction {
   Worker_fetchSiteInfo = 'Worker_fetchSiteInfo',
   Worker_debug = 'Worker_debug',
+  Worker_status = 'Worker_status',
   Worker_clickLoginButton = 'Worker_clickLoginButton',
   Worker_inputPrompts = 'Worker_inputPrompts',
   Worker_getActions = 'Worker_getActions',
@@ -304,29 +308,9 @@ export type CallbackButtonCreateWorkerRequest = {
   account?:LocalWorkerAccountType
 }
 
-
-export type WindowDbActionData = {
-  action:"saveHttpRequest",
-  payload:any
-}
-
 export enum BotStatusType {
   OFFLINE = "OFFLINE",
-  STARTED = 'STARTED',
   ONLINE = 'ONLINE',
-  RegenerateResponseNeed = "RegenerateResponseNeed",
-  LoginButtonClickNeed = "LoginButtonClickNeed",
-  ChallengeFormShow = 'ChallengeFormShow',
-  LoginInputUsernameNeed = 'LoginInputUsernameNeed',
-  LoginInputPasswordNeed = 'LoginInputPasswordNeed',
-
-  TaskWorkerNoApi = 'TaskWorkerNoApi',
-  TaskWorkerApiError = 'TaskWorkerApiError',
-}
-
-export enum BotWorkerStatusType {
-  WaitToReady = 'WaitToReady',
-  Ready = "Ready",
   InvokeApiError = 'InvokeApiError',
   Busy = "Busy",
 }
@@ -370,4 +354,12 @@ export type SaveFileDataType = {
 export type GetFileDataType = {
   filePath:string,
   type: "string" | "hex" | "base64" | "buffer";
+}
+
+export type ChatMsgSendingStatus = 'messageSendingStatePending' | 'messageSendingStateFailed'
+
+export type ChatMsgRenderResponse = {
+  msgId:number,
+  sendingState?:ChatMsgSendingStatus,
+  inlineButtons?:any[]
 }

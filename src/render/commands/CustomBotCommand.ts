@@ -4,8 +4,8 @@ import BaseCommand from './BaseCommand';
 
 export default class CustomBotCommand extends BaseCommand{
 
-  constructor(chatId:string,localMsgId?:number) {
-    super(chatId,localMsgId)
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
+    super(chatId,localMsgId,botId)
   }
 
   async loadBotCommands(){
@@ -30,6 +30,7 @@ export default class CustomBotCommand extends BaseCommand{
 
     buttons.push([
       MsgHelper.buildCallBackAction("🛠️️ Worker Name",CallbackButtonAction.Local_setupWorkerName),
+      MsgHelper.buildCallBackAction("🛠️️ UserName",CallbackButtonAction.Local_setupWorkerUserName),
     ])
 
     buttons.push([

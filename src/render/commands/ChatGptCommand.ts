@@ -9,8 +9,8 @@ import BotWorkerStatus from '../../sdk/botWorkerStatus/BotWorkerStatus';
 
 export default class ChatGptCommand extends BaseCommand{
 
-  constructor(chatId:string,localMsgId?:number) {
-    super(chatId,localMsgId)
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
+    super(chatId,localMsgId,botId)
   }
 
   async loadBotCommands(){

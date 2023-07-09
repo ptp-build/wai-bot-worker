@@ -10,9 +10,9 @@ import { MasterBotId } from '../sdk/setting';
 import CustomBotCommand from './commands/CustomBotCommand';
 
 export default class RenderChatMsgCommand extends RenderChatMsg{
-  private isMasterChat: boolean;
-  constructor(chatId:string,localMsgId?:number) {
-    super(chatId,localMsgId);
+  private readonly isMasterChat: boolean;
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
+    super(chatId,localMsgId,botId);
     this.isMasterChat = this.getChatId() === MasterBotId
   }
 
@@ -28,13 +28,13 @@ export default class RenderChatMsgCommand extends RenderChatMsg{
       const {type} = workerAccount
       switch (type){
         case "bot":
-          return new CustomBotCommand(this.getChatId(),this.getLocalMsgId()).loadBotCommands()
+          return new CustomBotCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).loadBotCommands()
         case "chatGpt":
-          return new ChatGptCommand(this.getChatId(),this.getLocalMsgId()).loadBotCommands()
+          return new ChatGptCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).loadBotCommands()
         case "custom":
-          return new CustomWorkerCommand(this.getChatId(),this.getLocalMsgId()).loadBotCommands()
+          return new CustomWorkerCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).loadBotCommands()
         case "coding":
-          return new CodingCommand(this.getChatId(),this.getLocalMsgId()).loadBotCommands()
+          return new CodingCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).loadBotCommands()
       }
     }
     const cmdList = [
@@ -66,18 +66,18 @@ export default class RenderChatMsgCommand extends RenderChatMsg{
     const workerAccount = await this.getWorkerAccount()
     if(workerAccount){
       if(workerAccount.type === "coding"){
-        return new CodingCommand(this.getChatId(),this.getLocalMsgId()).processBotCommand(command)
+        return new CodingCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).processBotCommand(command)
       }
       if(workerAccount.type === "custom"){
-        return new CustomWorkerCommand(this.getChatId(),this.getLocalMsgId()).processBotCommand(command)
+        return new CustomWorkerCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).processBotCommand(command)
       }
       if(workerAccount.type === "bot"){
-        return new CustomBotCommand(this.getChatId(),this.getLocalMsgId()).processBotCommand(command)
+        return new CustomBotCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).processBotCommand(command)
       }
       if(workerAccount.type === "chatGpt"){
-        return new ChatGptCommand(this.getChatId(),this.getLocalMsgId()).processBotCommand(command)
+        return new ChatGptCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).processBotCommand(command)
       }
     }
-    return new MasterCommand(this.getChatId(),this.getLocalMsgId()).processBotCommand(command)
+    return new MasterCommand(this.getChatId(),this.getLocalMsgId(),this.getBotId()).processBotCommand(command)
   }
 }

@@ -63,7 +63,10 @@ export default class MsgHelper {
       type:"callback"
     }
   }
-  static buildCallBackAction(text:string,path:CallbackButtonActionType | string){
+  static buildCallBackAction(text:string,path:CallbackButtonActionType | string,payload?:any){
+    if(path){
+      path = encodeCallBackButtonPayload(path,payload)
+    }
     return {
       text,
       data:`${path}`,

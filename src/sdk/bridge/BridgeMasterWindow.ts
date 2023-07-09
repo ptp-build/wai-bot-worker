@@ -50,4 +50,12 @@ export default class BridgeMasterWindow extends Bridge{
   getWorkerAccounts(payload?:any){
     return this.invokeMasterWindowAction(MasterEventActions.GetWorkerAccounts, payload);
   }
+
+  createWorker(payload?:any){
+    return this.invokeMasterWindowAction(MasterEventActions.CreateWorker, payload);
+  }
+
+  applyMsgId(chatId:string){
+    return this.invokeMasterWindowAction(MasterEventActions.ApplyMsgId, {chatId});
+  }
 }

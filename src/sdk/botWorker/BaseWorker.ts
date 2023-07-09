@@ -1,6 +1,5 @@
 import {
   BotStatusType,
-  BotWorkerStatusType,
   LocalWorkerAccountType,
   WorkerCallbackButtonAction,
   WorkerEventActions,
@@ -8,22 +7,16 @@ import {
 } from '../types';
 import MsgHelper from '../helper/MsgHelper';
 import BaseWorkerMsg, { SiteInfo } from './BaseWorkerMsg';
-import FileHelper from '../helper/FileHelper';
-import { currentTs } from '../common/time';
 
 export default class BaseWorker extends BaseWorkerMsg{
   public statusBot_pre?:BotStatusType;
-  public statusBotWorker_pre?:BotWorkerStatusType;
-
   public statusBot:BotStatusType;
-  public statusBotWorker:BotWorkerStatusType;
   public botId: string;
   private workerAccount: LocalWorkerAccountType;
 
   constructor(workerAccount: LocalWorkerAccountType) {
     super(workerAccount.botId)
-    this.statusBot = BotStatusType.STARTED;
-    this.statusBotWorker = BotWorkerStatusType.WaitToReady
+    this.statusBot = BotStatusType.OFFLINE
     this.workerAccount = workerAccount
     this.botId = workerAccount.botId;
     if(this.workerAccount.type !== "bot"){
@@ -31,35 +24,6 @@ export default class BaseWorker extends BaseWorkerMsg{
     }
   }
 
-  async replyJsonFile(name:string,json:any){
-    const fileData = JSON.stringify(json,null,2)
-    await this.replyMessageTextDoc(
-      this.botId,name,fileData,fileData.length,"application/json",
-      "plainData\r\n",
-      [
-        MsgHelper.buildOpenDocBtn()
-      ]
-    )
-  }
-  async replyMessageTextDoc(chatId:string,fileName:string,fileData:string,size:number,mimeType:string,type:"plainData\r\n"|"base64" = "base64",inlineButtons?:any[][]){
-    if(type === 'base64'){
-      await this.replyMessageDoc(chatId,fileName,"data:"+mimeType+";"+type+","+btoa(unescape(encodeURIComponent(fileData))),size,mimeType,inlineButtons)
-    }else{
-      await this.replyMessageDoc(chatId,fileName,"data:"+mimeType+";"+type+fileData,size,mimeType,inlineButtons)
-    }
-  }
-  async replyMessageDoc(chatId:string,fileName:string,fileData:string,size:number,mimeType:string,inlineButtons?:any[][]){
-    const id = await new FileHelper(chatId).save(fileData)
-    return this.replyMessageWithCancel({
-      document:{
-        id,
-        fileName,
-        size:fileData.length,
-        mimeType,
-        timestamp:currentTs()
-      }
-    },inlineButtons)
-  }
   async handleSiteLogo(siteInfo:SiteInfo){
     if(this.workerAccount.avatarHash){
       return
@@ -85,6 +49,7 @@ export default class BaseWorker extends BaseWorkerMsg{
       }
     }
   }
+
   handleSiteInfo() {
     const siteInfo = this.getSiteInfo();
     this.handleSiteLogo(siteInfo).catch(console.error)
@@ -95,20 +60,15 @@ export default class BaseWorker extends BaseWorkerMsg{
     return this.workerAccount
   }
 
-  reportStatus(statusBot?: BotStatusType,statusBotWorker?:BotWorkerStatusType) {
+  reportStatus(statusBot?: BotStatusType) {
     if(!statusBot){
       statusBot = this.statusBot
     }
-    if(!statusBotWorker){
-      statusBotWorker = this.statusBotWorker
-    }
-
-    if(statusBot !== this.statusBot_pre || statusBotWorker !== this.statusBotWorker_pre){
+    if(statusBot !== this.statusBot_pre){
       this.statusBot_pre = statusBot
-      this.statusBotWorker_pre = statusBotWorker
+      this.statusBot = statusBot
       this.getBridgeMasterWindow().updateWorkerStatus({
         statusBot,
-        statusBotWorker,
         botId: this.botId,
       }).catch(console.error);
     }
@@ -122,7 +82,7 @@ export default class BaseWorker extends BaseWorkerMsg{
       botId: this.botId,
     })
   }
-  handleEvent(action:WorkerEventActions, payload:any) {
+    handleEvent(action:WorkerEventActions, payload:any) {
     switch (action) {
       case WorkerEventActions.Worker_UpdateWorkerAccount:
         if(
@@ -137,7 +97,8 @@ export default class BaseWorker extends BaseWorkerMsg{
         this.workerAccount = payload
         break;
       case WorkerEventActions.Worker_GetWorkerStatus:
-        this.reportStatus(this.statusBot!,this.statusBotWorker!)
+        this.statusBot_pre = undefined
+        this.reportStatus()
         break;
       case WorkerEventActions.Worker_CallBackButton:
         this.handleCallBackButton(payload).catch(console.error);
@@ -161,26 +122,40 @@ export default class BaseWorker extends BaseWorkerMsg{
     }
     return this;
   }
-
-  actions(){
-    if(this.workerAccount.type !== 'bot'){
-      return [
+  buildCallBackAction(text:string,action:WorkerCallbackButtonAction | string,payload?:any){
+    return MsgHelper.buildCallBackAction(text,action,{...payload,botId:this.botId})
+  }
+  actions(chatId?:string){
+    let buttons = []
+    if(this.workerAccount.type !== 'bot' && (chatId && !chatId.startsWith("-"))){
+      buttons = [
         [
-          MsgHelper.buildCallBackAction("SiteInfo",WorkerCallbackButtonAction.Worker_fetchSiteInfo)
+          this.buildCallBackAction("SiteInfo",WorkerCallbackButtonAction.Worker_fetchSiteInfo)
         ]
       ]
     }else{
-      return [
+      buttons =  [
         [
-          MsgHelper.buildCallBackAction("Debug",WorkerCallbackButtonAction.Worker_debug)
+          this.buildCallBackAction("Debug",WorkerCallbackButtonAction.Worker_debug)
         ]
       ]
     }
+    buttons.push(
+      [
+        this.buildCallBackAction("Status",WorkerCallbackButtonAction.Worker_status)
+      ]
+    )
+    return buttons
   }
-  async handleCallBackButton({ path }:{path:string}) {
+  async handleCallBackButton(payload:{path:string,chatId:string}) {
+    const {path,chatId} = payload
     switch (path) {
       case WorkerCallbackButtonAction.Worker_getActions:
-        await this.replyTextWithCancel("Actions", this.actions());
+        await this.replyTextWithCancel("Actions", this.actions(chatId),chatId);
+        break;
+      case WorkerCallbackButtonAction.Worker_status:
+        this.reportStatus()
+        await this.replyTextWithCancel(`Status: [${this.statusBot}]`, [],chatId);
         break;
       case WorkerCallbackButtonAction.Worker_debug:
         await this.replyTextWithCancel("Debug");
@@ -202,4 +177,22 @@ export default class BaseWorker extends BaseWorkerMsg{
         await this.replyJsonFile("SiteInfo.json",siteInfo)
     }
   }
+
+  async onMessage({text,chatId}:{text:string,chatId:string}){
+    const msgId = await this.applyMsgId(this.botId)
+    const msg = await this.replyMsg({
+      chatId:chatId || this.botId,
+      msgId,
+      text:"..."
+    })
+    setTimeout(async ()=>{
+      await this.updateMsg({
+        ...msg,
+        chatId:chatId || this.botId,
+        msgId,
+        text:"recv:"+text
+      })
+    },2000)
+  }
+
 }

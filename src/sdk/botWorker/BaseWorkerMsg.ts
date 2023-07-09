@@ -2,6 +2,10 @@ import { CallbackButtonAction, ApiChatMsg } from '../types';
 import BaseKeyboardAndMouseEvents from './BaseKeyboardAndMouseEvents';
 import FileHelper from '../helper/FileHelper';
 import { arrayBufferToBase64 } from '../common/buf';
+import BridgeRender from '../bridge/BridgeRender';
+import BridgeMasterWindow from '../bridge/BridgeMasterWindow';
+import MsgHelper from '../helper/MsgHelper';
+import { currentTs } from '../common/time';
 
 interface Icon {
   rel: string;
@@ -30,43 +34,9 @@ export interface SiteInfo {
 }
 
 export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
+
   constructor(botId: string) {
     super(botId)
-  }
-  replyUpdateMessage(msgId: number, chatId: string,message:Partial<ApiChatMsg>) {
-    return this.getBridgeMasterWindow().updateMessage({
-      updateMessage: message,
-    })
-  }
-  updateMessage(text1: string, msgId: number, chatId: string,fromBotId?:string,taskId?:number,isDone?:boolean) {
-    void this.getBridgeMasterWindow().updateMessage({
-      updateMessage: {
-        msgId,
-        chatId,
-        text:text1,
-        entities:[]
-      },
-    })
-    if(fromBotId && taskId){
-      void this.getBridgeWorkerWindow().taskAiMsg({
-        fromBotId,
-        taskId,
-        isDone,
-        updateMessage: {
-          msgId,
-          chatId,
-          text:text1,
-          entities:[]
-        },
-      })
-    }
-  }
-
-  finishReply(msgId:number,chatId:string) {
-    void this.getBridgeMasterWindow().finishChatGptReply({
-      msgId,
-      chatId
-    })
   }
 
   updateUserInfo(userId:string,user:{photos:any[],avatarHash:string}) {
@@ -75,6 +45,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
       user,
     })
   }
+
   isLogoUpdated(){
     return localStorage.getItem("updateSiteLogo2_"+this.botId)
   }
@@ -82,6 +53,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
   logoUpdated(){
     return localStorage.setItem("updateSiteLogo2_"+this.botId,"1")
   }
+
   async updateSiteLogo(botId:string,logoUrl:string){
     if(this.isLogoUpdated()){
       return false
@@ -107,6 +79,11 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
     }
     return false
   }
+
+  loadUrl(url:string){
+    return this.getBridgeWorkerWindow().loadUrl({url})
+  }
+
   getSiteInfo(): SiteInfo {
     const links = document.getElementsByTagName("link");
     const icons: Icon[] = [];
@@ -185,6 +162,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
       logo: logo
     };
   }
+
   async fetchSiteLogo(url:string){
     try {
       const res = await fetch(url)
@@ -195,7 +173,49 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
     }
   }
 
-  replyTextWithCancel(text: string, inlineButtons?: any[]) {
+  async applyMsgId(chatId:string){
+    const {msgId} = await new BridgeMasterWindow().applyMsgId(chatId)
+    return msgId
+  }
+
+  replyUpdateMessage(msgId: number, chatId: string,message:Partial<ApiChatMsg>) {
+    return this.getBridgeMasterWindow().updateMessage({
+      updateMessage: message,
+    })
+  }
+
+  updateMessage(text1: string, msgId: number, chatId: string,fromBotId?:string,taskId?:number,isDone?:boolean) {
+    void this.getBridgeMasterWindow().updateMessage({
+      updateMessage: {
+        msgId,
+        chatId,
+        text:text1,
+        entities:[]
+      },
+    })
+    if(fromBotId && taskId){
+      void this.getBridgeWorkerWindow().taskAiMsg({
+        fromBotId,
+        taskId,
+        isDone,
+        updateMessage: {
+          msgId,
+          chatId,
+          text:text1,
+          entities:[]
+        },
+      })
+    }
+  }
+
+  finishReply(msgId:number,chatId:string) {
+    void this.getBridgeMasterWindow().finishChatGptReply({
+      msgId,
+      chatId
+    })
+  }
+
+  replyTextWithCancel(text: string, inlineButtons?: any[],chatId?:string) {
     if (!inlineButtons) {
       inlineButtons = [];
     }
@@ -206,7 +226,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
         type: 'callback',
       },
     ]);
-    return this.replyMessage(text, inlineButtons);
+    return this.replyMessage(text, inlineButtons,chatId);
   }
 
   replyJsonCancel(json: any, inlineButtons?: any[]) {
@@ -240,15 +260,13 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
       newMessage: {
         chatId:chatId || this.botId,
         text,
+        senderId:this.botId,
         isOutgoing:!!isOutgoing,
         inlineButtons: inlineButtons || undefined,
       },
     })
   }
 
-  loadUrl(url:string){
-    return this.getBridgeWorkerWindow().loadUrl({url})
-  }
   askMessageByTaskWorker(text: string,taskId:number) {
     return this.getBridgeMasterWindow().newMessageByTaskWorker({
       newMessage: {
@@ -258,7 +276,6 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
       taskId
     })
   }
-
 
   waitForElement(selector:string, timeout = 5000) {
     return new Promise((resolve, reject) => {
@@ -278,5 +295,72 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
       };
       checkElement();
     });
+  }
+
+  async replyJsonFile(name:string,json:any){
+    const fileData = JSON.stringify(json,null,2)
+    await this.replyMessageTextDoc(
+      this.botId,name,fileData,fileData.length,"application/json",
+      "plainData\r\n",
+      [
+        MsgHelper.buildOpenDocBtn()
+      ]
+    )
+  }
+  async replyMessageTextDoc(chatId:string,fileName:string,fileData:string,size:number,mimeType:string,type:"plainData\r\n"|"base64" = "base64",inlineButtons?:any[][]){
+    if(type === 'base64'){
+      await this.replyMessageDoc(chatId,fileName,"data:"+mimeType+";"+type+","+btoa(unescape(encodeURIComponent(fileData))),size,mimeType,inlineButtons)
+    }else{
+      await this.replyMessageDoc(chatId,fileName,"data:"+mimeType+";"+type+fileData,size,mimeType,inlineButtons)
+    }
+  }
+  async replyMessageDoc(chatId:string,fileName:string,fileData:string,size:number,mimeType:string,inlineButtons?:any[][]){
+    const id = await new FileHelper(chatId).save(fileData)
+    return this.replyMessageWithCancel({
+      document:{
+        id,
+        fileName,
+        size:fileData.length,
+        mimeType,
+        timestamp:currentTs()
+      }
+    },inlineButtons)
+  }
+
+  async updateMsg(msg:ApiChatMsg){
+    return this.getBridgeMasterWindow().updateMessage({
+      updateMessage:msg,
+    })
+  }
+  async replyMsg(msg:ApiChatMsg,options?:{withCancelButton?:boolean}){
+    const {withCancelButton} = options || {}
+    let {msgId,content,text,chatId,msgDate,senderId,inlineButtons} = msg;
+    if(!senderId){
+      senderId = this.botId
+    }
+    if(!msgDate){
+      msgDate = currentTs()
+    }
+    if(!inlineButtons){
+      inlineButtons = []
+    }
+    if(withCancelButton){
+      inlineButtons.push(MsgHelper.buildLocalCancel())
+    }
+    const newMessage = {
+      chatId,
+      msgId,
+      msgDate,
+      text:text || "",
+      senderId,
+      content:content || undefined,
+      isOutgoing:false,
+      inlineButtons,
+    }
+    await this.getBridgeMasterWindow().newMessage({
+      sendToMainChat:true,
+      newMessage ,
+    })
+    return newMessage
   }
 }
