@@ -11,11 +11,11 @@ export default class CustomWorkerCommand extends BaseCommand{
   async loadBotCommands(){
     const cmdList = [
       ["start","Start conversation."],
-      ["control","Control Panel"],
-      ["action","Action Panel"],
+      ["openWindow","Open Window"],
       ["reloadWindow","Reload Window"],
       ["activeWindow","Active Window"],
-      ["openWindow","Open Window"],
+      ["control","Control Panel"],
+      ["action","Action Panel"],
       ["setting","Setting panel"],
       ["clearHistory","Clear chat History."]
     ]

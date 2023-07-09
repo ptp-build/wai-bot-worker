@@ -92,6 +92,9 @@ export default class WindowActionsHandler {
         case WorkerEventActions.Worker_ActiveWindow:
           MainWindowManager.getInstance(payload.botId).activeWindow()
           return
+        case WorkerEventActions.Worker_UpdateWorkerAccount:
+          await new WorkerAccount(payload.botId).update(payload)
+          break
       }
       const account = await new WorkerAccount(botId).get()
       if(account.type !== "bot"){

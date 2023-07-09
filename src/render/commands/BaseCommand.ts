@@ -11,11 +11,11 @@ export default class BaseCommand extends RenderChatMsg{
   async loadBotCommands(){
     const cmdList = [
       ["start","Start conversation."],
-      ["setting","Setting panel"],
-      ["action","Action panel"],
+      ["openWindow","Open Window"],
       ["reloadWindow","Reload Window"],
       ["activeWindow","Active Window"],
-      ["openWindow","Open Window"],
+      ["setting","Setting panel"],
+      ["action","Action panel"],
       ["control","Control Panel"],
       ["clearHistory","Clear chat History."],
     ]

@@ -19,12 +19,12 @@ export default class ChatGptCommand extends BaseCommand{
     if(enableMultipleQuestion){
       cmdList = [
         ["start","Start conversation."],
-        ["control","Control Panel"],
-        ["setting","Setting panel"],
-        ["action","Action panel"],
+        ["openWindow","Open Window"],
         ["reloadWindow","Reload Window"],
         ["activeWindow","Active Window"],
-        ["openWindow","Open Window"],
+        ["control","Control Panel"],
+        ["action","Action panel"],
+        ["setting","Setting panel"],
         // ["disableMultipleQuestions","Disable multiple lines of questioning."],
         // ["sendQuestions","Send the above questions to AI"],
         ["clearHistory","Clear chat History."],
