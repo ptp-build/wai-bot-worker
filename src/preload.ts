@@ -19,7 +19,6 @@ import { MasterBotId } from './sdk/setting';
 
 const fs = require('fs');
 const path = require('path');
-
 const minimist = require('minimist');
 
 const argv = minimist(process.argv.slice(2));

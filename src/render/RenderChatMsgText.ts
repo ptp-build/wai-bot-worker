@@ -1,8 +1,5 @@
 import { currentTs } from '../sdk/common/time';
 import ChatAiMsg from '../window/ChatAiMsg';
-import ChatConfig from '../window/ChatConfig';
-import MainChatMsgStorage from '../window/MainChatMsgStorage';
-import CodingCommand from './commands/CodingCommand';
 import RenderChatMsg from './RenderChatMsg';
 import ChatGptCommand from './commands/ChatGptCommand';
 import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
@@ -11,8 +8,8 @@ import RenderGroupChatMsg from './RenderGroupChatMsg';
 export default class RenderChatMsgText extends RenderChatMsg{
 
   private chatAiMsg: ChatAiMsg;
-  constructor(chatId:string,localMsgId?:number) {
-    super(chatId,localMsgId);
+  constructor(chatId:string,localMsgId?:number,botId?:string) {
+    super(chatId,localMsgId,botId);
     this.chatAiMsg = new ChatAiMsg(chatId)
   }
 

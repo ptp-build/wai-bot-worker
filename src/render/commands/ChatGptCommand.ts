@@ -117,7 +117,7 @@ export default class ChatGptCommand extends BaseCommand{
     })
 
     await this.replyNewMessage(chatGptRole!,[],true,true)
-    await this.askChatGptMessage(chatGptRole!,undefined)
+    await this.askChatGptMessage(chatGptRole!)
   }
   async setupChatGptRole(){
     const {chatGptRole} = await this.getWorkerAccount()
