@@ -2,6 +2,25 @@ import { CallbackButtonAction, CallbackButtonActionType } from '../types';
 import { encodeCallBackButtonPayload } from '../common/string';
 
 export default class MsgHelper {
+
+  static handleReplyText(text:string,replyParser?:string){
+    if(replyParser){
+      try {
+        const code = `return ${replyParser};`;
+        const func = new Function('result', code);
+        const parseResult = func(text);
+        if(parseResult){
+          text = parseResult;
+        }else{
+          text = `${code} parse error`
+        }
+        console.log(text);
+      }catch (e){
+        console.log(e)
+      }
+    }
+    return text
+  }
   static isLocalMessageId(id:number){
     return !Number.isInteger(id);
   }
@@ -17,19 +36,17 @@ export default class MsgHelper {
   }
   static buildLocalCancel(text?:string){
     return [
-      MsgHelper.buildCallBackAction(text || "↩️️ Cancel",CallbackButtonAction.Local_cancelMessage),
+      MsgHelper.buildCallBackAction(text || "↩️️ 返回",CallbackButtonAction.Local_cancelMessage),
     ]
   }
   static buildRenderCancel(text?:string,payload?:any){
     return [
-      MsgHelper.buildCallBackAction(text || "↩️️ Cancel",encodeCallBackButtonPayload(CallbackButtonAction.Render_cancelMessage,payload)),
+      MsgHelper.buildCallBackAction(text || "↩️️ 返回",encodeCallBackButtonPayload(CallbackButtonAction.Render_cancelMessage,payload)),
     ]
   }
-
-
   static buildOpenDocBtn(text?:string){
     return [
-      MsgHelper.buildCallBackAction(text || "Open",encodeCallBackButtonPayload(CallbackButtonAction.Master_openMessageDoc,{
+      MsgHelper.buildCallBackAction(text || "外部默认程序打开",encodeCallBackButtonPayload(CallbackButtonAction.Master_openMessageDoc,{
         openMessageDoc:true
       })),
     ]

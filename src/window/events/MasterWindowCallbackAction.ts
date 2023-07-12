@@ -1,18 +1,20 @@
-import {getElectronEnv} from '../../utils/electronEnv';
+import { getElectronEnv } from '../../utils/electronEnv';
 import path from 'path';
-import {shell} from 'electron';
+import { shell } from 'electron';
 import {
   CallbackButtonAction,
   CallbackButtonRequest,
+  ChatGptModelType,
   LocalWorkerAccountType,
+  LocalWorkerBotType,
   LocalWorkerType,
   MasterEventActions,
-} from "../../sdk/types";
-import MainWindowManager from "../../ui/MainWindowManager";
-import {User} from "../../worker/models/user/User";
-import WindowEventsHandler from "./WindowEventsHandler";
-import WorkerAccount from "../woker/WorkerAccount";
-import {getCustomWorkerHtml, getTaskWorkerHtml} from "../../ui/Ui";
+} from '../../sdk/types';
+import MainWindowManager from '../../ui/MainWindowManager';
+import { User } from '../../worker/models/user/User';
+import WindowEventsHandler from './WindowEventsHandler';
+import WorkerAccount from '../woker/WorkerAccount';
+import { getCustomWorkerHtml } from '../../ui/Ui';
 import { MasterBotId } from '../../sdk/setting';
 import { parseCallBackButtonPayload } from '../../sdk/common/string';
 import MasterActions from './MasterActions';
@@ -26,20 +28,8 @@ export default class MasterWindowCallbackAction {
       case CallbackButtonAction.Master_openMessageDoc:
         await this.openMessageDoc(params)
         break
-      case CallbackButtonAction.Master_createCommonBot:
-        await this.createWorker("bot")
-        break
       case CallbackButtonAction.Master_createCustomWorker:
-        await this.createWorker("custom")
-        break
-      case CallbackButtonAction.Master_createCodingWorker:
-        await this.createWorker("coding")
-        break
-      case CallbackButtonAction.Master_createTaskWorker:
-        await this.createWorker("taskWorker")
-        break
-      case CallbackButtonAction.Master_createChatGptBotWorker:
-        await this.createWorker("chatGpt")
+        await this.createWorkerBot(params)
         break
       case CallbackButtonAction.Master_restartWorker:
         await this.restartWorker(params.botId || params.chatId )
@@ -92,6 +82,48 @@ export default class MasterWindowCallbackAction {
     }
     await this.initWindow(account)
   }
+  async createWorkerBot({type,botType,chatGptModel,customWorkerUrl,pluginJs}:{type:LocalWorkerType,chatGptModel?:ChatGptModelType,botType:LocalWorkerBotType,customWorkerUrl?:string,pluginJs:string}){
+    const botId = await User.genUserId()
+    let appWidth = 300
+    const {username,name} = WorkerAccount.getDefaultName(botId,type)
+    if(customWorkerUrl
+      &&
+      (
+        customWorkerUrl.indexOf("twitter") > 0
+        || customWorkerUrl.indexOf("proton") > 0
+      )
+    ){
+      appWidth = 900
+    }
+    const account = {
+      botId,
+      bio:"",
+      username,
+      name,
+      type:type,
+      appWidth,
+      appHeight:600,
+      appPosX: 0,
+      appPosY: 0,
+      botType,
+      chatGptModel,
+      customWorkerUrl:customWorkerUrl || "",
+      pluginJs,
+    }
+
+    await new WorkerAccount(botId).update(account)
+    await WorkerAccount.addBotList(botId)
+    await WindowEventsHandler.sendEventToMasterChat(MasterEventActions.CreateWorker,{
+      account
+    })
+    switch (type){
+      case 'bot':
+        break
+      default:
+        await this.initWindow(account)
+        break
+    }
+  }
   async createWorker(type:LocalWorkerType) {
     let account = await new WorkerAccount(MasterBotId).get() as LocalWorkerAccountType
     const botId = await User.genUserId()
@@ -122,6 +154,9 @@ export default class MasterWindowCallbackAction {
       pluginJs,
       proxy:account?.proxy || "",
     }
+    if(type === "chatGpt"){
+      account.customWorkerUrl = "https://chat.openai.com"
+    }
     await new WorkerAccount(botId).update(account)
     await WorkerAccount.addBotList(botId)
     await WindowEventsHandler.sendEventToMasterChat(MasterEventActions.CreateWorker,{
@@ -140,9 +175,6 @@ export default class MasterWindowCallbackAction {
     switch (account.type){
       case 'chatGpt':
         homeUrl = "https://chat.openai.com"
-        break
-      case 'taskWorker':
-        homeUrl = `data:text/html;charset=utf-8,${encodeURI(getTaskWorkerHtml())}`
         break
       case 'custom':
         homeUrl = account.customWorkerUrl ? account.customWorkerUrl : `data:text/html;charset=utf-8,${encodeURI(getCustomWorkerHtml())}`

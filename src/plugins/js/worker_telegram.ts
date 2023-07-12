@@ -31,6 +31,7 @@ class TelegramWorker extends BaseWorker {
   init() {
     console.log("[BotWorker INIT]",this.botId)
     this.reportStatus(BotStatusType.ONLINE)
+    this.reportStatus(BotStatusType.READY)
     this.loop().catch(console.error)
   }
 
@@ -38,6 +39,7 @@ class TelegramWorker extends BaseWorker {
     const global = this.tgHelper.getGlobal();
     if(global){
       this.statusBot = BotStatusType.ONLINE
+      this.reportStatus(BotStatusType.READY)
     }
     this.reportStatus(this.statusBot)
     await this.events.checkMessages()

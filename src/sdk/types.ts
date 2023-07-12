@@ -25,7 +25,7 @@ export interface ElectronApi {
   invokeRenderBridgeAction:(botId:string,action:RenderActions,payload:any)=>Promise<any|undefined>
   invokeWorkerWindowAction:(botId:string,action:WorkerEventActions,payload:any)=>Promise<any>
   invokeMasterWindowAction:(botId:string,action:MasterEventActions,payload:any)=>Promise<any>
-  invokeWorkerWindowKeyboardEventAction:(botId:string,type:string,keyCode:string)=>Promise<any>
+  invokeWorkerWindowKeyboardEventAction:(botId:string,type:string,keyCode:string,modifiers?:string[])=>Promise<any>
   invokeWorkerWindowMouseEventAction:(botId:string,paylaod:any)=>Promise<any>
   isFullscreen: () => Promise<boolean>;
   installUpdate: () => Promise<void>;
@@ -106,6 +106,13 @@ export interface AccountUser {
 
 export type LocalWorkerType="chatGpt" | 'taskWorker'| 'custom' | 'coding'  | 'sql' | "bot"
 
+export type LocalWorkerBotType = "telegramBot" | "chatGptBot"
+export const LocalWorkerBotTypes = ["telegramBot", "chatGptBot"] as LocalWorkerBotType[];
+
+
+export type ChatGptModelType = "gpt-4" | "gpt-3.5-turbo"
+export const ChatGptModelTypes = ["gpt-4", "gpt-3.5-turbo"] as ChatGptModelType[];
+
 export type LocalWorkerAccountType = {
   botId:string,
   username:string,
@@ -119,6 +126,7 @@ export type LocalWorkerAccountType = {
   proxy?:string,
   activeWindowOnOpenChat?:boolean,
   chatGptAuth?:string,
+  chatGptModel?:string,
   browserUserAgent?:string,
   chatGptRole?:string,
   promptFormat?:string,
@@ -129,6 +137,10 @@ export type LocalWorkerAccountType = {
   pluginJs?:string,
   mysqlMsgStorageDsn?:string,
   projectRootDir?:string,
+  botType?:LocalWorkerBotType,
+  telegramBotToken?:string,
+  telegramBotNotifyChatId?:string,
+  openAiApiKey?:string
 }
 
 export type UserInfoType = {
@@ -178,6 +190,8 @@ export enum MasterEventActions {
   UpdateWorkerStatus = 'UpdateWorkerStatus',
   GetWorkersStatus = 'GetWorkersStatus',
   RestartWorkerWindow = 'RestartWorkerWindow',
+  RequestOpenAi = 'RequestOpenAi',
+  CloseWorkerWindow = 'CloseWorkerWindow',
   ApplyMsgId = 'ApplyMsgId',
   GetWorkerAccount = 'GetWorkerAccount',
   GetWorkerAccounts = 'GetWorkerAccounts',
@@ -239,7 +253,14 @@ export enum CallbackButtonAction {
   Local_setupChatGptAuth = 'Local_setupChatGptAuth',
   Local_setupWorkerName = 'Local_setupWorkerName',
   Local_setupWorkerUserName = 'Local_setupWorkerUserName',
+  Local_setupWorkerBotType = 'Local_setupWorkerBotType',
+  Local_setupWorkerBio = 'Local_setupWorkerBio',
   Local_setupBrowserUserAgent = 'Local_setupBrowserUserAgent',
+  Local_setupTelegramBotToken = 'Local_setupTelegramBotToken',
+  Local_setupOpenAiApiKey = 'Local_setupOpenAiApiKey',
+  Local_setupChatGptModel = 'Local_setupChatGptModel',
+  Local_setupTelegramBotNotifyChatId = 'Local_setupTelegramBotNotifyChatId',
+  Local_setupWidthHeight = 'Local_setupWidthHeight',
   Local_setupTaskUri = 'Local_setupTaskUri',
   Local_setupHomeUrl = 'Local_setupHomeUrl',
   Local_setupPluginJs = 'Local_setupPluginJs',
@@ -267,22 +288,26 @@ export enum CallbackButtonAction {
   Render_resendAiMsg = 'Render_resendAiMsg',
   Render_workerStatus = 'Render_workerStatus',
   Render_setupChatGptRole = 'Render_setupChatGptRole',
-  Render_sendRoleDirectly = 'Render_sendRoleDirectly',
+  Render_setupChatGptRoleConfirm = 'Render_setupChatGptRoleConfirm',
 }
 
 export enum WorkerCallbackButtonAction {
   Worker_fetchSiteInfo = 'Worker_fetchSiteInfo',
+  Worker_openHomeUrl = 'Worker_openHomeUrl',
   Worker_debug = 'Worker_debug',
   Worker_status = 'Worker_status',
+  Worker_currentLocation = 'Worker_currentLocation',
   Worker_clickLoginButton = 'Worker_clickLoginButton',
   Worker_inputPrompts = 'Worker_inputPrompts',
   Worker_getActions = 'Worker_getActions',
   Worker_sendPromptTextareaMouseClick = "Worker_sendPromptTextareaMouseClick",
   Worker_sendInputSpaceEvent = 'Worker_sendInputSpaceEvent',
   Worker_performClickSendPromptButton = "Worker_performClickSendPromptButton",
-  Worker_clickRegenerateResponseButton = "Worker_clickRegenerateResponseButton",
   Worker_locationReload = "Worker_locationReload",
+  Worker_help = "Worker_help",
   Worker_historyGoBack = "Worker_historyGoBack",
+  Worker_closeWindow = "Worker_closeWindow",
+  Worker_restartWindow = "Worker_restartWindow",
 
   Worker_openDevTools = "Worker_openDevTools",
   Worker_browserUserAgent = "Worker_browserUserAgent",
@@ -311,6 +336,7 @@ export type CallbackButtonCreateWorkerRequest = {
 export enum BotStatusType {
   OFFLINE = "OFFLINE",
   ONLINE = 'ONLINE',
+  READY = 'READY',
   InvokeApiError = 'InvokeApiError',
   Busy = "Busy",
 }

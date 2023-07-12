@@ -271,10 +271,11 @@ export default class MainWindowManager {
     });
 
   }
-  sendInputKeyboardEvent(type:'char' | 'keyUp' | 'keyDown',keyCode:string){
+  sendInputKeyboardEvent(type:'char' | 'keyUp' | 'keyDown',keyCode:string,modifiers?:any){
     this.mainWindow!.webContents.sendInputEvent({
       type: type,
       keyCode: keyCode,
+      modifiers
     });
   }
   sendMouseEvent(payload:any){

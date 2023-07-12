@@ -8,11 +8,8 @@ import {
   WindowActions,
   WorkerCallbackButtonAction,
 } from '../sdk/types';
-import { currentTs } from '../sdk/common/time';
 import ChatAiMsg from '../window/ChatAiMsg';
 import MsgHelper from '../sdk/helper/MsgHelper';
-import ChatConfig from '../window/ChatConfig';
-import MainChatMsgStorage from '../window/MainChatMsgStorage';
 import WorkerAccount from '../window/woker/WorkerAccount';
 import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
 import BridgeMasterWindow from '../sdk/bridge/BridgeMasterWindow';
@@ -225,21 +222,21 @@ export default class RenderChatMsg {
       statusBot = BotStatusType.OFFLINE
     }
     switch (statusBot){
-      case BotStatusType.ONLINE:
+      case BotStatusType.READY:
         break
       case BotStatusType.OFFLINE:
         try{
           await ipcRenderer.invoke(WindowActions.MasterWindowCallbackAction,encodeCallBackButtonPayload(CallbackButtonAction.Master_OpenWorkerWindow,{
             botId
           }))
-          await this.waitForBotStatus(botId,BotStatusType.ONLINE)
+          await this.waitForBotStatus(botId,BotStatusType.READY)
         }catch (e){
           console.error("[sendMessageToWorker] error",e)
           return {
             msgId:await this.genMsgId(),sendingState:"messageSendingStateFailed",
             inlineButtons:[
-              [MsgHelper.buildCallBackAction("ReSend",CallbackButtonAction.Local_resend)],
-              [MsgHelper.buildCallBackAction("Restart Window",CallbackButtonAction.Master_restartWorker,{botId})],
+              [MsgHelper.buildCallBackAction("🔁 重新发送",CallbackButtonAction.Local_resend)],
+              [MsgHelper.buildCallBackAction("↩️ 重启窗口",CallbackButtonAction.Master_restartWorker,{botId})],
             ]
           }
         }
@@ -248,9 +245,8 @@ export default class RenderChatMsg {
         return {
           msgId:await this.genMsgId(),sendingState:"messageSendingStateFailed",
           inlineButtons:[
-            [MsgHelper.buildUnsupportedAction(`Worker is ${statusBot}!`)],
-            [MsgHelper.buildCallBackAction("ReSend",CallbackButtonAction.Local_resend)],
-            [MsgHelper.buildCallBackAction("Reload Window",WorkerCallbackButtonAction.Worker_locationReload,{botId})],
+            [MsgHelper.buildCallBackAction("🔁 重新发送",CallbackButtonAction.Local_resend)],
+            [MsgHelper.buildCallBackAction("🔄 刷新窗口",WorkerCallbackButtonAction.Worker_locationReload,{botId})],
           ]}
     }
     return undefined

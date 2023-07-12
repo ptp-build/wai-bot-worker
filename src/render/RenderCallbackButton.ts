@@ -46,8 +46,8 @@ export default class RenderCallbackButton extends RenderChatMsg{
     this.path = path
     this.messageId = messageId
     switch (path){
-      case CallbackButtonAction.Render_sendRoleDirectly:
-        return await new ChatGptCommand(this.getChatId()).sendRoleDirectly(this.messageId)
+      case CallbackButtonAction.Render_setupChatGptRoleConfirm:
+        return await new ChatGptCommand(this.getChatId()).setupChatGptRoleConfirm(payload.text)
       case CallbackButtonAction.Render_setupChatGptRole:
         return await new ChatGptCommand(this.getChatId()).setupChatGptRole()
       case CallbackButtonAction.Render_cancelMessage:

@@ -30,7 +30,7 @@ export default class BridgeWorkerWindow extends Bridge{
   taskAiMsg(payload:any){
     return this.invokeWorkerWindowAction(WorkerEventActions.Worker_TaskAiMsg, payload);
   }
-  loadUrl(payload:any){
+  loadUrl(payload:{url:string}){
     return this.invokeWorkerWindowAction(WorkerEventActions.Worker_LoadUrl, payload);
   }
 

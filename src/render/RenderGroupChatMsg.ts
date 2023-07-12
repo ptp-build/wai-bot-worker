@@ -1,8 +1,6 @@
 import RenderChatMsg from './RenderChatMsg';
-import ChatAiMsg from '../window/ChatAiMsg';
 import WorkerAccount from '../window/woker/WorkerAccount';
 import { ChatMsgRenderResponse, LocalWorkerAccountType } from '../sdk/types';
-import { currentTs } from '../sdk/common/time';
 import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
 import RenderChatMsgCommand from './RenderChatMsgCommand';
 

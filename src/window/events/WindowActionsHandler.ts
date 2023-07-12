@@ -39,8 +39,8 @@ export default class WindowActionsHandler {
               {path,...params}
             )
           }else{
-            await WindowEventsHandler.replyChatMsg("Worker is Offline",chatId,[
-              [MsgHelper.buildCallBackAction("Ope Window",CallbackButtonAction.Master_OpenWorkerWindow,{botId})],
+            await WindowEventsHandler.replyChatMsg("👇",chatId,[
+              [MsgHelper.buildCallBackAction("🚀 打开窗口",CallbackButtonAction.Master_OpenWorkerWindow,{botId})],
               MsgHelper.buildLocalCancel()
             ])
           }
@@ -61,9 +61,9 @@ export default class WindowActionsHandler {
     });
 
     ipcMain.handle(WindowActions.WorkerWindowKeyboardAction,
-      async (_,botId,type,keyCode)=>{
-        console.log("[WorkerWindowKeyboardAction]",botId,keyCode,type)
-        MainWindowManager.getInstance(botId).sendInputKeyboardEvent(type,keyCode)
+      async (_,botId,type,keyCode,modifiers)=>{
+        console.log("[WorkerWindowKeyboardAction]",botId,type,keyCode,modifiers)
+        MainWindowManager.getInstance(botId).sendInputKeyboardEvent(type,keyCode,modifiers)
       })
 
     ipcMain.handle(WindowActions.WorkerWindowMouseAction,
@@ -113,28 +113,36 @@ export default class WindowActionsHandler {
 
     ipcMain.handle(WindowActions.MasterWindowAction,async (_,botId:string,action:MasterEventActions,payload:any)=>{
 
-      console.log("[MasterWindowAction]",botId,action,payload)
-      switch (action) {
-        case MasterEventActions.UpdateWorkerStatus:
-          BotWorkerStatus.update(payload);
-          break
-        case MasterEventActions.GetWorkerAccount:
-          return new WorkerAccount(payload.botId).get();
-        case MasterEventActions.GetWorkerAccounts:
-          return WorkerAccount.getAccounts();
-        case MasterEventActions.GetWorkersStatus:
-          return BotWorkerStatus.getAllBotWorkersStatus();
-        case MasterEventActions.RestartWorkerWindow:
-          return MasterActions.restartWorkerWindow(payload.botId)
-        case MasterEventActions.ApplyMsgId:
-          return {msgId:await RenderChatMsg.genMessageId()}
-        case MasterEventActions.GetFileData:
-          return await MasterActions.getFileDate(payload)
-        case MasterEventActions.SaveFileData:
-          await MasterActions.saveFileDate(payload)
-          return
+      try {
+
+        switch (action) {
+          case MasterEventActions.UpdateWorkerStatus:
+            BotWorkerStatus.update(payload);
+            break
+          case MasterEventActions.GetWorkerAccount:
+            return new WorkerAccount(payload.botId).get();
+          case MasterEventActions.GetWorkerAccounts:
+            return WorkerAccount.getAccounts();
+          case MasterEventActions.GetWorkersStatus:
+            return BotWorkerStatus.getAllBotWorkersStatus();
+          case MasterEventActions.CloseWorkerWindow:
+            return MasterActions.closeWorkerWindow(payload.botId)
+          case MasterEventActions.RequestOpenAi:
+            return MasterActions.requestOpenAi(payload)
+          case MasterEventActions.RestartWorkerWindow:
+            return MasterActions.restartWorkerWindow(payload.botId)
+          case MasterEventActions.ApplyMsgId:
+            return {msgId:await RenderChatMsg.genMessageId()}
+          case MasterEventActions.GetFileData:
+            return await MasterActions.getFileDate(payload)
+          case MasterEventActions.SaveFileData:
+            await MasterActions.saveFileDate(payload)
+            return
+        }
+        return  await WindowEventsHandler.sendEventToMasterChat(action,payload)
+      }catch (e){
+        console.error("[MasterWindowAction] error",botId,action,payload,e)
       }
-      return  await WindowEventsHandler.sendEventToMasterChat(action,payload)
     })
   }
 

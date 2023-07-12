@@ -2,13 +2,12 @@ import { ENV } from '../../env';
 
 export class TelegramBot {
   private token: string;
-  private chat_id?: string;
-  private text?: string;
-  private reply_markup?: string;
   constructor(token: string) {
     this.token = token;
   }
-
+  async getUpdates(offset:number = 0,limit:number = 100){
+    return sendGetUpdatesToTelegram(offset,limit,this.token)
+  }
   async replyText(text: string, chat_id: string) {
     return sendMessageToTelegram({ text, chat_id }, this.token);
   }
@@ -76,6 +75,15 @@ export async function sendMessageToTelegram(body: Record<string, any>, token: st
     },
     body: JSON.stringify(body),
   });
+}
+
+export async function sendGetUpdatesToTelegram(offset:number,limit:number,token:string) {
+  return await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=${offset}&limit=${limit}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).then(res => res.json());
 }
 
 // 发送聊天动作到TG

@@ -67,7 +67,7 @@ const electronApi: ElectronApi = {
   invokeRenderBridgeAction:RenderBridge.callApi.bind(botId),
   invokeWorkerWindowAction: (botId,action:WorkerEventActions,payload) => ipcRenderer.invoke(WindowActions.WorkerWindowAction,botId,action,payload),
   invokeMasterWindowAction: (botId,action:MasterEventActions,payload) => ipcRenderer.invoke(WindowActions.MasterWindowAction,botId,action,payload),
-  invokeWorkerWindowKeyboardEventAction: (botId,type,keyCode) => ipcRenderer.invoke(WindowActions.WorkerWindowKeyboardAction,botId,type,keyCode),
+  invokeWorkerWindowKeyboardEventAction: (botId,type,keyCode,modifiers) => ipcRenderer.invoke(WindowActions.WorkerWindowKeyboardAction,botId,type,keyCode,modifiers),
   invokeWorkerWindowMouseEventAction: (botId,payload:any) => ipcRenderer.invoke(WindowActions.WorkerWindowMouseAction,botId,payload),
 
   isFullscreen: () => ipcRenderer.invoke(ElectronAction.GET_IS_FULLSCREEN),
@@ -87,9 +87,10 @@ const electronApi: ElectronApi = {
 contextBridge.exposeInMainWorld('electron', electronApi);
 window.electron = electronApi
 
+
 async function initCustomBot(account:LocalWorkerAccountType){
   if(account.type === 'bot'){
-    let {pluginJs} = account
+    let {pluginJs,botType} = account
     if(!pluginJs){
       pluginJs = "bot_custom.js"
     }
@@ -115,6 +116,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       if(
         customWorkerUrl!.includes("twitter")
         || customWorkerUrl!.includes("discord")
+        || customWorkerUrl!.includes("proton")
         || customWorkerUrl!.includes("github")
       ){
         appendChild = false
@@ -123,9 +125,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     if(appendChild){
       await readAppendFile("lib_zepto.js","")
       await readAppendFile(pluginJs, `window.WORKER_ACCOUNT = ${JSON.stringify(account)};`)
-      if(!isProd){
-        await readAppendFile("testCase.js",`window.WORKER_ACCOUNT = ${JSON.stringify(account)};`)
-      }
     }else{
       new BotWorkerCustom(account).addEvents()
     }

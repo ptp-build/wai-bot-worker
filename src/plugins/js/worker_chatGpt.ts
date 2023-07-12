@@ -2,13 +2,14 @@ import BotWorkerSelector from './chatGpt/BotWorkerSelector';
 import BaseWorker from '../../sdk/botWorker/BaseWorker';
 import {
   BotStatusType,
+  CallbackButtonAction,
   LocalWorkerAccountType,
-  ApiChatMsg,
   WorkerCallbackButtonAction,
   WorkerEventActions,
 } from '../../sdk/types';
 import ChatGptMsg from './chatGpt/ChatGptMsg';
 import { sleep } from '../../sdk/common/time';
+import MsgHelper from '../../sdk/helper/MsgHelper';
 
 const {$} = window
 
@@ -95,6 +96,7 @@ class ChatGptBotWorker extends BaseWorker {
   constructor(workerAccount:LocalWorkerAccountType) {
     super(workerAccount);
     this.setChatGptAuth(workerAccount.chatGptAuth)
+    this.reportStatus(BotStatusType.ONLINE)
     this.init();
   }
 
@@ -114,11 +116,9 @@ class ChatGptBotWorker extends BaseWorker {
     console.log("[BotWorker INIT]",this.botId,window.location.href)
     hook_fetch(this)
     this.loop()
-    setInterval(() => this.loop(), 1000);
   }
 
   loop() {
-    document.title = ("# "+this.getWorkerAccount().botId + " ChatGpt")
     if (this.selector.regenerateResponseButton.length > 0) {
       // this.statusBot = ChatGptCallbackButtonAction.RegenerateResponseNeed;
     }
@@ -129,7 +129,7 @@ class ChatGptBotWorker extends BaseWorker {
       this.selector.promptTextArea.length > 0 &&
       this.selector.startPopUpModal.length === 0
     ) {
-      if (this.statusBot === BotStatusType.OFFLINE) {
+      if (this.statusBot === BotStatusType.ONLINE) {
         void this.onReady()
       }
     }
@@ -146,7 +146,8 @@ class ChatGptBotWorker extends BaseWorker {
     }
     // console.log("[Loop]", this.statusBot, this.statusBotWorker);
     this.reportStatus()
-    this.performFirstPopupClick();
+    //this.performFirstPopupClick();
+    setTimeout(() => this.loop(), 1000);
   }
 
   performFirstPopupClick() {
@@ -198,11 +199,16 @@ class ChatGptBotWorker extends BaseWorker {
   async askMsg({ text,chatId,msgId }:{text:string,chatId:string,msgId?:number}) {
     if (
       this.chatGptMsg ||
-      this.statusBot !== BotStatusType.ONLINE
+      this.statusBot !== BotStatusType.READY
     ) {
-      this.reportStatus()
-      console.log("[askMsg] stopped", this.statusBot);
-      return;
+      if(!this.chatGptMsg && this.selector.promptTextArea.length > 0 && this.selector.promptTextArea.val().length === 0){
+        this.statusBot = BotStatusType.READY
+        this.reportStatus()
+      }else{
+        this.reportStatus()
+        console.log("[askMsg] stopped", this.statusBot);
+        return;
+      }
     }
     if(!msgId){
       msgId = await this.applyMsgId(chatId)
@@ -249,26 +255,6 @@ class ChatGptBotWorker extends BaseWorker {
     const msgId = await this.replyMessage('...', [], chatId || this.botId)
     this.chatGptMsg = new ChatGptMsg(msgId!, chatId || this.botId);
   }
-  handleResult(result:string){
-    const {replyParser} = this.getWorkerAccount()
-
-    if(replyParser){
-      try {
-        const code = `return ${replyParser};`;
-        const func = new Function('result', code);
-        const parseResult = func(result);
-        if(parseResult){
-          result = parseResult;
-        }else{
-          result = `${code} eval error`
-        }
-        console.log(result);
-      }catch (e){
-        console.log(e)
-      }
-    }
-    return result
-  }
   onSteamMsgRecv({ state, text, index }:{state:"REQUEST"|"START"|"ERROR"|"IN_PROCESS",text:string,index:number}) {
     console.log("[onSteamMsgRecv]",state,index)
     if (state === "ERROR") {
@@ -294,7 +280,7 @@ class ChatGptBotWorker extends BaseWorker {
       if (res.state === "DONE") {
         console.log("[DONE]", this.chatGptMsg.chatId, this.chatGptMsg.msgId, res.text);
         if(this.chatGptMsg.msgId){
-          const result = this.handleResult(res.text)
+          const result = MsgHelper.handleReplyText(res.text,this.getWorkerAccount().replyParser)
           void this.updateMsg({
             chatId:this.chatGptMsg.chatId,
             msgId:this.chatGptMsg.msgId,
@@ -302,7 +288,7 @@ class ChatGptBotWorker extends BaseWorker {
           })
           this.finishReply(this.chatGptMsg.msgId, this.chatGptMsg.chatId);
         }
-        this.reportStatus(BotStatusType.ONLINE)
+        this.reportStatus(BotStatusType.READY)
         if(this.chatGptMsg && conversation_id && !window.location.href.includes(conversation_id)){
           window.localStorage.setItem(`CHAT_Conversation3_${this.chatGptMsg.chatId}`,conversation_id)
           window.localStorage.setItem(`Conversation_CHAT_${conversation_id}`,this.chatGptMsg.chatId)
@@ -376,47 +362,61 @@ class ChatGptBotWorker extends BaseWorker {
       await this.sendEscKeyboardEvent()
     }
   }
+
+  async help(chatId:string) {
+    let text = "\n🎓使用帮助\n";
+    text += "\n💡 如何设置角色\n";
+    text += "\n1️⃣ 打开 Telegram app ";
+
+    return this.reply(chatId, text, true)
+  }
   actions(chatId?:string){
+
     return [
       ...super.actions(chatId),
-      [
-        this.buildCallBackAction("clickLoginButton","Worker_LoginButtonClickNeed")
-      ],
-      [
-        this.buildCallBackAction("loginInputUsernameNeed","Worker_LoginInputUsernameNeed")
-      ],
-      [
-        this.buildCallBackAction("loginInputPasswordNeed","Worker_LoginInputPasswordNeed")
-      ],
-      [
-        this.buildCallBackAction("regenerateResponseNeed","Worker_RegenerateResponseNeed")
-      ],
-      [
-        this.buildCallBackAction("sendPromptTextareaMouseClick",WorkerCallbackButtonAction.Worker_sendPromptTextareaMouseClick)
-      ],
-      [
-        this.buildCallBackAction("inputPrompts",WorkerCallbackButtonAction.Worker_inputPrompts)
-      ],
-      [
-        this.buildCallBackAction("sendInputSpaceEvent",WorkerCallbackButtonAction.Worker_sendInputSpaceEvent)
-      ],
-      [
-        this.buildCallBackAction("performClickSendPromptButton",WorkerCallbackButtonAction.Worker_performClickSendPromptButton)
-      ],
-
-      [
-        this.buildCallBackAction("Clear conversations",ChatGptCallbackButtonAction.Worker_clearConversations)
-      ],
-      [
-        this.buildCallBackAction("New conversations",ChatGptCallbackButtonAction.Worker_newConversations)
-      ],
+      [this.buildCallBackAction("👤 帐户中心","Worker_OpenPlatForm")],
+      [this.buildCallBackAction("🔐 用户名密码",CallbackButtonAction.Local_setupChatGptAuth)],
+      // [
+      //   this.buildCallBackAction("clickLoginButton","Worker_LoginButtonClickNeed")
+      // ],
+      // [
+      //   this.buildCallBackAction("loginInputUsernameNeed","Worker_LoginInputUsernameNeed")
+      // ],
+      // [
+      //   this.buildCallBackAction("loginInputPasswordNeed","Worker_LoginInputPasswordNeed")
+      // ],
+      // [
+      //   this.buildCallBackAction("regenerateResponseNeed","Worker_RegenerateResponseNeed")
+      // ],
+      // [
+      //   this.buildCallBackAction("sendPromptTextareaMouseClick",WorkerCallbackButtonAction.Worker_sendPromptTextareaMouseClick)
+      // ],
+      // [
+      //   this.buildCallBackAction("inputPrompts",WorkerCallbackButtonAction.Worker_inputPrompts)
+      // ],
+      // [
+      //   this.buildCallBackAction("sendInputSpaceEvent",WorkerCallbackButtonAction.Worker_sendInputSpaceEvent)
+      // ],
+      // [
+      //   this.buildCallBackAction("performClickSendPromptButton",WorkerCallbackButtonAction.Worker_performClickSendPromptButton)
+      // ],
+      //
+      // [
+      //   this.buildCallBackAction("Clear conversations",ChatGptCallbackButtonAction.Worker_clearConversations)
+      // ],
+      // [
+      //   this.buildCallBackAction("New conversations",ChatGptCallbackButtonAction.Worker_newConversations)
+      // ],
     ]
   }
 
   async handleCallBackButton(payload:{path:string,messageId:number,chatId:string}) {
-    const { path,messageId,chatId } = payload
+    const { path} = payload
     await super.handleCallBackButton(payload)
     switch (path) {
+      case "Worker_OpenPlatForm":
+        await this.getBridgeWorkerWindow().loadUrl({url:"https://platform.openai.com"})
+        return
       case "Worker_LoginButtonClickNeed":
         this.clickLoginButton();
         return
@@ -456,11 +456,14 @@ class ChatGptBotWorker extends BaseWorker {
     switch (action) {
       case WorkerEventActions.Worker_ChatMsg:
         console.log("[Worker_ChatMsg]", JSON.stringify(payload));
-        this.askMsg(payload).catch(console.error);
+        void this.onMessage(payload)
         break;
     }
   }
 
+  async onMessage({text,chatId}:{text:string,chatId:string}){
+    this.askMsg({text,chatId}).catch(console.error);
+  }
   async onReady() {
     const Conversation_Current = window.localStorage.getItem(`Conversation_Current`)
     if(Conversation_Current){
@@ -471,14 +474,14 @@ class ChatGptBotWorker extends BaseWorker {
       }
     }
     const WAITING_Msg = window.localStorage.getItem(`WAITING_Msg`)
-
-    this.reportStatus(BotStatusType.ONLINE)
+    this.reportStatus(BotStatusType.READY)
     if(WAITING_Msg){
       window.localStorage.removeItem(`WAITING_Msg`)
-      await sleep(4000)
+      await sleep(3000)
       this.chatGptMsg = undefined
       await this.askMsg(JSON.parse(WAITING_Msg))
     }
+    await sleep(3000)
   }
 }
 

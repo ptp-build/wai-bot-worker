@@ -46,6 +46,7 @@ export default class BotWorker extends BaseWorker {
         }
       }
       this.reportStatus(BotStatusType.ONLINE)
+      this.reportStatus(BotStatusType.READY)
     }catch (e){
       this.reportStatus(BotStatusType.InvokeApiError)
       console.error(e)

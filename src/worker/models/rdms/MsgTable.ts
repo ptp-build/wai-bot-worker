@@ -64,6 +64,9 @@ export default class MsgTable extends BaseTable{
   async update(row: Partial<ApiChatMsg>) {
     const { msgId, chatId, ...updatedFields } = row;
     this.chatId = row.chatId
+    console.debug(Object.keys(updatedFields))
+    console.debug(Object.values(updatedFields))
+    console.debug(updatedFields)
     if(Object.keys(updatedFields).includes("content") && updatedFields.content === undefined){
       updatedFields.content = {}
     }

@@ -11,8 +11,14 @@ export default class BridgeMasterWindow extends Bridge{
   getFileData(payload:GetFileDataType){
     return this.invokeMasterWindowAction(MasterEventActions.GetFileData, payload);
   }
-  restartWorkerWindow(payload:any){
+  closeWorkerWindow(payload: { botId:string }){
+    return this.invokeMasterWindowAction(MasterEventActions.CloseWorkerWindow, payload);
+  }
+  restartWorkerWindow(payload: { botId:string }){
     return this.invokeMasterWindowAction(MasterEventActions.RestartWorkerWindow, payload);
+  }
+  requestOpenAi(payload: any ){
+    return this.invokeMasterWindowAction(MasterEventActions.RequestOpenAi, payload);
   }
   getWorkersStatus(){
     return this.invokeMasterWindowAction(MasterEventActions.GetWorkersStatus);

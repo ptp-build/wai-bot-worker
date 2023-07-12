@@ -4,6 +4,10 @@ import RenderChatMsg from './RenderChatMsg';
 import ChatGptCommand from './commands/ChatGptCommand';
 import BridgeWorkerWindow from '../sdk/bridge/BridgeWorkerWindow';
 import RenderGroupChatMsg from './RenderGroupChatMsg';
+import BridgeMasterWindow from '../sdk/bridge/BridgeMasterWindow';
+import MsgHelper from '../sdk/helper/MsgHelper';
+import { CallbackButtonAction } from '../sdk/types';
+import RenderCallbackButton from './RenderCallbackButton';
 
 export default class RenderChatMsgText extends RenderChatMsg{
 
@@ -57,16 +61,108 @@ export default class RenderChatMsgText extends RenderChatMsg{
     //   }
     // }
   }
+  async preProcessMessage(text:string){
+    let stop = false
+    if(text.startsWith("-")){
+      const t = text.split(" ")
+      const cmd = t[0] as string
+      if(cmd !== "o"){
+        const offline = await this.checkWorkerIsOffline(this.getBotId())
+        if(offline){
+          return offline
+        }
+      }
+      switch (cmd.toLowerCase().substring(1)){
+        case "o":
+          await RenderCallbackButton.invokeMasterWindowCallbackButton(CallbackButtonAction.Master_OpenWorkerWindow,{botId:this.getBotId(),chatId:this.getChatId()})
+          stop = true
+          break
+        case "l":
+          if(t.length > 1){
+            await new BridgeWorkerWindow(this.getBotId()).loadUrl({url:t[1]})
+            stop = true
+          }
+          break
+        case "b":
+          await new BridgeWorkerWindow(this.getBotId()).goBack()
+          stop = true
+          break
+        case "h":
+          const account = await this.getWorkerAccount()
+          if(account.type === "chatGpt"){
+            account.customWorkerUrl = "https://chat.openai.com"
+          }
+          await new BridgeWorkerWindow(this.getBotId()).loadUrl({url:account.customWorkerUrl!})
+          stop = true
+          break
+        case "r":
+          await new BridgeWorkerWindow(this.getBotId()).reload()
+          stop = true
+          break
+        case "rr":
+          await new BridgeMasterWindow(this.getBotId()).restartWorkerWindow({botId:this.getBotId()})
+          stop = true
+          break
+        case "c":
+          await new BridgeMasterWindow(this.getBotId()).closeWorkerWindow({botId:this.getBotId()})
+          stop = true
+          break
+        case "d":
+          await new BridgeWorkerWindow(this.getBotId()).showDevTools()
+          stop = true
+          break
+        case "a":
+          await new BridgeWorkerWindow(this.getBotId()).activeWindow(this.getBotId())
+          stop = true
+          break
+      }
+    }
+    if(stop){
+      const msgId = await this.genMsgId()
+      return {msgId,sendingState:undefined}
+    }else{
+      return false
+    }
+  }
+  async askChatGpt(msgId:number,text:string){
+    const workerAccount = await this.getWorkerAccount()
+
+    let inlineButtons = []
+    if(await new ChatGptCommand(this.getChatId()).isSetupChatGptRole()){
+      await new ChatGptCommand(this.getChatId()).cancelSetupChatGptRole()
+      inlineButtons.push([MsgHelper.buildCallBackAction(
+        "保存角色信息",
+        CallbackButtonAction.Render_setupChatGptRoleConfirm,
+        {
+          cancelInlineButtons:true,
+          text
+        }
+      )])
+      inlineButtons.push(MsgHelper.buildLocalCancel())
+    }else{
+      const promptFormat = workerAccount ? workerAccount.promptFormat : ""
+      if(promptFormat){
+        text = promptFormat.replace("${prompts}",text)
+      }
+    }
+    await this.askChatGptMessage(text)
+    return {msgId,sendingState:undefined,inlineButtons}
+  }
   async processMessage({text,entities,taskId}:{text:string,entities?:any[],taskId?:number}){
     const group = await this.getGroup()
     if(group){
       return new RenderGroupChatMsg(this.getChatId(),this.getLocalMsgId()).handleGroupMsg({text,entities,taskId})
     }
+
+    const workerAccount = await this.getWorkerAccount()
+    const preRes = await this.preProcessMessage(text)
+    if(preRes){
+      return preRes
+    }
     const offline = await this.checkWorkerIsOffline(this.getBotId())
     if(offline){
       return offline
     }
-    const workerAccount = await this.getWorkerAccount()
     const msgId = await this.genMsgId()
     await this.handleNewMessage({
       chatId:this.getChatId(),
@@ -81,29 +177,18 @@ export default class RenderChatMsgText extends RenderChatMsg{
     if(workerAccount){
       switch (workerAccount.type){
         case "chatGpt":
-          if(await new ChatGptCommand(this.getChatId()).isSetupChatGptRole()){
-            await new ChatGptCommand(this.getChatId()).setupChatGptRoleText(text)
-          }else{
-            const promptFormat = workerAccount ? workerAccount.promptFormat : ""
-            if(promptFormat){
-              text = promptFormat.replace("${prompts}",text)
-            }
+          return this.askChatGpt(msgId,text)
+        case "bot":
+          if(workerAccount.type === 'bot' && workerAccount.botType === 'chatGptBot'){
+            return this.askChatGpt(msgId,text)
           }
-
-          if((workerAccount && workerAccount.type !== "chatGpt")){
-            if(!taskId){
-              return {msgId,sendingState:undefined}
-            }
-          }
-          await this.askChatGptMessage(text)
-          return {msgId,sendingState:undefined}
-        default:
-          await new BridgeWorkerWindow(this.getChatId()).sendChatMsgToWorker({
-            chatId:this.getChatId(),
-            text,
-          })
-          return {msgId,sendingState:undefined}
+          break
       }
+      await new BridgeWorkerWindow(this.getChatId()).sendChatMsgToWorker({
+        chatId:this.getChatId(),
+        text,
+      })
+      return {msgId,sendingState:undefined}
     }
   }
 }

@@ -27,8 +27,8 @@ export default class BaseKeyboardAndMouseEvents{
     return this.bridgeRender
   }
 
-  sendKeyboardEvent(type: 'char' | 'keyUp' | 'keyDown', keyCode: string) {
-    return this.bridgeWorkerWindow.invokeWorkerWindowKeyboardEventAction(type, keyCode)
+  sendKeyboardEvent(type: 'char' | 'keyUp' | 'keyDown', keyCode: string,modifiers?:Array<'shift' | 'control' | 'ctrl' | 'alt' | 'meta' | 'command' | 'cmd' | 'isKeypad' | 'isAutoRepeat' | 'leftButtonDown' | 'middleButtonDown' | 'rightButtonDown' | 'capsLock' | 'numLock' | 'left' | 'right'>) {
+    return this.bridgeWorkerWindow.invokeWorkerWindowKeyboardEventAction(type, keyCode,modifiers)
   }
 
   sendCharKeyboardEvent(keyCode: string) {
@@ -40,7 +40,6 @@ export default class BaseKeyboardAndMouseEvents{
     await sleep(sleepMs)
     await this.sendMouseEvent("left","mouseUp",left + offset,top + offset)
     await sleep(sleepMs)
-    await this.sendEnterKeyboardEvent()
   }
   sendMouseEvent(button:"left" | "right", type:"mouseDown"| "mouseUp", x:number, y:number) {
     return this.bridgeWorkerWindow.invokeWorkerWindowMouseEventAction({

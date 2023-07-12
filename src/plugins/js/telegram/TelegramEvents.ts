@@ -1,11 +1,9 @@
 import BaseWorker from '../../../sdk/botWorker/BaseWorker';
 import { sleep } from '../../../sdk/common/time';
 import MsgHelper from '../../../sdk/helper/MsgHelper';
-import { CallbackButtonAction, WorkerCallbackButtonAction } from '../../../sdk/types';
+import { WorkerCallbackButtonAction } from '../../../sdk/types';
 import TelegramHelper from '../../../sdk/helper/TelegramHelper';
 import TelegramStorage from './TelegramStorage';
-import FileHelper from '../../../sdk/helper/FileHelper';
-import { encodeCallBackButtonPayload } from '../../../sdk/common/string';
 
 export default class TelegramEvents {
   private worker: BaseWorker;
@@ -40,7 +38,9 @@ export default class TelegramEvents {
               const message = this.tgHelper.selectChatMessage(chatId,msgId)
               console.log("[message]",message.id,message.content.text.text)
               this.storage.put("lastMessageId_"+chatId,msgId)
-              await this.worker.replyMessageWithCancel(message.content)
+              await this.worker.replyMessageWithCancel(message.content,chatId,[
+                MsgHelper.buildOpenDocBtn()
+              ])
             }
           }
         }
@@ -194,7 +194,9 @@ export default class TelegramEvents {
       const msg = chat.lastMessage
       let content = await this.tgHelper.saveMessageContent(chatId,this.worker.botId,msg);
       if(content){
-        await this.worker.replyMessageWithCancel(content)
+        await this.worker.replyMessageWithCancel(content,chatId,[
+          MsgHelper.buildOpenDocBtn()
+        ])
       }
       await this.worker.replyJsonFile(`Message_${chatId}_${msg.id}.json`,msg)
 

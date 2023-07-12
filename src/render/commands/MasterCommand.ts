@@ -11,13 +11,11 @@ export default class MasterCommand extends BaseCommand{
 
   async loadBotCommands(){
     const cmdList = [
-      ["start","Start conversation."],
-      ["createWorker","Create Worker"],
-      ["control","Control Panel"],
-      ["setting","Setting panel"],
-      ["clearHistory","Clear chat History."]
+      ["start","开始对话"],
+      ["createWorker","创建Worker"],
+      ["control","控制指令"],
+      ["setting","设置选项"],
     ]
-
     return cmdList.map(cmd=>MsgHelper.buildCommand(cmd[0],cmd[1],this.getChatId()))
   }
 
@@ -26,16 +24,15 @@ export default class MasterCommand extends BaseCommand{
   }
 
   async setting(){
-    let helper = "Setting panel:"
+    let helper = "🛠️️️ 设置选项:"
+    helper += await this.getSettingHelp();
     const buttons = []
 
     buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️️ Setup MySql Message storage",CallbackButtonAction.Local_mysqlMsgStorage),
+      MsgHelper.buildCallBackAction("🛠️️️ 设置MySql存储",CallbackButtonAction.Local_mysqlMsgStorage),
     ])
 
-    buttons.push([
-      MsgHelper.buildCallBackAction("↩️️ Cancel",CallbackButtonAction.Local_cancelMessage),
-    ])
+    buttons.push(MsgHelper.buildLocalCancel())
     return this.replyText(helper,buttons)
   }
 
@@ -44,24 +41,73 @@ export default class MasterCommand extends BaseCommand{
   }
 
   async createWorker(){
-    return this.replyText("Choose type below:",[
-      [MsgHelper.buildCallBackAction("ChatGpt Worker",encodeCallBackButtonPayload(CallbackButtonAction.Master_createChatGptBotWorker,{
-        showConfirm:true,
-        confirmText:"Create a ChatGpt Worker ?",
-      }))],
-      [MsgHelper.buildCallBackAction("Custom Worker",encodeCallBackButtonPayload(CallbackButtonAction.Master_createCustomWorker,{
-        showConfirm:true,
-        confirmText:"Custom Worker is a worker with window\n Are you sure to create?",
-      }))],
+    let text = ""
+    text += `🟦 选择创建类别：\n\n`
 
-      [MsgHelper.buildCallBackAction("Custom Bot",encodeCallBackButtonPayload(CallbackButtonAction.Master_createCommonBot,{
+    text += `💡 Workers 与 Bots区别:\n\n`
+    text += `- Workers: 带窗口，需要登录账号\n`
+    text += `- Bots: 调用官方平台的api，需要apiKey或者Token，主要应用于通知、工具场景\n`
+    return this.replyText(text,[
+      [MsgHelper.buildUnsupportedAction("Workers:")],
+      [MsgHelper.buildCallBackAction("🔥🔥🔥 ChatGpt Worker",CallbackButtonAction.Master_createCustomWorker,{
+        type:"chatGpt",
+        customWorkerUrl:"https://chat.opanai.com",
+        pluginJs:"worker_chatGpt.js",
         showConfirm:true,
-        confirmText:"Custom Bot is a bot without window\n Are you sure to create?",
-      }))],
+        confirmText:"确定要创建 ?",
+      })],
+      [MsgHelper.buildCallBackAction("🔥 ProtonMail Worker",CallbackButtonAction.Master_createCustomWorker,{
+        type:"custom",
+        customWorkerUrl:"https://mail.proton.me",
+        pluginJs:"worker_custom.js",
+        showConfirm:true,
+        confirmText:"确定要创建 ?",
+      })],
+      [MsgHelper.buildCallBackAction("🔥 Twitter Worker",CallbackButtonAction.Master_createCustomWorker,{
+        type:"custom",
+        customWorkerUrl:"https://www.twitter.com",
+        pluginJs:"worker_custom.js",
+        showConfirm:true,
+        confirmText:"确定要创建 ?",
+      })],
+      [MsgHelper.buildCallBackAction("🌏 自定义 Worker",CallbackButtonAction.Master_createCustomWorker,{
+        type:"custom",
+        pluginJs:"worker_custom.js",
+        showConfirm:true,
+        confirmText:"确定要创建 ?",
+      })],
+      [MsgHelper.buildUnsupportedAction("Bots:")],
+      [MsgHelper.buildCallBackAction("🔥🔥🔥 ChatGpt4 Bot",CallbackButtonAction.Master_createCustomWorker,{
+        type:"bot",
+        pluginJs:"bot_chatGpt.js",
+        botType:"chatGptBot",
+        showConfirm:true,
+        chatGptModel:"gpt-4",
+        confirmText:"确定要创建 ?",
+      })],
+      [MsgHelper.buildCallBackAction("🔥🔥🔥 ChatGpt3.5 Bot",CallbackButtonAction.Master_createCustomWorker,{
+        type:"bot",
+        chatGptModel:"gpt-3.5-turbo",
+        pluginJs:"bot_chatGpt.js",
+        botType:"chatGptBot",
+        showConfirm:true,
+        confirmText:"确定要创建 ?",
+      })],
+      [MsgHelper.buildCallBackAction("🔥🔥🔥 Telegram Bot",CallbackButtonAction.Master_createCustomWorker,{
+        type:"bot",
+        pluginJs:"bot_telegram.js",
+        botType:"telegramBot",
+        showConfirm:true,
+        confirmText:"确定要创建 ?",
+      })],
+      [MsgHelper.buildCallBackAction("🛸 自定义 Bot",CallbackButtonAction.Master_createCustomWorker,{
+        type:"bot",
+        pluginJs:"bot_custom.js",
+        showConfirm:true,
+        confirmText:"确定要创建 ?",
+      })],
 
-      // [MsgHelper.buildCallBackAction("Task Worker",CallbackButtonAction.Master_createTaskWorker)],
-      // [MsgHelper.buildCallBackAction("Coding Worker",CallbackButtonAction.Master_createCodingWorker)],
-      [MsgHelper.buildCallBackAction("↩️️ Cancel",CallbackButtonAction.Local_cancelMessage)],
+      MsgHelper.buildLocalCancel(),
     ])
   }
   async processBotCommand(command:string){

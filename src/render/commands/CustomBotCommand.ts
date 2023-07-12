@@ -9,36 +9,53 @@ export default class CustomBotCommand extends BaseCommand{
   }
 
   async loadBotCommands(){
-    const cmdList = [
-      ["start","Start conversation."],
-      ["control","Control Panel"],
-      ["action","Action Panel"],
-      ["setting","Setting panel"],
-      ["clearHistory","Clear chat History."]
-    ]
-    console.log(cmdList)
+    const account = await this.getWorkerAccount();
+    let cmdList
+    if(account.botType === 'chatGptBot'){
+      cmdList = [
+        ["start","开始对话"],
+        ["brain","大脑"],
+        ["control","控制指令"],
+        ["action","动作指令"],
+        ["setting","设置选项"],
+        ["help","使用帮助"],
+      ]
+    }else{
+      cmdList = [
+        ["start","开始对话"],
+        ["control","控制指令"],
+        ["action","动作指令"],
+        ["setting","设置选项"],
+        ["help","使用帮助"],
+      ]
+    }
     return cmdList.map(cmd=>MsgHelper.buildCommand(cmd[0],cmd[1],this.getChatId()))
   }
 
   async start(){
-    return await super.start()
+    const account = await this.getWorkerAccount();
+    return await super.start(account.bio)
   }
 
   async setting(){
-    let helper = "Setting panel:"
+    let helper = " 🛠️️️️ 设置选项:\n\n"
+    helper += await this.getSettingHelp();
     const buttons = []
-
     buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️ Worker Name",CallbackButtonAction.Local_setupWorkerName),
-      MsgHelper.buildCallBackAction("🛠️️ UserName",CallbackButtonAction.Local_setupWorkerUserName),
+      MsgHelper.buildCallBackAction("🆔️️ 用户名",CallbackButtonAction.Local_setupWorkerUserName),
     ])
 
     buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️️ Plugin Js",CallbackButtonAction.Local_setupPluginJs),
+      MsgHelper.buildCallBackAction("👤 名称",CallbackButtonAction.Local_setupWorkerName),
+      MsgHelper.buildCallBackAction("📝️ 简介",CallbackButtonAction.Local_setupWorkerBio),
     ])
+    const account = await this.getWorkerAccount();
+
     buttons.push([
-      MsgHelper.buildCallBackAction("↩️️ Cancel",CallbackButtonAction.Local_cancelMessage),
+      MsgHelper.buildCallBackAction("🛠️️️ 插件Js",CallbackButtonAction.Local_setupPluginJs),
     ])
+
+    buttons.push(MsgHelper.buildLocalCancel())
     return this.replyText(helper,buttons)
   }
 
@@ -47,6 +64,11 @@ export default class CustomBotCommand extends BaseCommand{
   }
 
   async processBotCommand(command:string){
-    return super.processBotCommand(command)
+    switch (command){
+      case "brain":
+        return await this.brain()
+      default:
+        return super.processBotCommand(command)
+    }
   }
 }

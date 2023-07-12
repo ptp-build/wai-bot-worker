@@ -97,10 +97,6 @@ export default class WorkerAccount{
     let username = "";
     let name = "";
     switch (type){
-      case 'coding':
-        username = `Coding_${botId}_bot`;
-        name = `Coding #${botId}`
-        break
       case 'chatGpt':
         username = `ChatGpt_${botId}_bot`;
         name = `ChatGpt #${botId}`

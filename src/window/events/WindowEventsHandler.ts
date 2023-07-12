@@ -8,11 +8,13 @@ import BotWorkerStatus from '../../sdk/botWorkerStatus/BotWorkerStatus';
 export default class WindowEventsHandler {
 
   private static async handleNewMessageAction(payload: any) {
-    const mainChatMsgStorage = new MainChatMsgStorage();
     if(!payload.newMessage.msgId){
       payload.newMessage.msgId = await new RenderChatMsg(payload.newMessage.chatId).genMsgId();
     }
-    await mainChatMsgStorage.addNewMessage(payload.newMessage)
+    if(!payload.ignoreSaveToDb){
+      const mainChatMsgStorage = new MainChatMsgStorage();
+      await mainChatMsgStorage.addNewMessage(payload.newMessage)
+    }
     console.log("[handleNewMessageAction]",payload)
     if(payload.newMessage.isOutgoing){
       if(!payload.sendToMainChat){
@@ -42,7 +44,9 @@ export default class WindowEventsHandler {
         }
         break
       case MasterEventActions.UpdateMessage:
-        void await new MainChatMsgStorage().updateMessage(payload.updateMessage)
+        if(!payload.skipSaveDb){
+          void await new MainChatMsgStorage().updateMessage(payload.updateMessage)
+        }
         break
     }
 

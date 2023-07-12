@@ -14,62 +14,31 @@ export default class ChatGptCommand extends BaseCommand{
   }
 
   async loadBotCommands(){
-    const enableMultipleQuestion = await ChatConfig.isEnableMultipleQuestion(this.getChatId())
-    let cmdList
-    if(enableMultipleQuestion){
-      cmdList = [
-        ["start","Start conversation."],
-        ["openWindow","Open Window"],
-        ["reloadWindow","Reload Window"],
-        ["activeWindow","Active Window"],
-        ["control","Control Panel"],
-        ["action","Action panel"],
-        ["setting","Setting panel"],
-        // ["disableMultipleQuestions","Disable multiple lines of questioning."],
-        // ["sendQuestions","Send the above questions to AI"],
-        ["clearHistory","Clear chat History."],
-      ]
-    }else{
-      cmdList = [
-        ["start","Start conversation."],
-        ["setting","Setting panel"],
-        ["action","Action panel"],
-        ["reloadWindow","Reload Window"],
-        ["activeWindow","Active Window"],
-        ["openWindow","Open Window"],
-        ["control","Control Panel"],
-        // ["multipleQuestions","Enable Multiple lines of questioning"],
-        ["clearHistory","Clear chat History."],
-      ]
-    }
+    const cmdList = [
+      ["start","开始对话"],
+      ["brain","大脑"],
+      ["control","控制指令"],
+      ["action","动作指令"],
+      ["setting","设置选项"],
+      // ["help","使用帮助"],
+    ]
 
     return cmdList.map(cmd=>MsgHelper.buildCommand(cmd[0],cmd[1],this.getChatId()))
   }
-
   async start(){
-    return super.start()
+    const account = await this.getWorkerAccount();
+    return await super.start(account.bio,this.getShortKeyCmd())
   }
 
   async setting(){
-    let helper = "Setting panel:"
+    const account = await this.getWorkerAccount();
+
+    let helper = " 🛠️️️️ 设置选项:\n\n"
+    helper += await this.getSettingHelp(true);
+
     const buttons = this.getSettingButtons()
 
-    buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️ ChatGpt Auth",CallbackButtonAction.Local_setupChatGptAuth),
-      MsgHelper.buildCallBackAction("🛠️️️ Plugin Js",CallbackButtonAction.Local_setupPluginJs),
-    ])
-
-    buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️ Role",CallbackButtonAction.Render_setupChatGptRole),
-    ])
-
-    buttons.push([
-      MsgHelper.buildCallBackAction("🛠️️ Prompt Format",CallbackButtonAction.Local_setupPromptFormat),
-      MsgHelper.buildCallBackAction("🛠️️ Reply Parser",CallbackButtonAction.Local_setupReplyParser),
-    ])
-    buttons.push([
-      MsgHelper.buildCallBackAction("↩️️ Cancel",CallbackButtonAction.Local_cancelMessage),
-    ])
+    buttons.push(MsgHelper.buildLocalCancel())
     return this.replyText(helper,buttons)
   }
 
@@ -77,64 +46,12 @@ export default class ChatGptCommand extends BaseCommand{
     return super.action(action)
   }
 
-  async cancelSetupChatGptRole(){
-    await KvCache.getInstance().delete(`setupChatGptRole_${this.getChatId()}`)
-  }
-
-  async isSetupChatGptRole(){
-    return await KvCache.getInstance().get(`setupChatGptRole_${this.getChatId()}`)
-  }
-
-  async setupChatGptRoleText(text:string){
-    await this.cancelSetupChatGptRole()
-    const account = await this.getWorkerAccount()
-    const newAccount = {
-      ...account as LocalWorkerAccountType,
-      chatGptRole:text
-    }
-    await new WorkerAccount(this.getChatId()).update(newAccount)
-    await new BridgeWorkerWindow(this.getChatId()).updateWorkerAccount(newAccount)
-  }
-  async sendRoleDirectly(messageId:number){
-    if(!await this.isSetupChatGptRole()){
-      return
-    }
-    if(!BotWorkerStatus.getIsReadyByBotId(this.getChatId())){
-      await this.replyNewMessage("Worker is offline",[
-        MsgHelper.buildLocalCancel()
-      ])
-      return
-    }
-    await this.cancelSetupChatGptRole()
-    const {chatGptRole} = await this.getWorkerAccount()
-    let text = "";
-    text += `\nCurrent Role is :${MsgHelper.formatCodeTextMsg(chatGptRole!,"")}\n\n`
-    await this.handleUpdateMessage({
-      msgId:messageId,
-      chatId:this.getChatId(),
-      text,
-      inlineButtons:[]
-    })
-
-    await this.replyNewMessage(chatGptRole!,[],true,true)
-    await this.askChatGptMessage(chatGptRole!)
-  }
-  async setupChatGptRole(){
-    const {chatGptRole} = await this.getWorkerAccount()
-    let text = "";
-    const buttons:any[] = []
-    if(chatGptRole){
-      text += `\nCurrent Role is :${MsgHelper.formatCodeTextMsg(chatGptRole,"")}\n\n`
-      buttons.push([MsgHelper.buildCallBackAction("Send Role Directly",CallbackButtonAction.Render_sendRoleDirectly)])
-    }
-    buttons.push(MsgHelper.buildRenderCancel(undefined,{
-      cancelSetupChatGptRole:true
-    }))
-    await KvCache.getInstance().put(`setupChatGptRole_${this.getChatId()}`,true)
-    text += "Ok! Please typing the role you want me to play:"
-    await this.replyNewMessage(text,buttons)
-  }
   async processBotCommand(command:string){
-    return super.processBotCommand(command)
+    switch (command){
+      case "brain":
+        return await this.brain()
+      default:
+        return super.processBotCommand(command)
+    }
   }
 }

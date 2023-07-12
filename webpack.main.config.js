@@ -11,6 +11,8 @@ module.exports = {
     worker_telegram: './src/plugins/js/worker_telegram.ts',
     worker_custom: './src/plugins/js/worker_custom.ts',
     bot_custom: './src/plugins/js/bot_custom.ts',
+    bot_telegram: './src/plugins/js/bot_telegram.ts',
+    bot_chatGpt: './src/plugins/js/bot_chatGpt.ts',
     testCase: './src/plugins/js/testCase.ts',
     preload: './src/preload.ts',
   },

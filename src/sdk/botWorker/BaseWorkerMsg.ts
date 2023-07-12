@@ -6,6 +6,7 @@ import BridgeRender from '../bridge/BridgeRender';
 import BridgeMasterWindow from '../bridge/BridgeMasterWindow';
 import MsgHelper from '../helper/MsgHelper';
 import { currentTs } from '../common/time';
+import { rejects } from 'assert';
 
 interface Icon {
   rel: string;
@@ -233,24 +234,14 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
     return this.replyTextWithCancel("```json\n"+JSON.stringify(json,null,2)+"```",inlineButtons)
   }
 
-  replyMessageWithCancel(content: any, inlineButtons?: any[]) {
-    if (!inlineButtons) {
-      inlineButtons = [];
-    }
-    inlineButtons.push([
-      {
-        text: '↩️️ Cancel',
-        data: CallbackButtonAction.Local_cancelMessage,
-        type: 'callback',
-      },
-    ]);
-    return this.getBridgeMasterWindow().newContentMessage({
-      newMessage: {
-        chatId: this.botId,
-        content,
-        isOutgoing:false,
-        inlineButtons: inlineButtons || undefined,
-      },
+  async replyMessageWithCancel(content: any, chatId:string,inlineButtons?:any[][],withCancelButton:boolean = true) {
+    return this.replyMsg({
+      msgId:await this.applyMsgId(chatId),
+      chatId,
+      content,
+      inlineButtons
+    },{
+      withCancelButton
     })
   }
 
@@ -276,7 +267,87 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
       taskId
     })
   }
+  documentInsertData(data:string,isHtml?:boolean){
+    document.execCommand(isHtml ? 'insertHTML' : 'insertText', false, data);
+  }
 
+  click(x:number,y:number){
+    return new Promise(async (resolve) => {
+      //@ts-ignore
+      window.MOCK_CLICK = true;
+      await this.sendClick({left:x,top:y})
+      const div = document.createElement("div")
+
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+      div.style.position = "absolute"
+      div.style.top = `${y - 22 + scrollTop}px`
+      div.style.left = `${x -22 + scrollLeft}px`
+      div.style.width = `${44}px`
+      div.style.height = `${44}px`
+      div.style.backgroundColor = `red`
+      div.style.zIndex = `100000000`
+      div.style.opacity = `.9`
+      div.style.transition = `opacity .8s ease`
+      document.body.append(div)
+      div.addEventListener("transitionend", () => {
+        div.remove();
+        //@ts-ignore
+        window.MOCK_CLICK = false;
+        resolve(true)
+      });
+      setTimeout(()=>{
+        div.style.opacity = `0`
+      },100)
+    })
+  }
+  clickElement(selector:string | any) {
+    return new Promise(async (resolve,reject) => {
+      if(typeof selector === "string"){
+        selector = document.querySelector(selector);
+      }
+      if(!selector){
+        reject("not found selector")
+      }else{
+        const rect = this.rect(selector)
+        await this.sendClick(rect)
+        selector.click()
+        const div = document.createElement("div")
+        div.style.position = "absolute"
+        div.style.top = `${rect.top}px`
+        div.style.left = `${rect.left}px`
+        div.style.width = `${rect.width}px`
+        div.style.height = `${rect.height}px`
+        div.style.backgroundColor = `red`
+        div.style.zIndex = `100000000`
+        div.style.opacity = `.9`
+        div.style.transition = `opacity .8s ease`
+        document.body.append(div)
+        div.addEventListener("transitionend", () => {
+          div.remove();
+          resolve(true)
+        });
+        setTimeout(()=>{
+          div.style.opacity = `0`
+        },100)
+      }
+
+    })
+
+  }
+  rect(selector:string | any) {
+    const rect = typeof selector === "string" ? document.querySelector(selector)!.getBoundingClientRect() : selector.getBoundingClientRect();
+    console.log(rect)
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    return {
+      width:rect.width,
+      height:rect.height,
+      top: rect.top + scrollTop,
+      left: rect.left + scrollLeft
+    };
+  }
   waitForElement(selector:string, timeout = 5000) {
     return new Promise((resolve, reject) => {
       const startTime = Date.now();
@@ -324,7 +395,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
         mimeType,
         timestamp:currentTs()
       }
-    },inlineButtons)
+    },chatId,inlineButtons)
   }
 
   async updateMsg(msg:ApiChatMsg){
@@ -332,8 +403,11 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
       updateMessage:msg,
     })
   }
-  async replyMsg(msg:ApiChatMsg,options?:{withCancelButton?:boolean}){
-    const {withCancelButton} = options || {}
+  async replyMsg(msg:ApiChatMsg,options?:{
+    withCancelButton?:boolean,
+    ignoreSaveToDb?:boolean
+  }){
+    const {withCancelButton,ignoreSaveToDb} = options || {}
     let {msgId,content,text,chatId,msgDate,senderId,inlineButtons} = msg;
     if(!senderId){
       senderId = this.botId
@@ -359,6 +433,7 @@ export default class BaseWorkerMsg extends BaseKeyboardAndMouseEvents{
     }
     await this.getBridgeMasterWindow().newMessage({
       sendToMainChat:true,
+      ignoreSaveToDb,
       newMessage ,
     })
     return newMessage

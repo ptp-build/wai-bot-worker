@@ -24,8 +24,8 @@ export default class Bridge{
     return await this.bridge.invokeMasterWindowAction(this.botId, action, payload) || {};
   }
 
-  async invokeWorkerWindowKeyboardEventAction(type:string,keyCode:string){
-    return await this.bridge.invokeWorkerWindowKeyboardEventAction(this.botId, type, keyCode);
+  async invokeWorkerWindowKeyboardEventAction(type:string,keyCode:string,modifiers?:Array<'shift' | 'control' | 'ctrl' | 'alt' | 'meta' | 'command' | 'cmd' | 'isKeypad' | 'isAutoRepeat' | 'leftButtonDown' | 'middleButtonDown' | 'rightButtonDown' | 'capsLock' | 'numLock' | 'left' | 'right'>){
+    return await this.bridge.invokeWorkerWindowKeyboardEventAction(this.botId, type, keyCode,modifiers);
   }
   async invokeWorkerWindowMouseEventAction(payload?:any){
     return await this.bridge.invokeWorkerWindowMouseEventAction(this.botId, payload || {});
